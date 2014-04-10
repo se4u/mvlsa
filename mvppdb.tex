@@ -1,0 +1,116 @@
+%
+% File acl2014.tex
+%
+% Contact: koller@ling.uni-potsdam.de, yusuke@nii.ac.jp
+
+\documentclass[11pt]{article}
+\usepackage{acl2014}
+\usepackage{times}
+\usepackage{url}
+\usepackage{latexsym}
+
+%\setlength\titlebox{5cm}
+
+% You can expand the titlebox if you need extra space
+% to show all the authors. Please do not make the titlebox
+% smaller than 5cm (the original size); we will check this
+% in the camera-ready version and ask you to change it back.
+
+
+\title{Multi View approach for Paraphrasing OR Supervised embeddings
+  for improved performance}
+
+%% \author{Pushpendre Rastogi \\
+%%   Johns Hopkins University \\
+%%   {\tt pushpendre@jhu.edu} \\\And
+%%   Second Author \\
+%%   Affiliation / Address line 1 \\
+%%   Affiliation / Address line 2 \\
+%%   Affiliation / Address line 3 \\
+%%   {\tt email@domain} \\}
+
+\date{}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+  Sentence aligned bilingual text corpora and Unannotated Monolingual
+  text corpora can be used to learn large collections of semantically
+  similar paraphrases. These two data sources can be modelled as two
+  views over underlying latent representation of the words and
+  phrases.
+
+  OR
+  
+  We use CCA to adapt the features present in an existing collection
+  of paraphrases to learn a more useful representation of the existing features.
+\end{abstract}
+
+\section{Introduction}
+Bilingual text and monolingual text has been used to learn large
+collections of paraphrases. \cite{ccb2005} introduced the trick and
+then \cite{PPDB} built upon it. The reason why these two views work is
+that they complement each other. Monolingual data can't distinguish
+between antonyms but bilingual data can. And bilingual data confounds
+words that occur in the same sentence but monolingual data can
+distinguish them based on their context. So these are two different
+views over the same underlying representation which we can learn by
+using CCA or other multi view learning techniques.
+
+The main point of the paper is to learn embeddings or features
+that best correlate with both the views. 
+
+\textbf{But to check our own understanding} \textit{(I am speaking
+  my mind here)} of CCA we first just use the
+features that are already present in PPDB. and then learn a regression
+function with and without sparsity constraints and with and without
+CCA type dimensionality reduction and learn regression
+coefficients. (The reason why it is obvious that there would be an
+improvement is that we are specifically learning the representation to
+optimize some objective, with the extra tuning knob of how many
+dimensions to keep we must be able to do better than basic regression,
+EVEN THOUGH BOTH ARE LINEAR!!)
+
+\section{Previous Work}
+Multi view learning and CCA have been applied previously in the following
+papers.
+
+\section{Data Used}
+
+
+\section{Experiments}
+The first experiment was the following. \\
+Q. Can we learn reduced dimensionality embeddings which correlate with
+Human semantic judgement better than the original basis ? \\
+A. This is not really an experiment, more like a test. We expect an
+improvement in correlation, in fact we would be very 
+surprised if we can't improve and we would think there is a bug, that
+is why this is a test. The reason why we are so confident is that we are actually
+optimizing the representation and reducing dimensionality to learn 
+
+To perform this experiment we do the following.\\
+1. Gather likert-scale type human judgments about word similarity.\\
+2. Gather PPDB features for the word-pairs and make a big matrix \\
+3. Split that into train-dev-test\\
+4. Train-Test plain regression coefficients of normalized data. \\
+   (Basically find regression coefficients that best fit the training
+data in the original vector space, with the original basis.)\\
+5. Train-Test regression coefficients of CCA-type-latent-representations (We will not have to do normalization since CCA should take care of that.)
+
+The second experiment is the following. \\
+Q. Can we learn reduced dimensionality embeddings which correlate with
+Monolingual alignment ?  \\
+
+
+
+
+%% \section*{Acknowledgments}
+
+%% The acknowledgments should go immediately before the references.  Do
+%% not number the acknowledgments section. Do not include this section
+%% when submitting your paper for review.
+
+% include your own bib file like this:
+\bibliographystyle{acl}
+\bibliography{mvppdb}
+\end{document}
