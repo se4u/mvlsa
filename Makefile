@@ -5,4 +5,4 @@ c:
 	rm -f *.aux *.bbl *.blg *.log *.out *~
 
 v:
-	open mt-lrec-14.pdf
+	open mvppdb.pdf
