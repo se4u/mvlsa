@@ -60,8 +60,9 @@ tic; [Wx,Wy,r] = canoncorr_reg(view1, view2);
 disp(sprintf('CCA complete in %f sec', toc));
 Wx=Wx(:, 1:dimension_after_cca);
 Wy=Wy(:, 1:dimension_after_cca);
-U = (embedding)*Wx;
-U__ = (embedding)*Wy;
+mu=repmat(mean(embedding), size(embedding,1),1);
+U = (embedding-mu)*Wx;
+U__ = (embedding-mu)*Wy;
 % Storing this blob to Disk and loading again might be slow anyway.
 % save(outmatfile_name, 'Wx', 'Wy', 'r', 'view1', 'view2');
 %% Do KNN
