@@ -1,24 +1,32 @@
 .SECONDARY:
-.PHONY: optimal_cca_dimension_table log/gridrun
+.PHONY: optimal_cca_dimension_table gridrun_log_tabulate
 .INTERMEDIATE: gn_ppdb.itermediate
 # NOTE # For calculating the distance Mikolov makes the embeddings unit L2 norm
 
 # Active Evaluation
 MATGRUNT := LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src');addpath('src/kdtree'); "
+QSUBGRUNT := qsub -V -j y -l mem_free=10G -r yes -pe smp 5 
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
+# 1. PROBLEM : Confidence increases just by repeating data.
+# 2. Find how many labels remain after filtering ? 
+# 2. FIXME : I have removed classes which dont have at least knK points in them. Is that correct way to evaluate ?
+# 5. Currently I cannot use ppdb xxl because of the following reasons
+#      For  xxl the graph becomes completely connected. and there is a single cluster.
+#      ppdb l is the current goldilocks zone.
+# 4. Use other methods for like strongly connected component labeling in directed graphs for making equivalence classes.
+#     See TAOCP for the strongly connected component in directed graphs algorithm by Tarjan.
 
-# 4. Add confidence intervals.
-# 2. Subsample the KNN queries.
-
-log/gridrun2: # I would like to do xxl but for that the graph becomes almost fully connected and gibberish. Also I would like to s but nothing gets connected with s and we end up with only singletons,  there is no class that has even 16 members. also I was earlier using dim2keep in 10 30 50 70 90; 
-	for db in l  ; do \
+gridrun_log_tabulate: # log/gridrun I do not want it to run stuff on grid at all
+	python src/gridrun_log_tabulate.py | tee gridrun_log_tabulate
+log/gridrun: # I would like to do xxl but for that the graph becomes almost fully connected and gibberish. Also I would like to s but nothing gets connected with s and we end up with only singletons,  there is no class that has even 16 members. also I was earlier using dim2keep in 10 30 50 70 90;   -l h=plantation,other_resources -verify
+	for db in s l ; do \
 	  for dist in euclidean cosine ; do \
 	    for knnK in 1 4 8 16; do \
-	       for dim2keep in 110 130 150 170 190 210 230 250 270 290 ; do \
-		  qsub -V -j y -l mem_free=6G -m as -M prastog3@jhu.edu -N gridrun_"$$db"_"$$dist"_"$$knnK"_"$$dim2keep"_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_"$$dim2keep"_0 ;\
+	       for dim2keep in 10 30 50 70 90 110 130 150 170 190 210 230 250 270 290 ; do \
+		  $(QSUBGRUNT) -N gridrun_"$$db"_"$$dist"_"$$knnK"_"$$dim2keep"_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_"$$dim2keep"_0 ;\
 	       done;\
-	       qsub -V -j y -l mem_free=6G -m as -M prastog3@jhu.edu -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_1 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_1 ;\
+	       $(QSUBGRUNT) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_1 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_1 ;\
 	    done;\
 	  done;\
 	done;
@@ -37,7 +45,7 @@ log/gridrun2: # I would like to do xxl but for that the graph becomes almost ful
 log/large_scale_cca_%: /export/a15/prastog3/gn_intersect_ppdb_embeddings.mat  #res/gn_ppdb_lex_%_paraphrase
 	$(MATGRUNT)"load('$<'); options=strsplit('$*', '_'); ppdb_size=options{1}; distance_method=options{2}; knnK=str2num(options{3}); dimension_after_cca=str2num(options{4}); do_knn_only_over_original_embedding=str2num(options{5}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); large_scale_cca; exit" | tee $@
 
-/export/a15/prastog3/gn_intersect_ppdb_embeddings.mat : /export/a15/prastog3/gn_intersect_ppdb_embeddings
+/export/a15/prastog3/gn_intersect_ppdb_embeddings.mat : # /export/a15/prastog3/gn_intersect_ppdb_embeddings
 	$(MATGRUNT)"embeddingdlmread('$<', ,'', 0, 1); save('$<.mat','embedding');exit;"
 
 src/top.mexa64: src/top.cpp

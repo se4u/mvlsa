@@ -17,9 +17,7 @@ lib_util;
 tic;
 view1=zeros(vocab_relation_count, width);
 view2=zeros(vocab_relation_count, width);
-disp(['FIXME : Should i do mean substraction before taking CCA or ' ...
-      'add extra 1 dimension so that the mean is automatically taken ' ...
-      'care of ? ']);
+
 for i=1:vocab_relation_count
     view1(i,:)=embedding(mapping(i, 1), :);
     view2(i,:)=embedding(mapping(i, 2), :);
@@ -46,6 +44,10 @@ disp(['FIXME I have removed classes which dont have at least ' ...
 % labels from classes which are singletons.
 disp(sprintf('Floodfill complete in %f sec', toc));
 label=label(non_sparse_class_indices);
+if isempty(label)
+    disp(sprintf('Stop KNN: Not a single class with %d neighbors', knnK));
+    return;
+end
 %% Do KNN of the original embedding
 if do_knn_only_over_original_embedding
     embedding=embedding(non_sparse_class_indices, :);
@@ -61,6 +63,16 @@ disp(sprintf('CCA complete in %f sec', toc));
 Wx=Wx(:, 1:dimension_after_cca);
 Wy=Wy(:, 1:dimension_after_cca);
 mu=repmat(mean(embedding), size(embedding,1),1);
+chisq_stat=-(size(view1, 1)-1-(2*width+1)/2)*flipud(cumsum(flipud(log(1-r.^2))));
+dof=((width+1)-(1:width)).^2;
+for non_negligible_corr_dim=width:-1:1
+    i=non_negligible_corr_dim; % For convenience
+    if chisq_diff_from_zero(chisq_stat(i), dof(i), 0.95)
+        break;
+    end
+end
+disp(sprintf(['At 95 percent confidence the number of dimensions which have ' ...
+      'non negative correlation are %d'], non_negligible_corr_dim));
 U = (embedding-mu)*Wx;
 U__ = (embedding-mu)*Wy;
 % Storing this blob to Disk and loading again might be slow anyway.

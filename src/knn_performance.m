@@ -30,6 +30,10 @@ parfor i=1:crossval_fold
     perf(i)=sum(pred_labels==label(test));
 end
 acc=sum(perf)/length(label)*100;
+disp(sprintf('Accuracy in knn performance is %f in percentage', acc));
+disp(sprintf('The n for use in variance calc is %d', ...
+             length(label)));
+disp(sprintf('the variance is %f', acc*(1-acc)/length(label)));
 time_taken=toc;
 try
     % Same here, matlab needs to be told to close the things.
