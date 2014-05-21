@@ -1,32 +1,40 @@
 .SECONDARY:
 .PHONY: optimal_cca_dimension_table gridrun_log_tabulate
 .INTERMEDIATE: gn_ppdb.itermediate
-# NOTE # For calculating the distance Mikolov makes the embeddings unit L2 norm
 
 # Active Evaluation
-MATGRUNT := LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src');addpath('src/kdtree'); "
-QSUBGRUNT := qsub -V -j y -l mem_free=10G -r yes -pe smp 5 
+MATCMD := LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src');addpath('src/kdtree'); "
+QSUBCMD := qsub -V -j y -l mem_free=10G -r yes -pe smp 5 
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
-# 1. PROBLEM : Confidence increases just by repeating data.
-# 2. Find how many labels remain after filtering ? 
-# 2. FIXME : I have removed classes which dont have at least knK points in them. Is that correct way to evaluate ?
-# 5. Currently I cannot use ppdb xxl because of the following reasons
-#      For  xxl the graph becomes completely connected. and there is a single cluster.
-#      ppdb l is the current goldilocks zone.
-# 4. Use other methods for like strongly connected component labeling in directed graphs for making equivalence classes.
-#     See TAOCP for the strongly connected component in directed graphs algorithm by Tarjan.
+
+# 1. Sanity check the first row of these results and figure out why are
+#    these numbers so low ? and the rest of them so high ?
+# 2. Eyeball the data with typical familiar words like dog and cheese
+#    and see whether the vector embeddings for them and their paraphrases
+#    are close to each other, what are their neighbors, how close are the
+#    nearest good paraphrases in the vector space ? Also draw histogram of
+#    number of paraphrase per word and the number of words in a class.  
+# 3. Run a KNN experiment after appending the new embedding to the original 
+# 4. Make runs from CCA_Dim=1:10 and KNN from [16, 32, 64] . Test the limits and find peaks of accuracy. 
+# 5. Make run with kNN=1 using only the first dimension or only the
+#    second dimension etc. see the trend of performance.  
+# 6. Make new graphs of preciosion/recall for real valued K 
+#    i.e. Amongst words which have 4 paraphrases how high do I need
+#     to set k to capture all of them ? Or to capture 3 of them ? This gives
+#     us an average K that has a particular precision or recall. 
 
 gridrun_log_tabulate: # log/gridrun I do not want it to run stuff on grid at all
 	python src/gridrun_log_tabulate.py | tee gridrun_log_tabulate
-log/gridrun: # I would like to do xxl but for that the graph becomes almost fully connected and gibberish. Also I would like to s but nothing gets connected with s and we end up with only singletons,  there is no class that has even 16 members. also I was earlier using dim2keep in 10 30 50 70 90;   -l h=plantation,other_resources -verify
+
+log/gridrun: # qacct -j [jobid]  -l h=plantation,other_resources -verify
 	for db in s l ; do \
 	  for dist in euclidean cosine ; do \
 	    for knnK in 1 4 8 16; do \
 	       for dim2keep in 10 30 50 70 90 110 130 150 170 190 210 230 250 270 290 ; do \
-		  $(QSUBGRUNT) -N gridrun_"$$db"_"$$dist"_"$$knnK"_"$$dim2keep"_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_"$$dim2keep"_0 ;\
+		  $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_"$$dim2keep"_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_"$$dim2keep"_0 ;\
 	       done;\
-	       $(QSUBGRUNT) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_1 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_1 ;\
+	       $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_1 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_1 ;\
 	    done;\
 	  done;\
 	done;
@@ -43,10 +51,10 @@ log/gridrun: # I would like to do xxl but for that the graph becomes almost full
 # original embedding or the CCA ones. You only need to do CCA over
 # original embeddings once.
 log/large_scale_cca_%: /export/a15/prastog3/gn_intersect_ppdb_embeddings.mat  #res/gn_ppdb_lex_%_paraphrase
-	$(MATGRUNT)"load('$<'); options=strsplit('$*', '_'); ppdb_size=options{1}; distance_method=options{2}; knnK=str2num(options{3}); dimension_after_cca=str2num(options{4}); do_knn_only_over_original_embedding=str2num(options{5}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); large_scale_cca; exit" | tee $@
+	$(MATCMD)"load('$<'); options=strsplit('$*', '_'); ppdb_size=options{1}; distance_method=options{2}; knnK=str2num(options{3}); dimension_after_cca=str2num(options{4}); do_knn_only_over_original_embedding=str2num(options{5}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); large_scale_cca; exit" | tee $@
 
 /export/a15/prastog3/gn_intersect_ppdb_embeddings.mat : # /export/a15/prastog3/gn_intersect_ppdb_embeddings
-	$(MATGRUNT)"embeddingdlmread('$<', ,'', 0, 1); save('$<.mat','embedding');exit;"
+	$(MATCMD)"embeddingdlmread('$<', ,'', 0, 1); save('$<.mat','embedding');exit;"
 
 src/top.mexa64: src/top.cpp
 	mex -o src/top.mexa64 src/top.cpp
@@ -100,20 +108,20 @@ optimal_cca_dimension.log:
 	for i in 1 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70; do  make cca_over_rnnlm_knn_$$i | awk '{if(NR == 1 || NR > 34){print $$0}}' >> $@ ; done
 
 cca_over_rnnlm_knn_%: res/rnnlm_synonym_embedding res/rnnlm_synonym_embedding_word
-	$(MATGRUNT)"filename='res/rnnlm_synonym_embedding'; columns=1; dimension_after_cca=$*; cca_and_f_pushpendre ;exit"
+	$(MATCMD)"filename='res/rnnlm_synonym_embedding'; columns=1; dimension_after_cca=$*; cca_and_f_pushpendre ;exit"
 
 cca_over_lsh_embeddings_%: res/ben_synonym_embedding res/ben_synonym_embedding_word
-	$(MATGRUNT)"filename='res/ben_synonym_embedding'; columns= $*; dimension_after_cca=2; cca_and_f_pushpendre;exit"
+	$(MATCMD)"filename='res/ben_synonym_embedding'; columns= $*; dimension_after_cca=2; cca_and_f_pushpendre;exit"
 
 ## Random Embedding and Random partition Baselines. The purpose of
 ## these two sorts of experiments is always to find out what is the
 ## absolute baseline for the metric that you are using to test your
 ## technique. 
 random_partition_rnnlm_cca.png: res/rnnlm_synonym_embedding res/rnnlm_synonym_embedding_word
-	$(MATGRUNT);"filename='res/rnnlm_synonym_embedding'; columns=1; dimension_after_cca=2; random_embedding_cca;exit;"
+	$(MATCMD);"filename='res/rnnlm_synonym_embedding'; columns=1; dimension_after_cca=2; random_embedding_cca;exit;"
 
 random_embedding_cca.png:
-	$(MATGRUNT)"filename='res/rnnlm_synonym_embedding'; columns=1; dimension_after_cca=2; random_embedding_cca;exit;"
+	$(MATCMD)"filename='res/rnnlm_synonym_embedding'; columns=1; dimension_after_cca=2; random_embedding_cca;exit;"
 
 ###########################################################################################
 # TARGET : Contains just the words. extracted from the first column of the source
