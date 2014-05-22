@@ -2,39 +2,37 @@
 .PHONY: optimal_cca_dimension_table gridrun_log_tabulate
 .INTERMEDIATE: gn_ppdb.itermediate
 
-# Active Evaluation
 MATCMD := LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src');addpath('src/kdtree'); "
-QSUBCMD := qsub -V -j y -l mem_free=10G -r yes -pe smp 5 
+
+QSUBCMD := qsub -V -j y -l mem_free=10G -r yes #-verify 
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
+STORE := /export/a15/prastog3
 
-# 1. Sanity check the first row of these results and figure out why are
-#    these numbers so low ? and the rest of them so high ?
 # 2. Eyeball the data with typical familiar words like dog and cheese
 #    and see whether the vector embeddings for them and their paraphrases
 #    are close to each other, what are their neighbors, how close are the
 #    nearest good paraphrases in the vector space ? Also draw histogram of
 #    number of paraphrase per word and the number of words in a class.  
-# 3. Run a KNN experiment after appending the new embedding to the original 
-# 4. Make runs from CCA_Dim=1:10 and KNN from [16, 32, 64] . Test the limits and find peaks of accuracy. 
-# 5. Make run with kNN=1 using only the first dimension or only the
-#    second dimension etc. see the trend of performance.  
 # 6. Make new graphs of preciosion/recall for real valued K 
 #    i.e. Amongst words which have 4 paraphrases how high do I need
 #     to set k to capture all of them ? Or to capture 3 of them ? This gives
 #     us an average K that has a particular precision or recall. 
 
-gridrun_log_tabulate: # log/gridrun I do not want it to run stuff on grid at all
+gridrun_log_tabulate: log/gridrun 
 	python src/gridrun_log_tabulate.py | tee gridrun_log_tabulate
 
-log/gridrun: # qacct -j [jobid]  -l h=plantation,other_resources -verify
+log/gridrun: 
 	for db in s l ; do \
-	  for dist in euclidean cosine ; do \
-	    for knnK in 1 4 8 16; do \
-	       for dim2keep in 10 30 50 70 90 110 130 150 170 190 210 230 250 270 290 ; do \
-		  $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_"$$dim2keep"_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_"$$dim2keep"_0 ;\
-	       done;\
-	       $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_1 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_1 ;\
+	  for dist in cosine ; do \
+	    for knnK in 1 4 8 16 32 64; do \
+	      for dim2keep in 1 10 30 50 70 90 110 130 150 170 300 ; do \
+		$(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 ;\
+	      done;\
+	      $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_1_0_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_1_0_0_0 ;\
+	      for dim2append in 10 30 50 70 90 ; do \
+	        $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append" ;\
+	      done;\
 	    done;\
 	  done;\
 	done;
@@ -45,16 +43,16 @@ log/gridrun: # qacct -j [jobid]  -l h=plantation,other_resources -verify
 # 497,046,000 (doubles 8 Bytes) == 3GB. (4 GB for xxl) After running
 # CCA. I get new embeddings and then I need to run KNN.
 
-# EXAMPLE: /export/a15/prastog3/large_scale_cca_xxl_euclidean_1_10_1
+# EXAMPLE: $(STORE)/large_scale_cca_xxl_euclidean_1_10_1
 # The first is size of ppdb, then the distance method then knnK then the
 # dimensions to keep and then whether to do it over
 # original embedding or the CCA ones. You only need to do CCA over
-# original embeddings once.
-log/large_scale_cca_%: /export/a15/prastog3/gn_intersect_ppdb_embeddings.mat  #res/gn_ppdb_lex_%_paraphrase
-	$(MATCMD)"load('$<'); options=strsplit('$*', '_'); ppdb_size=options{1}; distance_method=options{2}; knnK=str2num(options{3}); dimension_after_cca=str2num(options{4}); do_knn_only_over_original_embedding=str2num(options{5}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); large_scale_cca; exit" | tee $@
+# original embeddings once. 
+log/large_scale_cca_%: $(STORE)/gn_intersect_ppdb_embeddings.mat # res/gn_ppdb_lex_s_paraphrase res/gn_ppdb_lex_l_paraphrase res/gn_ppdb_lex_xl_paraphrase res/gn_ppdb_lex_xxl_paraphrase
+	$(MATCMD)"load('$<'); options=strsplit('$*', '_'); ppdb_size=options{1}; distance_method=options{2}; knnK=str2num(options{3}); do_knn_only_over_original_embedding=str2num(options{4}); dimension_after_cca=str2num(options{5}); do_append=str2num(options{6}); dim2append=str2num(options{6}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); large_scale_cca; exit" | tee $@
 
-/export/a15/prastog3/gn_intersect_ppdb_embeddings.mat : # /export/a15/prastog3/gn_intersect_ppdb_embeddings
-	$(MATCMD)"embeddingdlmread('$<', ,'', 0, 1); save('$<.mat','embedding');exit;"
+# $(STORE)/gn_intersect_ppdb_embeddings.mat : $(STORE)/gn_intersect_ppdb_embeddings
+# 	$(MATCMD)"embeddingdlmread('$<', ,'', 0, 1); save('$<.mat','embedding');exit;"
 
 src/top.mexa64: src/top.cpp
 	mex -o src/top.mexa64 src/top.cpp
@@ -70,10 +68,10 @@ res/gn_ppdb_lex_%_paraphrase: res/gn_intersect_ppdb_word
 	python src/get_paraphrase.py $< 10 $* > $@
 
 # TARGET : Just the words from the gn_intersect_ppdb file
-res/gn_intersect_ppdb_word: /export/a15/prastog3/gn_intersect_ppdb_embeddings
+res/gn_intersect_ppdb_word: $(STORE)/gn_intersect_ppdb_embeddings
 	awk '{print $$1}' $+ > $@
 
-/export/a15/prastog3/gn_intersect_ppdb_embeddings : /export/a15/prastog3/gn_intersect_ppdb_embeddings.gz
+$(STORE)/gn_intersect_ppdb_embeddings : $(STORE)/gn_intersect_ppdb_embeddings.gz
 	zcat $+ > $@
 
 # TARGET : Contains embeddings of overlapping words in Google News
@@ -84,18 +82,17 @@ res/gn_intersect_ppdb_word: /export/a15/prastog3/gn_intersect_ppdb_embeddings
 # In PPDB not in Google 42406
 # PPDB has 125,247 words
 # Google has 3 Million Phrases and roughly 300k words.
-/export/a15/prastog3/gn_intersect_ppdb_embeddings.gz res/in_google_not_in_ppdb res/in_ppdb_not_in_google: gn_ppdb.itermediate
+# This also builds res/in_google_not_in_ppdb res/in_ppdb_not_in_google
+$(STORE)/gn_intersect_ppdb_embeddings.gz : $(STORE)/gn300.txt $(STORE)/PPDB_Lexical_Data/ppdb-1.0-xxxl-lexical-words-uniq 
+	PYTHONPATH=$$PWD/src/:$$PYTHONPATH python src/overlap_between_google_and_ppdb.py $+ $(STORE)/gn_intersect_ppdb_embeddings.gz
 
-gn_ppdb.itermediate: /export/a15/prastog3/gn300.txt /export/a15/prastog3/PPDB_Lexical_Data/ppdb-1.0-xxxl-lexical-words-uniq 
-	PYTHONPATH=$$PWD/src/:$$PYTHONPATH python src/overlap_between_google_and_ppdb.py $+ /export/a15/prastog3/gn_intersect_ppdb_embeddings.gz
-
-# /export/a15/prastog3/gn300.txt.gz : /export/a15/prastog3/gn300.txt
+# $(STORE)/gn300.txt.gz : $(STORE)/gn300.txt
 # 	gzip -c $+ > $@
 
-/export/a15/prastog3/gn300.txt: /export/a15/prastog3/GoogleNews-vectors-negative300.bin res/convertvec
+$(STORE)/gn300.txt: $(STORE)/GoogleNews-vectors-negative300.bin res/convertvec
 	./res/convertvec bin2txt $<  $@ 
 
-/export/a15/prastog3/GoogleNews-vectors-negative300.bin: /export/a15/prastog3/GoogleNews-vectors-negative300.bin.gz
+$(STORE)/GoogleNews-vectors-negative300.bin: $(STORE)/GoogleNews-vectors-negative300.bin.gz
 	gunzip -c $< > $@
 
 res/convertvec : src/convertvec.c

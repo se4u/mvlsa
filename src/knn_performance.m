@@ -12,7 +12,6 @@ indices=crossvalind('Kfold', label, crossval_fold);
 perf=zeros(1, crossval_fold);
 try
     % This is all crap for parallel processing which is buggy
-    disp('I am running on machine'); unix('hostname');
     distcomp.feature( 'LocalUseMpiexec', false );
     matlabpool('OPEN', crossval_fold);
 catch
