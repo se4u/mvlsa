@@ -67,7 +67,8 @@ ppdb_size_list=['s', 'l']
 dist_list=['cosine']
 knnK_list=[str(e) for e in [1, 4, 8, 16, ]]
 cca_dim_list=['1']+[str(e) for e in xrange(10, 190, 20)]+['300',]
-cca_app_list=[str(e) for e in xrange(10, 110, 20)]
+#cca_app_list=[str(e) for e in xrange(10, 210, 40)]
+cca_app_list=[str(e) for e in xrange(10, 190, 20)]
 on_original=['0', '1']
 # I want to show ppdb_size x dist number of tables.
 out1 = StringIO()
@@ -82,8 +83,8 @@ for p in ppdb_size_list:
         print >>out2, "\t".join(["knn"]+cca_app_list)
         for k in knnK_list:
             print2both( out1, out2, k)
-            for cd in cca_dim_list:
-                out1.write("\t"+results["_".join([p, d, k, "1" if cd=="0" else "0", cd, "0", "0"])][:5])
+            # for cd in cca_dim_list:
+            #     out1.write("\t"+results["_".join([p, d, k, "1" if cd=="0" else "0", cd, "0", "0"])][:5])
             for ca in cca_app_list:
                 out2.write("\t"+results["_".join([p, d, k, "0", "0", "1", ca])][:5])
             print2both(out1, out2, "\n")
@@ -96,6 +97,9 @@ print "-2 indicates that job crashed"
 print "-1 indicates that there weren't enough labels in a class"
 for k,e in fail_jid.items():
     print k, jid2param[k], e
+
+
+
 
 
 

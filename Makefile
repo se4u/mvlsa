@@ -17,9 +17,12 @@ STORE := /export/a15/prastog3
 # 6. Make new graphs of preciosion/recall for real valued K 
 #    i.e. Amongst words which have 4 paraphrases how high do I need
 #     to set k to capture all of them ? Or to capture 3 of them ? This gives
-#     us an average K that has a particular precision or recall. 
-gridrun_log_tabulate: log/gridrun 
-	python src/gridrun_log_tabulate.py | tee gridrun_log_tabulate
+#     us an average K that has a particular precision or recall.
+data_eyeball_%:
+	$(MATCMD)"load('/export/a15/prastog3/gn_intersect_ppdb_embeddings.mat'); mapping=dlmread('res/gn_ppdb_lex_$*_paraphrase','', 0, 2); word=textread('res/gn_intersect_ppdb_word', '%s'); cd src; dbstop in data_eyeball at 5; debug=1; data_eyeball;"
+
+log/gridrun_log_tabulate: log/gridrun 
+	python src/gridrun_log_tabulate.py | tee $@
 
 qstat:
 	qstat | cut -c 73-75 | sort | uniq -c
@@ -32,7 +35,7 @@ log/gridrun:
 	for db in s l ; do \
 	  for dist in cosine ; do \
 	    for knnK in 1 4 8 16 ; do \
-	      for dim2append in 10 50 90 130 170 ; do \
+	      for dim2append in 10 30 50 70 90 110 130 150 170 ; do \
 	        $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append" ;\
 	      done;\
 	    done;\
@@ -51,7 +54,7 @@ log/gridrun:
 # original embedding or the CCA ones. You only need to do CCA over
 # original embeddings once. 
 log/large_scale_cca_%: $(STORE)/gn_intersect_ppdb_embeddings.mat # res/gn_ppdb_lex_s_paraphrase res/gn_ppdb_lex_l_paraphrase res/gn_ppdb_lex_xl_paraphrase res/gn_ppdb_lex_xxl_paraphrase
-	$(MATCMD)"load('$<'); options=strsplit('$*', '_'); ppdb_size=options{1}; distance_method=options{2}; knnK=str2num(options{3}); do_knn_only_over_original_embedding=str2num(options{4}); dimension_after_cca=str2num(options{5}); do_append=str2num(options{6}); dim2append=str2num(options{6}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); large_scale_cca; exit" | tee $@
+	$(MATCMD)"load('$<'); options=strsplit('$*', '_'); ppdb_size=options{1}; distance_method=options{2}; knnK=str2num(options{3}); do_knn_only_over_original_embedding=str2num(options{4}); dimension_after_cca=str2num(options{5}); do_append=str2num(options{6}); dim2append=str2num(options{7}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); large_scale_cca; exit" | tee $@
 
 # $(STORE)/gn_intersect_ppdb_embeddings.mat : $(STORE)/gn_intersect_ppdb_embeddings
 # 	$(MATCMD)"embeddingdlmread('$<', ,'', 0, 1); save('$<.mat','embedding');exit;"

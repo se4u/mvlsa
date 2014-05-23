@@ -10,6 +10,7 @@ tic;
 perf=0;
 indices=crossvalind('Kfold', label, crossval_fold);
 perf=zeros(1, crossval_fold);
+perf_per_fold=NaN(crossval_fold, 1);
 try
     % This is all crap for parallel processing which is buggy
     distcomp.feature( 'LocalUseMpiexec', false );
@@ -27,12 +28,20 @@ parfor i=1:crossval_fold
     pred_labels=knnclassify(view(test,:), view(train,:), label(train), ...
                       knnK, distance, 'nearest');
     perf(i)=sum(pred_labels==label(test));
+    perf_per_fold(i)=perf(i)/sum(test);
 end
 acc=sum(perf)/length(label)*100;
+disp(perf_per_fold);
+disp(perf);
 disp(sprintf('Accuracy in knn performance is %f in percentage', acc));
 disp(sprintf('The n for use in variance calc is %d', ...
              length(label)));
-disp(sprintf('the variance is %f', acc*(1-acc)/length(label)));
+disp(sprintf('the theoretical variance is %f', acc*(1-acc)/ ...
+             length(label)));
+disp(sprintf('the empirical variance is %f', var(perf_per_fold)));
+% This sample variance is over 10 folds.
+% sample_mean / sqrt(sample_variance/n) is t distributed with dof = 9
+disp(sprintf('the 0.95 confidence interval is %f', tinv(0.95, crossval_fold-1)*sqrt(var(perf_per_fold)/crossval_fold)));
 time_taken=toc;
 try
     % Same here, matlab needs to be told to close the things.
