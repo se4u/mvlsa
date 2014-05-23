@@ -3,10 +3,11 @@
 .INTERMEDIATE: gn_ppdb.itermediate
 
 MATCMD := LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src');addpath('src/kdtree'); "
-QSUBCMD := qsub -V -j y -l mem_free=15G -r yes #-verify 
+QSUBCMD := qsub -V -j y -l mem_free=20G -r yes #-verify 
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
 STORE := /export/a15/prastog3
+
 
 # 2. Eyeball the data with typical familiar words like dog and cheese
 #    and see whether the vector embeddings for them and their paraphrases
@@ -17,18 +18,21 @@ STORE := /export/a15/prastog3
 #    i.e. Amongst words which have 4 paraphrases how high do I need
 #     to set k to capture all of them ? Or to capture 3 of them ? This gives
 #     us an average K that has a particular precision or recall. 
-
 gridrun_log_tabulate: log/gridrun 
 	python src/gridrun_log_tabulate.py | tee gridrun_log_tabulate
 
-log/gridrun: #$(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_1_0_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_1_0_0_0 ;
+qstat:
+	qstat | cut -c 73-75 | sort | uniq -c
+
+# $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_1_0_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_1_0_0_0 ;
+# for dim2keep in 1 10 30 50 70 90 110 130 150 170 300 ; do 
+#  $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 ;
+# done;
+log/gridrun: 
 	for db in s l ; do \
 	  for dist in cosine ; do \
 	    for knnK in 1 4 8 16 ; do \
-	      for dim2keep in 1 10 30 50 70 90 110 130 150 170 300 ; do \
-		$(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 ;\
-	      done;\
-	      for dim2append in 10 30 50 70 90 ; do \
+	      for dim2append in 10 50 90 130 170 ; do \
 	        $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append" ;\
 	      done;\
 	    done;\
