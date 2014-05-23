@@ -46,11 +46,10 @@ for jid, param in jid2param.items(): #Process all the logs
     if len(l) > 0:
         results[param]=str(-1)
         continue
-    l=[e for e in log if e.startswith("Out of memory.")]
+    l=[e for e in log if e.startswith("Out of memory.") ]
     if len(l) > 0:
         fail_jid[jid]+="Out of memory "
         results[param]=str(-4)
-        continue
     #reg_acc_AU, reg_acc_U, reg_acc_orig
     for reg in [reg_acc_orig, reg_acc_U, reg_acc_AU]:
         l=[e for e in log if reg.match(e)]
@@ -66,8 +65,8 @@ for jid, param in jid2param.items(): #Process all the logs
 
 ppdb_size_list=['s', 'l']
 dist_list=['cosine']
-knnK_list=[str(e) for e in [1, 4, 8, 16, 32, 64]]
-cca_dim_list=['1']+[str(e) for e in xrange(10, 190, 20)]+['300', '0']
+knnK_list=[str(e) for e in [1, 4, 8, 16, ]]
+cca_dim_list=['1']+[str(e) for e in xrange(10, 190, 20)]+['300',]
 cca_app_list=[str(e) for e in xrange(10, 110, 20)]
 on_original=['0', '1']
 # I want to show ppdb_size x dist number of tables.
@@ -97,5 +96,6 @@ print "-2 indicates that job crashed"
 print "-1 indicates that there weren't enough labels in a class"
 for k,e in fail_jid.items():
     print k, jid2param[k], e
+
 
 

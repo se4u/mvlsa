@@ -1,0 +1,78 @@
+s cosine
+knn	1	10	30	50	70	90	110	130	150	170	300	Original
+1	0.019	-4	37.30	44.31	47.26	49.09	-4	49.94	49.75	48.59	39.82	39.66
+4	0.019	12.26	24.06	26.79	27.77	28.73	29.22	29.55	29.94	29.64	27.23	26.41
+8	0.009	8.046	13.88	14.86	-3	16.43	16.64	16.88	16.94	17.17	17.39	-2
+16	0.000	4.071	7.086	7.960	8.623	8.555	8.690	8.911	9.266	9.564	9.880	-2
+32	0.000	2.583	4.724	5.137	5.502	5.492	5.646	5.963	6.145	6.222	6.433	5.358
+64	0.000	2.083	3.360	3.706	-2	3.946	4.253	4.407	4.465	4.580	4.782	3.994
+
+l cosine
+knn	1	10	30	50	70	90	110	130	150	170	300	Original
+1	24.69	24.11	39.31	43.88	46.04	47.28	47.87	48.28	48.24	-4	-4	45.71
+4	27.27	31.64	39.50	41.85	43.22	-2	44.20	-4	44.73	-2	-4	43.96
+8	37.47	34.98	38.96	40.69	41.43	41.72	42.01	42.28	42.31	42.41	-4	41.96
+16	37.47	-2	-4	-4	-4	-2	39.84	-4	-4	-4	39.93	39.69
+32	37.47	37.12	37.81	38.06	38.17	38.19	38.25	38.35	-2	-4	38.30	38.34
+64	37.47	37.38	-4	37.54	37.63	37.68	37.64	37.74	37.75	37.77	-4	37.75
+
+
+s cosine
+knn	10	30	50	70	90
+1	-4	39.66	39.66	39.66	-2
+4	26.41	26.41	26.41	26.41	26.41
+8	15.80	15.80	15.80	15.80	-3
+16	8.133	8.133	8.133	8.133	8.133
+32	5.358	5.358	5.358	5.358	5.358
+64	3.994	3.994	3.994	3.994	3.994
+
+l cosine
+knn	10	30	50	70	90
+1	45.71	45.71	45.71	45.71	-4
+4	43.96	43.96	43.96	43.96	-4
+8	41.96	41.96	41.96	41.96	41.96
+16	39.69	39.69	39.69	-2	-2
+32	-2	38.34	-2	-4	38.34
+64	-4	37.75	37.75	37.75	37.75
+
+
+-4 indicates OOM
+-3 indicates job not complete
+-2 indicates that job crashed
+-1 indicates that there weren't enough labels in a class
+6506031 l_cosine_1_0_0_1_90 Out of memory 
+6506059 l_cosine_8_0_300_0_0 Out of memory 
+6506037 l_cosine_4_0_90_0_0 host v02, couldnt do knn 
+6506039 l_cosine_4_0_130_0_0 Out of memory 
+6505919 s_cosine_1_0_110_0_0 Out of memory 
+6505975 s_cosine_16_1_0_0_0 host a16, couldnt do knn 
+6505951 s_cosine_8_0_70_0_0 job not complete 
+6505958 s_cosine_8_1_0_0_0 host b03, couldnt do knn 
+6506110 l_cosine_64_0_300_0_0 Out of memory 
+6505914 s_cosine_1_0_10_0_0 Out of memory 
+6506067 l_cosine_16_0_10_0_0 host v02, couldnt do knn 
+6506112 l_cosine_64_0_0_1_10 Out of memory 
+6506068 l_cosine_16_0_30_0_0 Out of memory 
+6506069 l_cosine_16_0_50_0_0 Out of memory 
+6506081 l_cosine_16_0_0_1_70 host , couldnt do knn 
+6506082 l_cosine_16_0_0_1_90 host , couldnt do knn 
+6506048 l_cosine_4_0_0_1_90 Out of memory 
+6506025 l_cosine_1_0_300_0_0 Out of memory 
+6506002 s_cosine_64_0_70_0_0 host b03, couldnt do knn 
+6505925 s_cosine_1_0_0_1_10 Out of memory 
+6506041 l_cosine_4_0_170_0_0 host v02, couldnt do knn 
+6506042 l_cosine_4_0_300_0_0 Out of memory 
+6505929 s_cosine_1_0_0_1_90 host h01, couldnt do knn 
+6505963 s_cosine_8_0_0_1_90 job not complete 
+6506024 l_cosine_1_0_170_0_0 Out of memory 
+6506075 l_cosine_16_0_170_0_0 Out of memory 
+6506074 l_cosine_16_0_150_0_0 Out of memory 
+6506071 l_cosine_16_0_90_0_0 host v02, couldnt do knn 
+6506070 l_cosine_16_0_70_0_0 Out of memory 
+6506073 l_cosine_16_0_130_0_0 Out of memory 
+6506098 l_cosine_32_0_0_1_70 Out of memory 
+6506097 l_cosine_32_0_0_1_50 host h01, couldnt do knn 
+6506095 l_cosine_32_0_0_1_10 host h01, couldnt do knn 
+6506092 l_cosine_32_0_170_0_0 Out of memory 
+6506091 l_cosine_32_0_150_0_0 host , couldnt do knn 
+6506102 l_cosine_64_0_30_0_0 Out of memory 
