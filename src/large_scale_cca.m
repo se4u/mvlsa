@@ -10,10 +10,10 @@ global do_append;
 global dim2append;
 global debug;
 disp('I am running on machine'); unix('hostname');
-% embedding=embedding-repmat(mean(embedding), size(embedding, 1), 1);
-% for i=1:size(embedding, 1)
-%     embedding(i,:)=embedding(i,:)/norm(embedding(i,:));
-% end
+embedding=embedding-repmat(mean(embedding), size(embedding, 1), 1);
+for i=1:size(embedding, 1)
+    embedding(i,:)=embedding(i,:)/norm(embedding(i,:));
+end
 vocab_size=size(embedding, 1);
 width=size(embedding, 2);
 vocab_relation_count=size(mapping, 1);
@@ -67,15 +67,7 @@ if do_append
     % Do CCA
     [Wx, Wy, r]=get_CCA_projection_matrices(view1, view2, ...
                                                    dim2append);
-    mu=repmat(mean(embedding), size(embedding,1),1);
-    % Do KNN
-    % Do Mean and Variance normalization of the embeddings
-    normalize = @(a, mu) (a-mu)*diag(sqrt(var(a)).^-1);
-    if debug
-        disp(mean(var(normalize(embedding, mu))));
-        disp(mean(var((embedding-mu)*Wx)));
-    end
-    [time_taken, acc]=knn_performance([normalize(embedding, mu) (embedding-mu)*Wx], ...
+    [time_taken, acc]=knn_performance([embedding (embedding)*Wx], ...
                                       label, knnK, distance_method, ...
                                       10);
     disp(sprintf('Knn complete in %f with Accuracy : %f over AU', time_taken, ...
@@ -87,7 +79,7 @@ end
 [Wx, Wy, r]=get_CCA_projection_matrices(view1, view2, dimension_after_cca);
 mu=repmat(mean(embedding), size(embedding,1),1);
 
-U = (embedding-mu)*Wx;
+U = (embedding)*Wx;
 U = U(non_sparse_class_indices, :);
 [time_taken, acc]=knn_performance(U, label, knnK, distance_method, 10);
 disp(sprintf('Knn complete in %f with Accuracy : %f over U', time_taken, ...

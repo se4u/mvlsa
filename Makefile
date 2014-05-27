@@ -1,5 +1,5 @@
 .SECONDARY:
-.PHONY: optimal_cca_dimension_table gridrun_log_tabulate
+.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate
 .INTERMEDIATE: gn_ppdb.itermediate
 
 MATCMD := LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src');addpath('src/kdtree'); "
@@ -9,17 +9,12 @@ CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-res
 STORE := /export/a15/prastog3
 
 
-# 2. Eyeball the data with typical familiar words like dog and cheese
-#    and see whether the vector embeddings for them and their paraphrases
-#    are close to each other, what are their neighbors, how close are the
-#    nearest good paraphrases in the vector space ? Also draw histogram of
-#    number of paraphrase per word 
 # 6. Make new graphs of preciosion/recall for real valued K 
 #    i.e. Amongst words which have 4 paraphrases how high do I need
 #     to set k to capture all of them ? Or to capture 3 of them ? This gives
 #     us an average K that has a particular precision or recall.
 data_eyeball_%:
-	$(MATCMD)"load('/export/a15/prastog3/gn_intersect_ppdb_embeddings.mat'); mapping=dlmread('res/gn_ppdb_lex_$*_paraphrase','', 0, 2); word=textread('res/gn_intersect_ppdb_word', '%s'); cd src; dbstop in data_eyeball at 5; debug=1; data_eyeball;"
+	$(MATCMD)"load('/export/a15/prastog3/gn_intersect_ppdb_embeddings.mat'); mapping=dlmread('res/gn_ppdb_lex_$*_paraphrase','', 0, 2); word=textread('res/gn_intersect_ppdb_word', '%s'); cd src; debug=1; data_eyeball; exit;"
 
 log/gridrun_log_tabulate: log/gridrun 
 	python src/gridrun_log_tabulate.py | tee $@
@@ -27,15 +22,16 @@ log/gridrun_log_tabulate: log/gridrun
 qstat:
 	qstat | cut -c 73-75 | sort | uniq -c
 
-# $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_1_0_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_1_0_0_0 ;
-# for dim2keep in 1 10 30 50 70 90 110 130 150 170 300 ; do 
-#  $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 ;
-# done;
+
 log/gridrun: 
 	for db in s l ; do \
 	  for dist in cosine ; do \
-	    for knnK in 1 4 8 16 ; do \
-	      for dim2append in 10 30 50 70 90 110 130 150 170 ; do \
+	    for knnK in 1 2 3 4 ; do \
+	      for dim2keep in 1 10 50 90 130 170 210 250 300 ; do \
+                $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 ;\
+              done;\
+	      $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_1_0_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_1_0_0_0 ; \
+	      for dim2append in 10 50 90 130 170 ; do \
 	        $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append" ;\
 	      done;\
 	    done;\
