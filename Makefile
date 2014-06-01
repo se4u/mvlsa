@@ -1,9 +1,10 @@
 .SECONDARY:
-.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate
+.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate log/gridrun
 .INTERMEDIATE: gn_ppdb.itermediate
 
 MATCMD := LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src');addpath('src/kdtree'); "
-QSUBCMD := qsub -V -j y -l mem_free=20G -r yes #-verify 
+# QSUBCMD := qsub -V -j y -l mem_free=20G -r yes #-verify
+QSUBCMD := echo 
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
 STORE := /export/a15/prastog3
@@ -22,21 +23,44 @@ log/gridrun_log_tabulate: log/gridrun
 qstat:
 	qstat | cut -c 73-75 | sort | uniq -c
 
+slapdash:
+	make log/large_scale_cca_s_cosine_1_0_90_0_0_0_1 &&\
+	make log/large_scale_cca_s_cosine_1_0_170_0_0_0_1 &&\
+	make log/large_scale_cca_s_cosine_1_1_0_0_0_0_1 &&\
+	make log/large_scale_cca_s_cosine_1_0_0_1_170_0_1 &&\
+	make log/large_scale_cca_s_cosine_1_0_90_0_0_1_1 &&\
+	make log/large_scale_cca_s_cosine_1_0_170_0_0_1_1 &&\
+	make log/large_scale_cca_s_cosine_1_1_0_0_0_1_1 &&\
+	make log/large_scale_cca_s_cosine_1_0_0_1_170_1_1 
 
-log/gridrun: 
-	for db in s l ; do \
-	  for dist in cosine ; do \
-	    for knnK in 1 2 3 4 ; do \
-	      for dim2keep in 1 10 50 90 130 170 210 250 300 ; do \
-                $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0 ;\
-              done;\
-	      $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_1_0_0_0 -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_1_0_0_0 ; \
-	      for dim2append in 10 50 90 130 170 ; do \
-	        $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append" ;\
-	      done;\
-	    done;\
+slapdash2:
+	make log/large_scale_cca_l_cosine_1_0_90_0_0_0_1 &&\
+	make log/large_scale_cca_l_cosine_1_0_170_0_0_0_1 &&\
+	make log/large_scale_cca_l_cosine_1_1_0_0_0_0_1 &&\
+	make log/large_scale_cca_l_cosine_1_0_0_1_170_0_1 &&\
+	make log/large_scale_cca_l_cosine_1_0_90_0_0_1_1 &&\
+	make log/large_scale_cca_l_cosine_1_0_170_0_0_1_1 &&\
+	make log/large_scale_cca_l_cosine_1_1_0_0_0_1_1 &&\
+	make log/large_scale_cca_l_cosine_1_0_0_1_170_1_1 
+
+log/gridrun:
+	for db in s ; do \
+	 for dist in cosine ; do \
+	  for knnK in 1  ; do \
+	   for uum in 0 1 ; do \
+            for doavgk in 1 ; do\
+	     for dim2keep in  90 170 ; do \
+                $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0_"$$uum"_"$$doavgk" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0_"$$uum"_"$$doavgk" ;\
+             done;\
+	     $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_1_0_0_0_"$$uum"_"$$doavgk" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_1_0_0_0_"$$uum"_"$$doavgk" ; \
+	     for dim2append in 170 ; do \
+	        $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append"_"$$uum"_"$$doavgk" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append"_"$$uum"_"$$doavgk" ;\
+	     done;\
+            done;\
+	   done;\
 	  done;\
-	done;
+	 done;\
+	done 
 
 # TARGET : Now do CCA over embeddings. The second file contains the
 # mapping. Currently it has 660584 rows. There are 2 arrays each with
@@ -50,7 +74,7 @@ log/gridrun:
 # original embedding or the CCA ones. You only need to do CCA over
 # original embeddings once. 
 log/large_scale_cca_%: $(STORE)/gn_intersect_ppdb_embeddings.mat # res/gn_ppdb_lex_s_paraphrase res/gn_ppdb_lex_l_paraphrase res/gn_ppdb_lex_xl_paraphrase res/gn_ppdb_lex_xxl_paraphrase
-	$(MATCMD)"load('$<'); options=strsplit('$*', '_'); ppdb_size=options{1}; distance_method=options{2}; knnK=str2num(options{3}); do_knn_only_over_original_embedding=str2num(options{4}); dimension_after_cca=str2num(options{5}); do_append=str2num(options{6}); dim2append=str2num(options{7}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); large_scale_cca; exit" | tee $@
+	$(MATCMD)"load('$<'); options=strsplit('$*', '_'); ppdb_size=options{1}; distance_method=options{2}; knnK=str2num(options{3}); do_knn_only_over_original_embedding=str2num(options{4}); dimension_after_cca=str2num(options{5}); do_append=str2num(options{6}); dim2append=str2num(options{7}); use_unique_mapping=str2num(options{8}); do_average_knn=str2num(options{9}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); large_scale_cca; exit" | tee $@
 
 # $(STORE)/gn_intersect_ppdb_embeddings.mat : $(STORE)/gn_intersect_ppdb_embeddings
 # 	$(MATCMD)"embeddingdlmread('$<', ,'', 0, 1); save('$<.mat','embedding');exit;"
