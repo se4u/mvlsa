@@ -16,32 +16,18 @@ if isempty(do_average_knn)
     do_average_knn=0;
 end
 disp('I am running on machine'); unix('hostname');
-for i=1:size(embedding, 1)
-    embedding(i,:)=embedding(i,:)/norm(embedding(i,:));
-end
+embedding=normalize_embedding(embedding);
 vocab_size=size(embedding, 1);
 width=size(embedding, 2);
-
-unique_mapping=unique(mapping, 'rows');
-if use_unique_mapping
-    mapping=unique_mapping;
-end
+[mapping, unique_mapping]=uniquify_mapping(mapping, use_unique_mapping);
 vocab_relation_count=size(mapping, 1);
 disp(sprintf('the number of vocab_relation_count %d', vocab_relation_count));
 assert(all(all(1 <= mapping <= vocab_size)));
 %% Include utility functions
 lib_util;
 %% Prepare Input
-tic;
-view1=zeros(vocab_relation_count, width);
-view2=zeros(vocab_relation_count, width);
-
-for i=1:vocab_relation_count
-    view1(i,:)=embedding(mapping(i, 1), :);
-    view2(i,:)=embedding(mapping(i, 2), :);
-end
-disp(sprintf('input prepared in %f', toc));
-
+[view1, view2]=view_preparor(vocab_relation_count, width, ...
+                                      embedding, mapping);
 %% Based on the mapping array assign labels
 if ~do_average_knn
     tic
@@ -94,8 +80,7 @@ end
 %% Do CCA then KNN
 [Wx, Wy, r]=get_CCA_projection_matrices(view1, view2, dimension_after_cca);
 mu=repmat(mean(embedding), size(embedding,1),1);
-
-U = (embedding)*Wx;
+U = (embedding-mu)*Wx;
 U = U(non_sparse_class_indices, :);
 [time_taken, acc]=knn_performance(U, label, knnK, distance_method, ...
                                   10, do_average_knn,  ...

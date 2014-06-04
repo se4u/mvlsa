@@ -1,5 +1,5 @@
 .SECONDARY:
-.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate log/gridrun
+.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate 
 .INTERMEDIATE: gn_ppdb.itermediate
 
 MATCMD := LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src');addpath('src/kdtree'); "
@@ -8,12 +8,46 @@ QSUBCMD := echo
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
 STORE := /export/a15/prastog3
+tabulate_extrinsic_test: log/extrinsic_test_s_0 log/extrinsic_test_l_0   log/extrinsic_test_s_1 log/extrinsic_test_l_1
+	python src/tabulate_extrinsic_test.py $+
 
+extrinsic_test: log/extrinsic_test_s_1 log/extrinsic_test_s_0 log/extrinsic_test_l_1 log/extrinsic_test_l_0
 
-# 6. Make new graphs of preciosion/recall for real valued K 
-#    i.e. Amongst words which have 4 paraphrases how high do I need
-#     to set k to capture all of them ? Or to capture 3 of them ? This gives
-#     us an average K that has a particular precision or recall.
+# After all the previous experimentation now I am ready to pick a
+# configuration and to do the pre and pos test on that particular
+# confiugration. By looking at all the data I decided to use 150 as
+# the optimal number of CCA dimensions to keep. By doing this I am
+# doing a dimensionality reduction of exactly half which is great. 
+# Note that the cosine distance does not do any mean centralization
+# which is fine because the embeddings are any way mean centered.
+# Also note that cosine distance does divide by the norm of the
+# embeddings.
+# So the settings are: 
+# db = s l xxl
+# Uniquify or not before CCA (For Baseline)
+# # No longer I need knnK, dim2keep, doavgk. do_knn_only_over_original_embedding (because I do over both all the time) # I dont dist because dist = cosine
+# I also checked use_unique_mapping
+# log/large_scale_cca_[sl]_cosine_1_0_0_1_170_1_[10]
+#     large_scale_cca_[sl]_cosine_1_0_(170|90)_0_0_1_[10]
+#     large_scale_cca_[sl]_cosine_1_1_0_0_0_1_[10]
+log/extrinsic_test_%: $(STORE)/gn_intersect_ppdb_embeddings.mat res/filtered_paraphrase_list_wordnet.mat res/ppdb_paraphrase_rating_filtered.mat
+	$(MATCMD)"load('$<'); load('res/filtered_paraphrase_list_wordnet.mat'); load('res/ppdb_paraphrase_rating_filtered.mat'); word=textread('res/gn_intersect_ppdb_word', '%s'); options=strsplit('$*', '_'); ppdb_size=options{1}; use_unique_mapping=str2num(options{2}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); dimension_after_cca=150; distance_method='cosine'; conduct_extrinsic_test; exit;" | tee $@
+
+res/ppdb_paraphrase_rating_filtered.mat: res/ppdb_paraphrase_rating
+	$(MATCMD)"[w1 w2 sc]=textread('$<', '%s %s %d', 'delimiter', '\t'); word=textread('res/gn_intersect_ppdb_word', '%s'); M=NaN(length(w1), 3); for i=1:length(w1) i1=find(strcmp(word, w1(i))); i2=find(strcmp(word, w2(i))); if ~isempty(i1) && ~isempty(i2) M(i,:)=[i1 i2 sc(i)]; end; end; M(isnan(M))=[];M= reshape(M, numel(M)/3, 3); ppdb_paraphrase_rating=M; save('$@', 'ppdb_paraphrase_rating'); exit;"
+
+res/ppdb_paraphrase_rating: res/pred-scored-human-ppdb.txt
+	python src/preprocess-pred-scored-human-ppdb.py $< > $@
+
+res/filtered_paraphrase_list_wordnet.mat: res/wordnet.test
+	$(MATCMD)"[w1 w2]=textread('$<', '%s %s'); word=textread('res/gn_intersect_ppdb_word', '%s'); M=NaN(length(w1), 2); for i=1:length(w1) i1=find(strcmp(word, w1(i))); i2=find(strcmp(word, w2(i))); if ~isempty(i1) && ~isempty(i2) M(i,:)=[i1, i2]; end; end; M(isnan(M))=[];M= reshape(M, numel(M)/2, 2); golden_paraphrase_map=M; save('$@', 'golden_paraphrase_map'); exit;"
+
+# res/filtered_paraphrase_list_moby_thes_%.mat: res/paraphrase_list_moby_thes_%
+# 	$(MATCMD)"[w1 w2]=textread('$<', '%s %s'); word=textread('res/gn_intersect_ppdb_word', '%s'); M=NaN(length(w1), 2); for i=1:length(w1) i1=find(strcmp(word, w1(i))); i2=find(strcmp(word, w2(i))); if ~isempty(i1) && ~isempty(i2) M(i,:)=[i1, i2]; end; end; M(isnan(M))=[];M= reshape(M, numel(M)/2, 2); golden_paraphrase_map=M; save('$@', 'golden_paraphrase_map'); exit;"
+
+# res/paraphrase_list_moby_thes_%: res/mthesaur.txt
+# 	python src/random_paraphrastic_words.py $< $*  > $@
+
 data_eyeball_%:
 	$(MATCMD)"load('/export/a15/prastog3/gn_intersect_ppdb_embeddings.mat'); mapping=dlmread('res/gn_ppdb_lex_$*_paraphrase','', 0, 2); word=textread('res/gn_intersect_ppdb_word', '%s'); cd src; debug=1; data_eyeball; exit;"
 
@@ -23,6 +57,27 @@ log/gridrun_log_tabulate: log/gridrun
 qstat:
 	qstat | cut -c 73-75 | sort | uniq -c
 
+# These are jobs with changing ppdb size and whether I am using unique
+# mapping or not. The basic purpose is to find out whether things work
+# better or not ?
+slapdash_14: 
+	make log/large_scale_cca_l_cosine_1_0_0_1_170_1_1 &&\
+	make log/large_scale_cca_l_cosine_1_0_170_0_0_1_1 &&\
+	make log/large_scale_cca_l_cosine_1_0_90_0_0_1_1 &&\
+	make log/large_scale_cca_l_cosine_1_1_0_0_0_1_1 &&\
+	make log/large_scale_cca_s_cosine_1_0_0_1_170_1_1 &&\
+	make log/large_scale_cca_s_cosine_1_0_170_0_0_1_1 &&\
+	make log/large_scale_cca_s_cosine_1_0_90_0_0_1_1 &&\
+	make log/large_scale_cca_s_cosine_1_1_0_0_0_1_1 && \
+	make log/large_scale_cca_l_cosine_1_0_0_1_170_1_0 &&\
+	make log/large_scale_cca_l_cosine_1_0_170_0_0_1_0 &&\
+	make log/large_scale_cca_l_cosine_1_0_90_0_0_1_0 &&\
+	make log/large_scale_cca_l_cosine_1_1_0_0_0_1_0 &&\
+	make log/large_scale_cca_s_cosine_1_0_0_1_170_1_0 &&\
+	make log/large_scale_cca_s_cosine_1_0_170_0_0_1_0 &&\
+	make log/large_scale_cca_s_cosine_1_0_90_0_0_1_0 &&\
+	make log/large_scale_cca_s_cosine_1_1_0_0_0_1_0
+
 slapdash:
 	make log/large_scale_cca_s_cosine_1_0_90_0_0_0_1 &&\
 	make log/large_scale_cca_s_cosine_1_0_170_0_0_0_1 &&\
@@ -31,9 +86,7 @@ slapdash:
 	make log/large_scale_cca_s_cosine_1_0_90_0_0_1_1 &&\
 	make log/large_scale_cca_s_cosine_1_0_170_0_0_1_1 &&\
 	make log/large_scale_cca_s_cosine_1_1_0_0_0_1_1 &&\
-	make log/large_scale_cca_s_cosine_1_0_0_1_170_1_1 
-
-slapdash2:
+	make log/large_scale_cca_s_cosine_1_0_0_1_170_1_1 &&\
 	make log/large_scale_cca_l_cosine_1_0_90_0_0_0_1 &&\
 	make log/large_scale_cca_l_cosine_1_0_170_0_0_0_1 &&\
 	make log/large_scale_cca_l_cosine_1_1_0_0_0_0_1 &&\
