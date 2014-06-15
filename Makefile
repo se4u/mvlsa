@@ -1,17 +1,103 @@
 .SECONDARY:
-.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate 
+.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate big_input
 .INTERMEDIATE: gn_ppdb.itermediate
 
-MATCMD := LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src');addpath('src/kdtree'); "
+## GENERIC 
+# TARGET : Contains just the words. extracted from 1st column of source
+CMD3 = awk '{print $$1}' $+ > $@
+%_word: %
+	$(CMD3)
+## VARIABLES #LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 addpath('src/kdtree');
+MATCMD := time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); "
 # QSUBCMD := qsub -V -j y -l mem_free=20G -r yes #-verify
 QSUBCMD := echo 
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
 STORE := /export/a15/prastog3
+STORE2 := /export/a14/prastog3
+BIG_LANG := ar cs de es fr zh
+BIG_INPUT := $(addprefix $(STORE2)/ppdb-input-simplified-,$(BIG_LANG))
+BIG_INPUT_WORD := $(addsuffix _word,$(BIG_INPUT))
+BIG_ALIGN_MAT := $(addsuffix .mat,$(addprefix $(STORE2)/align_,$(BIG_LANG)))
+
+# SOURCE: 1. The mat file with google embeddings. 6 mat files with sparse array denoting alignments to different languages
+# TARGET: Results of doing GCCA over them.
+gcca_result: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat $(BIG_ALIGN_MAT)
+	$(MATCMD)""
+
+# TARGET: A mat file which contains the google embeddings as a mat file.
+$(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding
+	$(MATCMD)"bvgn_embedding=dlmread('$<', '', 0, 1); bvgn_count=bvgn_embedding(:,1);bvgn_embedding=bvgn_embedding(:,2:size(bvgn_embedding,2)); save('$@', 'bvgn_embedding','bvgn_count');"
+
+log/alignment_mat: $(BIG_ALIGN_MAT)
+	echo $+ > $@
+# tmp5.mat : tmpp2 tmp3_word tmp2
+# 	python src/create_sparse_alignmat.py $+ $@
+# TARGET: sparse matrix encoding the alignment as a mat file
+# SOURCE: 1. The vocabulary of the foreign language along with counts.
+#	2. The embeddings for english words present in google and bitext
+# 	3. The simplified file with alignments.
+# Note that the word file is auto generated from the rule on top
+$(STORE2)/align_%.mat: $(STORE2)/big_vocabcount_% $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word $(STORE2)/ppdb-input-simplified-%
+	python src/create_sparse_alignmat.py $+ $@
+
+# TARGET : intersect big_vocabcount_en and google embedding
+# 	Its a file with first column as the word,
+#	second column is count in the source files.
+#	third column onwards we have the embeddings.
+# SOURCE : The google embedding and english big vocab
+$(STORE2)/big_vocabcount_en_intersect_gn_embedding: $(STORE)/gn300.txt $(STORE2)/big_vocabcount_en
+	python src/overlap_between_google_and_big_vocabcount.py $+ $@
+
+# TARGET : A vocabulary of english created from the 6 files.
+#          with counts of how many times the words occurred
+#          And 6 vocabularies of the foreign languages
+#          big_vocabcount_[en ar cs de es fr zh]
+$(STORE2)/big_vocabcount_en : $(BIG_INPUT)
+	pypy src/create_big_vocab.py $@ $+ 2> log/big_vocabcount
+
+big_input: $(BIG_INPUT)
+
+# TARGET: A simplified BIG_INPUT where all the english parses are converted to normal sentences.
+$(STORE2)/ppdb-input-simplified-%: $(STORE2)/ppdb-input-%
+	pypy src/remove_parse_from_english.py $^  $@
+
+# TARGET: Single files each for a separater language
+# This will take 22 files and convert them to 6 files fr es de cs ar zh
+$(STORE2)/ppdb-input-%:
+	cat /home/juri/ppdb-input/*-$*-* > $@
+
+align_europarlv1_%:
+	java -jar /home/prastog3/tools/berkeleyaligner.jar  -trainSources /export/a15/prastog3/europarlv1/$*-en -foreignSuffix $* -englishSuffix en -execDir /export/a15/prastog3/europarlv1/$*-en-aligned  -saveParams false -numThreads 16 -msPerLine 10000 -alignTraining -create true -overwriteExecDir true
+
+# MORE PREPROCESSING STUFF
+# for file in *-en.aligned.tgz ; do tar -xzf $file ; done
+# for corpus in de es fr ; do 
+#     for file in $corpus-en/$corpus/* ; do mv $file $corpus-en/${file:9}.$corpus ; done && 
+#     for file in $corpus-en/en/* ; do mv $file $corpus-en/${file:9}.en ; done ; 
+# done
+# rmdir de-en/de de-en/en es-en/es es-en/en fr-en/fr fr-en/en
+/export/a15/prastog3/europarlv1/%-en.aligned.tgz:
+	cd $(@D) && wget http://www.statmt.org/europarl/v1/$*-en.aligned.tgz && cd -
+
 tabulate_extrinsic_test: log/extrinsic_test_s_0 log/extrinsic_test_l_0   log/extrinsic_test_s_1 log/extrinsic_test_l_1
 	python src/tabulate_extrinsic_test.py $+
 
+# TARGET: pr2xy means pushpendre to xuchen, ppdb_l and ppdb_s refer to
+# the ppdb sizes used for doing CCA, word2vec contains the original
+# embeddings that google provided. There are 82841 words in these
+# files 
 extrinsic_test: log/extrinsic_test_s_1 log/extrinsic_test_s_0 log/extrinsic_test_l_1 log/extrinsic_test_l_0
+
+pr2xy: pr2xy_cca_ppdb_l_embedding.bin pr2xy_cca_ppdb_s_embedding.bin pr2xy_word2vec_embedding.bin
+
+$(STORE)/pr2xy_%_embedding.bin: $(STORE)/pr2xy_%_embedding.txt
+	./res/convertvec txt2bin $<  $@
+
+# $(STORE)/pr2xy_word2vec_embedding.txt is also made automatically
+# TARGET : Save the embeddings as a txt file.
+$(STORE)/pr2xy_cca_ppdb_%_embedding.txt: $(STORE)/gn_intersect_ppdb_embeddings.mat 
+	$(MATCMD)"load('$<'); word=textread('res/gn_intersect_ppdb_word', '%s'); ppdb_size='$*'; mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); dimension_after_cca=150; distance_method='cosine'; w2v_file_name='$(STORE)/pr2xy_word2vec_embedding.txt'; cca_file_name='$@'; save_embedding_to_txt_file;exit;"
 
 # After all the previous experimentation now I am ready to pick a
 # configuration and to do the pre and pos test on that particular
@@ -25,28 +111,22 @@ extrinsic_test: log/extrinsic_test_s_1 log/extrinsic_test_s_0 log/extrinsic_test
 # So the settings are: 
 # db = s l xxl
 # Uniquify or not before CCA (For Baseline)
-# # No longer I need knnK, dim2keep, doavgk. do_knn_only_over_original_embedding (because I do over both all the time) # I dont dist because dist = cosine
+# # No longer I need knnK, dim2keep, doavgk. do_knn_only_over_original_embedding (because I do over both all the time), dist (dist = cosine)
 # I also checked use_unique_mapping
 # log/large_scale_cca_[sl]_cosine_1_0_0_1_170_1_[10]
 #     large_scale_cca_[sl]_cosine_1_0_(170|90)_0_0_1_[10]
 #     large_scale_cca_[sl]_cosine_1_1_0_0_0_1_[10]
-log/extrinsic_test_%: $(STORE)/gn_intersect_ppdb_embeddings.mat res/filtered_paraphrase_list_wordnet.mat res/ppdb_paraphrase_rating_filtered.mat
-	$(MATCMD)"load('$<'); load('res/filtered_paraphrase_list_wordnet.mat'); load('res/ppdb_paraphrase_rating_filtered.mat'); word=textread('res/gn_intersect_ppdb_word', '%s'); options=strsplit('$*', '_'); ppdb_size=options{1}; use_unique_mapping=str2num(options{2}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); dimension_after_cca=150; distance_method='cosine'; conduct_extrinsic_test; exit;" | tee $@
+log/extrinsic_test_%: $(STORE)/gn_intersect_ppdb_embeddings.mat res/filtered_paraphrase_list_wordnet.mat res/ppdb_paraphrase_rating_filtered.mat res/gn_intersect_ppdb_word # res/topvocablist.100000
+	$(MATCMD)"load('$<'); load('$(word 2,$^)'); load('$(word 3,$^)'); word=textread('$(word 4,$^)', '%s'); options=strsplit('$*', '_'); ppdb_size=options{1}; use_unique_mapping=str2num(options{2}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); dimension_after_cca=150; distance_method='cosine'; conduct_extrinsic_test; exit;" | tee $@
 
 res/ppdb_paraphrase_rating_filtered.mat: res/ppdb_paraphrase_rating
 	$(MATCMD)"[w1 w2 sc]=textread('$<', '%s %s %d', 'delimiter', '\t'); word=textread('res/gn_intersect_ppdb_word', '%s'); M=NaN(length(w1), 3); for i=1:length(w1) i1=find(strcmp(word, w1(i))); i2=find(strcmp(word, w2(i))); if ~isempty(i1) && ~isempty(i2) M(i,:)=[i1 i2 sc(i)]; end; end; M(isnan(M))=[];M= reshape(M, numel(M)/3, 3); ppdb_paraphrase_rating=M; save('$@', 'ppdb_paraphrase_rating'); exit;"
 
 res/ppdb_paraphrase_rating: res/pred-scored-human-ppdb.txt
-	python src/preprocess-pred-scored-human-ppdb.py $< > $@
+	python src/preprocess-pred-scored-human-ppdb.py $< | sort > $@
 
 res/filtered_paraphrase_list_wordnet.mat: res/wordnet.test
 	$(MATCMD)"[w1 w2]=textread('$<', '%s %s'); word=textread('res/gn_intersect_ppdb_word', '%s'); M=NaN(length(w1), 2); for i=1:length(w1) i1=find(strcmp(word, w1(i))); i2=find(strcmp(word, w2(i))); if ~isempty(i1) && ~isempty(i2) M(i,:)=[i1, i2]; end; end; M(isnan(M))=[];M= reshape(M, numel(M)/2, 2); golden_paraphrase_map=M; save('$@', 'golden_paraphrase_map'); exit;"
-
-# res/filtered_paraphrase_list_moby_thes_%.mat: res/paraphrase_list_moby_thes_%
-# 	$(MATCMD)"[w1 w2]=textread('$<', '%s %s'); word=textread('res/gn_intersect_ppdb_word', '%s'); M=NaN(length(w1), 2); for i=1:length(w1) i1=find(strcmp(word, w1(i))); i2=find(strcmp(word, w2(i))); if ~isempty(i1) && ~isempty(i2) M(i,:)=[i1, i2]; end; end; M(isnan(M))=[];M= reshape(M, numel(M)/2, 2); golden_paraphrase_map=M; save('$@', 'golden_paraphrase_map'); exit;"
-
-# res/paraphrase_list_moby_thes_%: res/mthesaur.txt
-# 	python src/random_paraphrastic_words.py $< $*  > $@
 
 data_eyeball_%:
 	$(MATCMD)"load('/export/a15/prastog3/gn_intersect_ppdb_embeddings.mat'); mapping=dlmread('res/gn_ppdb_lex_$*_paraphrase','', 0, 2); word=textread('res/gn_intersect_ppdb_word', '%s'); cd src; debug=1; data_eyeball; exit;"
@@ -162,7 +242,7 @@ $(STORE)/gn_intersect_ppdb_embeddings : $(STORE)/gn_intersect_ppdb_embeddings.gz
 # Google has 3 Million Phrases and roughly 300k words.
 # This also builds res/in_google_not_in_ppdb res/in_ppdb_not_in_google
 $(STORE)/gn_intersect_ppdb_embeddings.gz : $(STORE)/gn300.txt $(STORE)/PPDB_Lexical_Data/ppdb-1.0-xxxl-lexical-words-uniq 
-	PYTHONPATH=$$PWD/src/:$$PYTHONPATH python src/overlap_between_google_and_ppdb.py $+ $(STORE)/gn_intersect_ppdb_embeddings.gz
+	python src/overlap_between_google_and_ppdb.py $+ $@
 
 # $(STORE)/gn300.txt.gz : $(STORE)/gn300.txt
 # 	gzip -c $+ > $@
@@ -198,11 +278,6 @@ random_partition_rnnlm_cca.png: res/rnnlm_synonym_embedding res/rnnlm_synonym_em
 random_embedding_cca.png:
 	$(MATCMD)"filename='res/rnnlm_synonym_embedding'; columns=1; dimension_after_cca=2; random_embedding_cca;exit;"
 
-###########################################################################################
-# TARGET : Contains just the words. extracted from the first column of the source
-CMD3 = awk '{if(NR > 1){print $$1}}' $+ > $@
-%_word: %
-	$(CMD3)
 ##############################################################################################
 # TARGET : This file contains synonyms on the even and odd lines like 1-2 and 3-4 are synonyms.
 #          Its length is decided below.

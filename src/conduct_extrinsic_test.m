@@ -5,7 +5,10 @@ global distance_method;
 global use_unique_mapping; %Whether to uniquify the mapping or not
 global golden_paraphrase_map; %The golden paraphrases, that I use
                               %to calculate MRR
-global ppdb_paraphrase_rating; 
+global ppdb_paraphrase_rating; % The manual evaluation ratings by
+                               % Juri and Chris to judge
+                               % sensibility of ppdb paraphrases
+global word;
 lib_util; % Include utility functions
 embedding=normalize_embedding(embedding); % Set euclidean norm of every row = 1
 vocab_size=size(embedding, 1);
@@ -19,7 +22,16 @@ vocab_relation_count=length(mapping);
                                                dimension_after_cca);
 mu=repmat(mean(embedding), size(embedding,1),1);
 U = normalize_embedding((embedding-mu)*Wx);
-conduct_extrinsic_test_impl(embedding, golden_paraphrase_map, word, ...
-                            ppdb_paraphrase_rating, 'original embedding');
-conduct_extrinsic_test_impl(U, golden_paraphrase_map, word, ...
-                            ppdb_paraphrase_rating, 'U');
+rank_cell_orig=conduct_extrinsic_test_impl(...
+    embedding, golden_paraphrase_map, ...
+    ppdb_paraphrase_rating, ...
+    'original embedding', word);
+rank_cell_cca=conduct_extrinsic_test_impl(...
+    U, golden_paraphrase_map, ...
+    ppdb_paraphrase_rating, 'U', word);
+assert(length(rank_cell_orig)==length(rank_cell_cca));
+for i=1:length(rank_cell_orig)
+    fprintf(1, '%s\t%s\t%d\t%d\n', rank_cell_orig{i, 1}, ...
+            rank_cell_orig{i, 2}, rank_cell_orig{i, 3}, ...
+            rank_cell_cca{i, 3});
+end
