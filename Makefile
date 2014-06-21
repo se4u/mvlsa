@@ -9,37 +9,58 @@ CMD3 = awk '{print $$1}' $+ > $@
 	$(CMD3)
 ## VARIABLES #LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 addpath('src/kdtree');
 MATCMD := time matlab -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); "
-# QSUBCMD := qsub -V -j y -l mem_free=20G -r yes #-verify
-QSUBCMD := echo 
+QSUBCMD := qsub -V -j y -l mem_free=20G -r yes #-verify
+# QSUBCMD := echo 
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
 STORE := /export/a15/prastog3
 STORE2 := /export/a14/prastog3
-BIG_LANG := ar cs de es fr zh
+BIG_LANG := ar cs de es fr zh 
 BIG_INPUT := $(addprefix $(STORE2)/ppdb-input-simplified-,$(BIG_LANG))
 BIG_INPUT_WORD := $(addsuffix _word,$(BIG_INPUT))
-BIG_ALIGN_MAT := $(addsuffix .mat,$(addprefix $(STORE2)/align_,$(BIG_LANG)))
+BIG_ALIGN_MAT := $(patsubst %,$(STORE2)/align_%.mat,$(BIG_LANG))
+SVD_DIM := 500
+GCCA_SVD = $(foreach lang,$(BIG_LANG),tic; load $(STORE2)/align_$(lang).mat; align_mat=transpose(align_mat); [~, s, b]=svds(align_mat, $*); clear align_mat; S=[S diag(s)]; B=[B b]; clear s, b; whos; toc;)
+
+# save('$(STORE2)/align_$(lang)_svd_$*.mat', 's', 'b');
+## Make the sparse cooccurence matrix of english. using the full vocabulary. In fact dont even need to store in memory just write to file all the time. I would once again have to use  sort -n | uniq -c trick because the data is gonna be large and I would be doing append only
+
 
 # SOURCE: 1. The mat file with google embeddings. 6 mat files with sparse array denoting alignments to different languages
 # TARGET: Results of doing GCCA over them.
-gcca_result: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat $(BIG_ALIGN_MAT)
-	$(MATCMD)""
+$(STORE2)/gcca_result_svd_%.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat $(BIG_ALIGN_MAT)
+	$(MATCMD)"S={}; B={}; ""$(GCCA_SVD)""save('$@', 'S', 'B'); exit;"
 
-# TARGET: A mat file which contains the google embeddings as a mat file.
+# SOURCE: All of the vocabulary files.
+# TARGET: A sparse matrix of english co-occurence counts.
+# This took 1hour 16 minutes
+$(STORE2)/cooccur_en.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word $(BIG_INPUT)
+	time pypy src/create_sparse_cooccurmat.py $+ 1> tmp_cooccur 2> log/cooccur_en.mat && sort -n tmp_cooccur | uniq -c > tmp_cooccur_en 
+
+# TARGET: Mat file which contains the google embeddings.
 $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding
 	$(MATCMD)"bvgn_embedding=dlmread('$<', '', 0, 1); bvgn_count=bvgn_embedding(:,1);bvgn_embedding=bvgn_embedding(:,2:size(bvgn_embedding,2)); save('$@', 'bvgn_embedding','bvgn_count');"
 
-log/alignment_mat: $(BIG_ALIGN_MAT)
-	echo $+ > $@
-# tmp5.mat : tmpp2 tmp3_word tmp2
-# 	python src/create_sparse_alignmat.py $+ $@
+## 1. Check that the sparse matrix has the correct values. Manually check the result.  (Check using a smaller data file.) DONE
+## For processing the french matrix I had to do the following. because of size
+# numpy.asarray(idx_en_list).tofile("tmp_idx_en_list", sep="\n"); numpy.asarray(idx_fr_list).tofile("tmp_idx_fr_list", sep="\n")
+## paste tmp_idx_en_list tmp_idx_fr_list |  sort -n | uniq -c > tmp_idx_cnt_en_fr
+## arr=dlmread('tmp_idx_cnt_en_fr', '', 0, 0); align_mat=sparse(1+arr(:,2), 1+arr(:,3), arr(:,1)); save('/export/a14/prastog3/align_fr.mat', 'align_mat');
+## The minimum of tmp_idx_en_list is 0
+## The maximum of tmp_idx_en_list is 131132 (0 indexed since total are 131133)
+## The minimum of tmp_idx_fr_list is 0
+## The maximum of tmp_idx_fr_list is 2243100 (total are 2243101 so 0 indexed)
+
+gridrun_align_mat:
+	for targ in $(BIG_LANG); do $(QSUBCMD)  -cwd submit_grid_stub.sh $(STORE2)/align_"$$targ".mat ; done 
+
 # TARGET: sparse matrix encoding the alignment as a mat file
 # SOURCE: 1. The vocabulary of the foreign language along with counts.
 #	2. The embeddings for english words present in google and bitext
 # 	3. The simplified file with alignments.
 # Note that the word file is auto generated from the rule on top
 $(STORE2)/align_%.mat: $(STORE2)/big_vocabcount_% $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word $(STORE2)/ppdb-input-simplified-%
-	python src/create_sparse_alignmat.py $+ $@
+	time python src/create_sparse_alignmat.py $+ $@ 2> log/$(@F)
 
 # TARGET : intersect big_vocabcount_en and google embedding
 # 	Its a file with first column as the word,

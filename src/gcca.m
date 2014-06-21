@@ -65,6 +65,8 @@ iperm=iperm(1:S);
 X=X(:,iperm);
 Y=Y(:,iperm);
 Z=double(Z(:,iperm)); %% Z: one-hot encoding of labels
+%% It OOMS over here.
+%% Error using eye
 Rxx=X'*(inv((X*X')+regX*eye(p)))*X;
 Ryy=Y'*(inv((Y*Y')+regY*eye(q)))*Y;
 Rzz=Z'*(inv((Z*Z')+regZ*eye(t)))*Z;
