@@ -20,16 +20,24 @@ BIG_INPUT := $(addprefix $(STORE2)/ppdb-input-simplified-,$(BIG_LANG))
 BIG_INPUT_WORD := $(addsuffix _word,$(BIG_INPUT))
 BIG_ALIGN_MAT := $(patsubst %,$(STORE2)/align_%.mat,$(BIG_LANG))
 SVD_DIM := 500
-GCCA_SVD = $(foreach lang,$(BIG_LANG),tic; load $(STORE2)/align_$(lang).mat; align_mat=transpose(align_mat); [~, s, b]=svds(align_mat, $*); clear align_mat; S=[S diag(s)]; B=[B b]; clear s, b; whos; toc;)
+PREPROCESS_OPT := Count logCount
+#% A Typical run would 300_1000_1e-8
+gcca_run_%: $(STORE2)/gcca_result_svd_2.mat
+	$(MATCMD)"options=strsplit('$*', '_'); r=str2num(options{1}); b=str2num(options{2}); svd_reg_seq=str2num(options{3})*ones(size(S)); load $<;  [U_tilde, S_tilde]=se_gcca(S, B, r, b, svd_reg_seq); "
 
-# save('$(STORE2)/align_$(lang)_svd_$*.mat', 's', 'b');
-## Make the sparse cooccurence matrix of english. using the full vocabulary. In fact dont even need to store in memory just write to file all the time. I would once again have to use  sort -n | uniq -c trick because the data is gonna be large and I would be doing append only
+## Make the sparse cooccurence matrix of english. using the full
+#vocabulary. In fact dont even need to store in memory just write to
+#file all the time. I would once again have to use  sort -n | uniq -c
+#trick because the data is gonna be large and I would be doing append
+#only
 
-
-# SOURCE: 1. The mat file with google embeddings. 6 mat files with sparse array denoting alignments to different languages
+# SOURCE: 1. The mat file with google embeddings. 6 mat files with
+# sparse array denoting alignments to different languages 
 # TARGET: Results of doing GCCA over them.
-$(STORE2)/gcca_result_svd_%.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat $(BIG_ALIGN_MAT)
-	$(MATCMD)"S={}; B={}; ""$(GCCA_SVD)""save('$@', 'S', 'B'); exit;"
+bitextsvd%:
+	for lang in $(BIG_LANG); do for preproc in $(PREPROCESS_OPT); do $(QSUBCMD) -pe smp 20 -cwd submit_grid_stub.sh $(STORE2)/bitext_svd_"$$lang"_$*_"$$preproc".mat; done; done
+$(STORE2)/bitext_svd_%.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat $(BIG_ALIGN_MAT)
+	$(MATCMD)"options=strsplit('$*', '_'); lang=options{1}; svd_size=str2num(options{2}); preprocess_option=options{3}; tic; load(['$(STORE2)/align_',lang,'.mat']); [align_mat, mu1, mu2]=preprocess_align_mat(align_mat,preprocess_option); [b, s]=svds(align_mat, svd_size); s=transpose(diag(s)); clear('align_mat', 'lang', 'preprocess_option', 'options', 'svd_size'); whos; toc; save('$@', 's', 'b', 'mu1', 'mu2'); exit;"
 
 # SOURCE: All of the vocabulary files.
 # TARGET: A sparse matrix of english co-occurence counts.
