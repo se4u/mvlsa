@@ -17,27 +17,25 @@ S_tilde1=zeros(1, r);
 U_tilde2=zeros(N, N);
 S_tilde2=zeros(1, N);
 increment=1;
-for batch=1:1
-    fprintf(1, 'the batch is %d\n', batch);
-    for j=1:increment:size(X,2);
+
+for j=1:increment:size(X,2);
         C=X(:, j:min(N,j+increment-1));
         [U_tilde1, S_tilde1]=incrementalSVD(...
             C, U_tilde1, S_tilde1, r);
         fprintf(1, '%f %f %f %f %f \n', S_tilde1);
-        if batch == 1
-            [U_tilde2, S_tilde2]=incrementalSVD(...
+    
+        [U_tilde2, S_tilde2]=incrementalSVD(...
                 C, U_tilde2, S_tilde2, N);
-            fprintf(1, '%f %f %f %f %f %f %f %f %f %f\n', S_tilde2);
-        end
+        fprintf(1, '%f %f %f %f %f %f %f %f %f %f\n', S_tilde2);
+    
         % disp(j);
         % if j > r
         %     disp('do special now');
         % end
-    end
-    rec1 = U_tilde1*diag(S_tilde1)*U_tilde1';
-    G = U_tilde1'; % Because we have founf the eigen vectors and
-    fprintf(1, 'test that G is orthogonal, G^T*G - I = %d\n', (norm(G*G'-eye(size(G,1)))));
 end
+rec1 = U_tilde1*diag(S_tilde1)*U_tilde1';
+G = U_tilde1'; % Because we have founf the eigen vectors and
+fprintf(1, 'test that G is orthogonal, G^T*G - I = %d\n', (norm(G*G'-eye(size(G,1)))));
 
 % Importantly we dont have to compute U_j over the bilingual
 % matrices.

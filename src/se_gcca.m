@@ -9,6 +9,7 @@ N = size(B{1}, 1);
 assert(length(svd_reg_seq)==J && length(B)==J); 
 assert(all(arrayfun(@(i) size(B{i}, 1), 1:J)==N));%B{i} have N observations
 assert(length(S{1})==size(B{1}, 2));
+ovguard = @(l, b) min(l+b-1, N);
 for i=1:J
     if size(S{i}, 1)~=1
         %If S{i} is a column make it a row
@@ -17,13 +18,10 @@ for i=1:J
 end
 U_tilde=zeros(N, r);
 S_tilde=zeros(1, r);
-% We need to schedule the columns that we process according to
+% We schedule the rows and columns that we process according to
 % their norm so that the error in the SVD remains low. See
 % test_incrementalSVD.m for more information
-% THE RIGHT WAY TO DO THIS IS TO SHUFFLE BOTH ROWS AND COLUMNS.
-% NOT JUST ONE of THEM. We first need to calculate just the norms
-% of all the columns.
-ovguard = @(l, b) min(l+b-1, N);
+
 column_norm=zeros(1, N);
 for l=1:b:N
     column_norm(l:ovguard(l, b))=sum(...
@@ -35,15 +33,15 @@ assert(size(sort_idx,1)==1);
 
 for l=1:b:N
     fprintf(2, 'Will process %d th column out of %d\n', l, N);
-    % Cl = get_columns(S, B, l:ovguard(l, b), svd_reg_seq);
+        
     Cl = get_columns(S, B, sort_idx(l:ovguard(l, b)), svd_reg_seq);
-    Cl=Cl(sort_idx,:); %Also shuffle the rows so that C remains a
-                  %kernel matrix.
-    [U_tilde, S_tilde_new]=incrementalSVD(...
-        Cl, U_tilde, S_tilde, r);
-    fprintf(2, 'S_tilde changed by %f\n', ...
-            norm(S_tilde-S_tilde_new)/norm(S_tilde));
+    Cl=Cl(sort_idx,:); % Also shuffle the rows so that C remains a
+                           % kernel matrix.
+    [U_tilde_new, S_tilde_new, St_discarded, Ut_discarded]= ...
+        incrementalSVD(Cl, U_tilde, S_tilde, r);
+        
     S_tilde=S_tilde_new;
+    U_tilde=U_tilde_new;
     % Orthogonalize using modified gram schmidt if eigen 
     % directions become non orthogonal
     if abs(U_tilde(:,1)'*U_tilde(:, r)) > 10*eps('double')
@@ -52,7 +50,6 @@ for l=1:b:N
     end
 end
 G = U_tilde';
-% U = pinv(X{1})'*G'; %Of course we never actually got X1 only its SVD
 end
 
 function C = get_columns(S, B, idx, svd_reg_seq)
