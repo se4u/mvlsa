@@ -15,4 +15,9 @@ fprintf(1, 'The Swapped Pair rate is %f in percentage\n', ((1-kc)/2)*100);
 fprintf(1, 'The Pearson Corr over %s is %f\n', ...
         id, corr(cosine_sim, ppdb_paraphrase_rating(:,3), 'type', ...
              'Pearson'));
+for i=1:length(cosine_sim)
+    fprintf(1, '%s\t%s\t%f\t%d\n', word{ppdb_paraphrase_rating(i,1)}, word{ppdb_paraphrase_rating(i,2)}, cosine_sim(i), ppdb_paraphrase_rating(i, ...
+                                                      3));
+end
+disp('finished printing the true ratings');
 %fprintf(1, 'The Logistic Fit is %f\n', logistic_fit());

@@ -1,15 +1,18 @@
 .SECONDARY:
-.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate big_input
+.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate big_input 
 .INTERMEDIATE: gn_ppdb.itermediate
 
 ## GENERIC 
 # TARGET : Contains just the words. extracted from 1st column of source
-CMD3 = awk '{print $$1}' $+ > $@
 %_word: %
-	$(CMD3)
-## VARIABLES #LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 addpath('src/kdtree');
+	awk '{print $$1}' $+ > $@
+qstat:
+	qstat | cut -c 73-75 | sort | uniq -c
+
+## VARIABLES
+# LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 addpath('src/kdtree');
 MATCMD := time matlab -nojvm -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); "
-QSUBCMD := qsub -V -j y -l mem_free=35G -r yes #-verify
+QSUBCMD := qsub -V -j y -l mem_free=5G -r yes #-verify
 # QSUBCMD := echo 
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
@@ -22,13 +25,30 @@ BIG_ALIGN_MAT := $(patsubst %,$(STORE2)/align_%.mat,$(BIG_LANG))
 SVD_DIM := 500
 PREPROCESS_OPT := Count logCount
 
-submit_gcca_run_sans_mu_to_grid: # I can experiment with 300_10000 (and higher) or 500_1000 (or higher)
-	$(QSUBCMD) -pe smp 35 -cwd submit_grid_stub.sh $(STORE2)/gcca_run_sans_mu_300_7000_1e-8
 
+run_on_grid_bitext_extrinsic_test:
+	for i in 50 100 150 200 250 ; do for t in logCount Count; do \
+          $(QSUBCMD) -cwd submit_grid_stub.sh log/bitext_extrinsic_test_300_7000_1e-8_"$$t"."$$i" ; \
+	done ; done
+
+# TARGET: log/bitext_extrinsic_test_300_7000_1e-8_logCount.150 log/bitext_extrinsic_test_300_7000_1e-8_Count.150
+# SOURCE: 
+log/bitext_extrinsic_test_%: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word res/wordnet.test res/ppdb_paraphrase_rating $(STORE2)/gcca_run_sans_mu_300_7000_1e-8_Count.mat $(STORE2)/gcca_run_sans_mu_300_7000_1e-8_logCount.mat
+	$(MATCMD)"options=strsplit('$*','.'); load(sprintf('$(STORE2)/gcca_run_sans_mu_%s', options{1})); dimension_after_cca=str2num(options{2}); load('$(word 1,$+)'); word=textread('$(word 2,$+)', '%s'); wordnet_test_filename='$(word 3,$+)'; ppdb_paraphrase_rating_filename='$(word 4,$+)'; G=G'; sort_idx=sort_idx'; word=word(sort_idx); bvgn_count=bvgn_count(sort_idx); bvgn_embedding=bvgn_embedding(sort_idx,:);bitext_true_extrinsic_test;exit; " | tee $@
+
+# TARGET: this creates things like /export/a14/prastog3/gcca_run_sans_mu_300_7000_1e-8_logCount.mat
+#       :                     and  /export/a14/prastog3/gcca_run_sans_mu_300_7000_1e-8_Count.mat
+# SOURCE: this creates things like /export/a14/prastog3/gcca_run_sans_mu_300_7000_1e-8_Count.mat
+submit_gcca_run_sans_mu_to_grid: # I can experiment with 300_10000 (and higher) or 500_1000 (or higher)
+	for transform in Count logCount; \
+	    do $(QSUBCMD) -pe smp 25 -cwd submit_grid_stub.sh $(STORE2)/gcca_run_sans_mu_300_7000_1e-8_"$$transform" ; done
 # TARGET: A Typical run would 300_1000_1e-8 (300 is the number of principal vectors, 1000 is the batch size, (the higher the better))
 # SOURCE : A mat file containing S, B, Mu1, Mu2 which contain the arabic, chinese, english bitext data
-$(STORE2)/gcca_run_sans_mu_%: $(STORE2)/gcca_result_svd_500.mat
-	$(MATCMD)"options=strsplit('$*', '_'); r=str2num(options{1}); b=str2num(options{2}); load $<;svd_reg_seq=str2num(options{3})*ones(size(S)); [G, S_tilde]=se_gcca(S, B, r, b, svd_reg_seq); tic; save('$@', 'G', 'S_tilde'); toc; exit; "
+GCCA_RUN_SANS_MU_CMD = $(MATCMD)"options=strsplit('$*', '_'); r=str2num(options{1}); b=str2num(options{2}); load $<;svd_reg_seq=str2num(options{3})*ones(size(S)); [G, S_tilde, sort_idx]=se_gcca(S, B, r, b, svd_reg_seq); tic; save('$@', 'G', 'S_tilde', 'sort_idx'); toc; exit; "
+$(STORE2)/gcca_run_sans_mu_%_logCount: $(STORE2)/gcca_result_svd_500_logCount.mat
+	$(GCCA_RUN_SANS_MU_CMD)
+$(STORE2)/gcca_run_sans_mu_%_Count: $(STORE2)/gcca_result_svd_500_Count.mat
+	$(GCCA_RUN_SANS_MU_CMD)
 
 # SOURCE: A small test file to practice doing se_gcca.
 test_gcca_run: res/tmp_bitext_svd.mat
@@ -42,7 +62,7 @@ test_gcca_run: res/tmp_bitext_svd.mat
 
 # TARGET: A single mat file containing S, B, mu1 and mu2 arrays in a cell
 # SOURCE:
-GCCA_RESULT_SVD_MAT_DEP = $(foreach lang,$(BIG_LANG),$(STORE2)/bitext_svd_$(lang)_%_logCount.mat)
+GCCA_RESULT_SVD_MAT_DEP = $(foreach lang,$(BIG_LANG),$(STORE2)/bitext_svd_$(lang)_%.mat)
 GCCA_RESULT_TODO = $(patsubst %,load %; B=[B b]; S=[S s]; Mu1=[Mu1 full(mu1)]; Mu2=[Mu2 full(mu2)]; whos;,$+)
 $(STORE2)/gcca_result_svd_%.mat: $(GCCA_RESULT_SVD_MAT_DEP)
 	$(MATCMD)"tic; S={}; B={}; Mu1={}; Mu2={}; $(GCCA_RESULT_TODO) save('$@', 'S', 'B', 'Mu1', 'Mu2', '-v7.3'); toc; exit;"
@@ -168,22 +188,19 @@ log/extrinsic_test_%: $(STORE)/gn_intersect_ppdb_embeddings.mat res/filtered_par
 	$(MATCMD)"load('$<'); load('$(word 2,$^)'); load('$(word 3,$^)'); word=textread('$(word 4,$^)', '%s'); options=strsplit('$*', '_'); ppdb_size=options{1}; use_unique_mapping=str2num(options{2}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); dimension_after_cca=150; distance_method='cosine'; conduct_extrinsic_test; exit;" | tee $@
 
 res/ppdb_paraphrase_rating_filtered.mat: res/ppdb_paraphrase_rating
-	$(MATCMD)"[w1 w2 sc]=textread('$<', '%s %s %d', 'delimiter', '\t'); word=textread('res/gn_intersect_ppdb_word', '%s'); M=NaN(length(w1), 3); for i=1:length(w1) i1=find(strcmp(word, w1(i))); i2=find(strcmp(word, w2(i))); if ~isempty(i1) && ~isempty(i2) M(i,:)=[i1 i2 sc(i)]; end; end; M(isnan(M))=[];M= reshape(M, numel(M)/3, 3); ppdb_paraphrase_rating=M; save('$@', 'ppdb_paraphrase_rating'); exit;"
+	$(MATCMD)"ppdb_paraphrase_rating=create_ppdb_paraphrase_rating('$<', textread('res/gn_intersect_ppdb_word', '%s')); save('$@', 'ppdb_paraphrase_rating'); exit;"
 
 res/ppdb_paraphrase_rating: res/pred-scored-human-ppdb.txt
 	python src/preprocess-pred-scored-human-ppdb.py $< | sort > $@
 
 res/filtered_paraphrase_list_wordnet.mat: res/wordnet.test
-	$(MATCMD)"[w1 w2]=textread('$<', '%s %s'); word=textread('res/gn_intersect_ppdb_word', '%s'); M=NaN(length(w1), 2); for i=1:length(w1) i1=find(strcmp(word, w1(i))); i2=find(strcmp(word, w2(i))); if ~isempty(i1) && ~isempty(i2) M(i,:)=[i1, i2]; end; end; M(isnan(M))=[];M= reshape(M, numel(M)/2, 2); golden_paraphrase_map=M; save('$@', 'golden_paraphrase_map'); exit;"
+	$(MATCMD)"golden_paraphrase_map=create_golden_paraphrase_map('$<', textread('res/gn_intersect_ppdb_word', '%s')); save('$@', 'golden_paraphrase_map'); exit;"
 
 data_eyeball_%:
 	$(MATCMD)"load('/export/a15/prastog3/gn_intersect_ppdb_embeddings.mat'); mapping=dlmread('res/gn_ppdb_lex_$*_paraphrase','', 0, 2); word=textread('res/gn_intersect_ppdb_word', '%s'); cd src; debug=1; data_eyeball; exit;"
 
 log/gridrun_log_tabulate: log/gridrun 
 	python src/gridrun_log_tabulate.py | tee $@
-
-qstat:
-	qstat | cut -c 73-75 | sort | uniq -c
 
 # These are jobs with changing ppdb size and whether I am using unique
 # mapping or not. The basic purpose is to find out whether things work
