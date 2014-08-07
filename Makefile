@@ -14,6 +14,8 @@ qstat:
 MATCMD := time matlab -nojvm -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); "
 QSUBCMD := qsub -V -j y -l mem_free=5G -r yes #-verify
 # QSUBCMD := echo 
+QSUBMAKE := $(QSUBCMD) -cwd submit_grid_stub.sh
+QSUBPEMAKE := $(QSUBCMD) -pe smp 25 -cwd submit_grid_stub.sh
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
 STORE := /export/a15/prastog3
@@ -26,13 +28,50 @@ SVD_DIM := 500
 PREPROCESS_OPT := Count logCount
 
 
+# This process creates a table like the following.
+# logCount original G U V
+# 50 0.663180 0.761930 0.673395 0.742604 
+# 75 0.663180 0.761930 0.686480 0.754124 
+# 100 0.663180 0.761930 0.684092 0.758477 
+# 125 0.663180 0.761930 0.690841 0.764990 
+# 150 0.663180 0.761930 0.694817 0.767735 
+# 175 0.663180 0.761930 0.693774 0.770188 
+# 200 0.663180 0.761930 0.696455 0.771158 
+# 225 0.663180 0.761930 0.694216 0.771636 
+# 250 0.663180 0.761930 0.691688 0.772791 
+# 275 0.663180 0.761930 0.691138 0.772942 
+# 300 0.663180 0.761930 0.687952 0.773492 
+# Count original G U V
+# 50 0.663180 0.544499 0.638092 0.560735 
+# 75 0.663180 0.544499 0.664301 0.582729 
+# 100 0.663180 0.544499 0.675602 0.596855 
+# 125 0.663180 0.544499 0.684646 0.600773 
+# 150 0.663180 0.544499 0.688560 0.608362 
+# 175 0.663180 0.544499 0.686949 0.614132 
+# 200 0.663180 0.544499 0.689746 0.614116 
+# 225 0.663180 0.544499 0.693141 0.616704 
+# 250 0.663180 0.544499 0.692086 0.616689 
+# 275 0.663180 0.544499 0.689986 0.618161 
+# 300 0.663180 0.544499 0.687952 0.617602 
+tabulate_run_on_grid_bitext_extrinsic:
+	for t in logCount Count; do printf "$$t original G U V" && for i in 50 75 100 125 150 175 200 225 250 275 300 ; do  echo "" && printf "$$i " && grep -e "The Pearson Corr over " log/bitext_extrinsic_test_300_7000_1e-8_"$$t"."$$i" | tee -a $@ | awk '{printf "%s ", $$NF}' ; done && echo ""; done
+
 run_on_grid_bitext_extrinsic_test:
-	for i in 50 100 150 200 250 ; do for t in logCount Count; do \
-          $(QSUBCMD) -cwd submit_grid_stub.sh log/bitext_extrinsic_test_300_7000_1e-8_"$$t"."$$i" ; \
+	for i in 50 75 100 125 150 175 200 225 250 275 300 ; do for t in logCount Count; do \
+          $(QSUBMAKE) log/bitext_extrinsic_test_300_7000_1e-8_"$$t"."$$i" ; \
 	done ; done
 
 # TARGET: log/bitext_extrinsic_test_300_7000_1e-8_logCount.150 log/bitext_extrinsic_test_300_7000_1e-8_Count.150
-# SOURCE: 
+# This is basically doing CCA with resulting 150 dimensions over the original gn embeddings and the GCCA embeddings.
+# The results are basically how well these embeddings work to predict the human similarity judgements.
+# And there are 4 types of embeddings
+# original embeddings : the bvgn embeddings
+# G : the basic GCCA embeddings
+# U : The bvgn embeddings projected after doing CCA between bvgn and G
+# V : The G embeddings projected after doing CCA between bvgn and G
+# This target is pretty quick to make.
+# SOURCE: big_vocabcount_en_intersect_gn_embedding which is the gn embeddings intersected with big_vocab that was made from 6 bitext files.
+#         300_7000_1e-8_Count/logCount are basically Hyper parameters that were used while creating the GCCA embeddings.
 log/bitext_extrinsic_test_%: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word res/wordnet.test res/ppdb_paraphrase_rating $(STORE2)/gcca_run_sans_mu_300_7000_1e-8_Count.mat $(STORE2)/gcca_run_sans_mu_300_7000_1e-8_logCount.mat
 	$(MATCMD)"options=strsplit('$*','.'); load(sprintf('$(STORE2)/gcca_run_sans_mu_%s', options{1})); dimension_after_cca=str2num(options{2}); load('$(word 1,$+)'); word=textread('$(word 2,$+)', '%s'); wordnet_test_filename='$(word 3,$+)'; ppdb_paraphrase_rating_filename='$(word 4,$+)'; G=G'; sort_idx=sort_idx'; word=word(sort_idx); bvgn_count=bvgn_count(sort_idx); bvgn_embedding=bvgn_embedding(sort_idx,:);bitext_true_extrinsic_test;exit; " | tee $@
 
@@ -41,7 +80,7 @@ log/bitext_extrinsic_test_%: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.
 # SOURCE: this creates things like /export/a14/prastog3/gcca_run_sans_mu_300_7000_1e-8_Count.mat
 submit_gcca_run_sans_mu_to_grid: # I can experiment with 300_10000 (and higher) or 500_1000 (or higher)
 	for transform in Count logCount; \
-	    do $(QSUBCMD) -pe smp 25 -cwd submit_grid_stub.sh $(STORE2)/gcca_run_sans_mu_300_7000_1e-8_"$$transform" ; done
+	    do $(QSUBPEMAKE) $(STORE2)/gcca_run_sans_mu_300_7000_1e-8_"$$transform" ; done
 # TARGET: A Typical run would 300_1000_1e-8 (300 is the number of principal vectors, 1000 is the batch size, (the higher the better))
 # SOURCE : A mat file containing S, B, Mu1, Mu2 which contain the arabic, chinese, english bitext data
 GCCA_RUN_SANS_MU_CMD = $(MATCMD)"options=strsplit('$*', '_'); r=str2num(options{1}); b=str2num(options{2}); load $<;svd_reg_seq=str2num(options{3})*ones(size(S)); [G, S_tilde, sort_idx]=se_gcca(S, B, r, b, svd_reg_seq); tic; save('$@', 'G', 'S_tilde', 'sort_idx'); toc; exit; "
@@ -70,7 +109,7 @@ $(STORE2)/gcca_result_svd_%.mat: $(GCCA_RESULT_SVD_MAT_DEP)
 
 # TARGET: A way to submit bitext_svd_%.mat jobs to the grid
 submit_bitextsvd_to_grid_%:
-	for lang in $(BIG_LANG); do for preproc in $(PREPROCESS_OPT); do $(QSUBCMD) -pe smp 20 -cwd submit_grid_stub.sh $(STORE2)/bitext_svd_"$$lang"_$*_"$$preproc".mat; done; done
+	for lang in $(BIG_LANG); do for preproc in $(PREPROCESS_OPT); do $(QSUBPEMAKE) $(STORE2)/bitext_svd_"$$lang"_$*_"$$preproc".mat; done; done
 
 # SOURCE: 1. The mat file with google embeddings. 6 mat files with
 # sparse array denoting alignments to different languages 
@@ -85,6 +124,7 @@ $(STORE2)/cooccur_en.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding_wor
 	time pypy src/create_sparse_cooccurmat.py $+ 1> tmp_cooccur 2> log/cooccur_en.mat && sort -n tmp_cooccur | uniq -c > tmp_cooccur_en 
 
 # TARGET: Mat file which contains the google embeddings.
+# bvgn means big vocab google news
 $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding
 	$(MATCMD)"bvgn_embedding=dlmread('$<', '', 0, 1); bvgn_count=bvgn_embedding(:,1);bvgn_embedding=bvgn_embedding(:,2:size(bvgn_embedding,2)); save('$@', 'bvgn_embedding','bvgn_count');"
 
@@ -99,7 +139,7 @@ $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat: $(STORE2)/big_vocabcount
 ## The maximum of tmp_idx_fr_list is 2243100 (total are 2243101 so 0 indexed)
 
 gridrun_align_mat:
-	for targ in $(BIG_LANG); do $(QSUBCMD)  -cwd submit_grid_stub.sh $(STORE2)/align_"$$targ".mat ; done 
+	for targ in $(BIG_LANG); do $(QSUBMAKE) $(STORE2)/align_"$$targ".mat ; done 
 
 # TARGET: sparse matrix encoding the alignment as a mat file
 # SOURCE: 1. The vocabulary of the foreign language along with counts.
