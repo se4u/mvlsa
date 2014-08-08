@@ -11,7 +11,17 @@ qstat:
 
 ## VARIABLES
 # LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 addpath('src/kdtree');
-MATCMD := time matlab -nojvm -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); "
+# Note the Test names
+# TOEFL_QUESTION
+# SCWS (Stanford COntextual word similarity)
+# Rare Words (RW, by Stanford, Socher)
+# MEN : 
+# EN_MC_30 : 
+# EN_MTURK_287 : 
+# EN_RG_65 : 
+# EN_TOM_ICLR13(SYN/REL) : 
+# EN_WS-353 (ALL/REL/SIM): 
+MATCMD := time matlab -nojvm -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); setenv('TOEFL_QUESTION_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/toefl.qst'); setenv('TOEFL_ANSWER_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/toefl.ans'); setenv('SCWS_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/scws_simplified.txt'); setenv('RW_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/rw_simplified.txt'); setenv('MEN_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/MEN.txt'); setenv('EN_MC_30_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-MC-30.txt'); setenv('EN_MTURK_287_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-MTurk-287.txt'); setenv('EN_RG_65_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-RG-65.txt'); setenv('EN_TOM_ICLR13_SEM_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-TOM-ICLR13-SEM.txt'); setenv('EN_TOM_ICLR13_SYN_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-TOM-ICLR13-SYN.txt'); setenv('EN_WS_353_REL_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-WS-353-REL.txt'); setenv('EN_WS_353_SIM_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-WS-353-SIM.txt'); setenv('EN_WS_353_ALL_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-WS-353-ALL.txt'); "
 QSUBCMD := qsub -V -j y -l mem_free=5G -r yes #-verify
 # QSUBCMD := echo 
 QSUBMAKE := $(QSUBCMD) -cwd submit_grid_stub.sh
@@ -57,9 +67,15 @@ tabulate_run_on_grid_bitext_extrinsic:
 	for t in logCount Count; do printf "$$t original G U V" && for i in 50 75 100 125 150 175 200 225 250 275 300 ; do  echo "" && printf "$$i " && grep -e "The Pearson Corr over " log/bitext_extrinsic_test_300_7000_1e-8_"$$t"."$$i" | tee -a $@ | awk '{printf "%s ", $$NF}' ; done && echo ""; done
 
 run_on_grid_bitext_extrinsic_test:
-	for i in 50 75 100 125 150 175 200 225 250 275 300 ; do for t in logCount Count; do \
+	for i in 50 100 150 200 250 300 ; do for t in logCount ; do \
           $(QSUBMAKE) log/bitext_extrinsic_test_300_7000_1e-8_"$$t"."$$i" ; \
 	done ; done
+
+res/word_sim/rw_simplified.txt: res/word_sim/rw.txt
+	awk '{print $$1, $$2, $$3}' $+ > $@
+
+res/word_sim/scws_simplified.txt: res/word_sim/scws.txt
+	awk -F $$'\t' '{print $$2, $$4, $$8}' $+ > $@
 
 # TARGET: log/bitext_extrinsic_test_300_7000_1e-8_logCount.150 log/bitext_extrinsic_test_300_7000_1e-8_Count.150
 # This is basically doing CCA with resulting 150 dimensions over the original gn embeddings and the GCCA embeddings.
