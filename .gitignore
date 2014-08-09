@@ -1,3 +1,6 @@
 log*/*
 papers/*
 res/*
+TAGS
+submit_grid_stub.sh.o*
+tmp_cooccur_en
