@@ -9,6 +9,8 @@
 qstat:
 	qstat | cut -c 73-75 | sort | uniq -c
 
+
+
 ## VARIABLES
 # LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 addpath('src/kdtree');
 # Note the Test names
@@ -19,8 +21,8 @@ qstat:
 # EN_MC_30 : 
 # EN_MTURK_287 : 
 # EN_RG_65 : 
-# EN_TOM_ICLR13(SYN/REL) : 
 # EN_WS-353 (ALL/REL/SIM): 
+# EN_TOM_ICLR13(SYN/REL) : 
 MATCMD := time matlab -nojvm -nodisplay -r "warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); setenv('TOEFL_QUESTION_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/toefl.qst'); setenv('TOEFL_ANSWER_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/toefl.ans'); setenv('SCWS_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/scws_simplified.txt'); setenv('RW_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/rw_simplified.txt'); setenv('MEN_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/MEN.txt'); setenv('EN_MC_30_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-MC-30.txt'); setenv('EN_MTURK_287_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-MTurk-287.txt'); setenv('EN_RG_65_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-RG-65.txt'); setenv('EN_TOM_ICLR13_SEM_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-TOM-ICLR13-SEM.txt'); setenv('EN_TOM_ICLR13_SYN_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-TOM-ICLR13-SYN.txt'); setenv('EN_WS_353_REL_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-WS-353-REL.txt'); setenv('EN_WS_353_SIM_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-WS-353-SIM.txt'); setenv('EN_WS_353_ALL_FILENAME', '/home/prastog3/projects/mvppdb/res/word_sim/EN-WS-353-ALL.txt'); "
 QSUBCMD := qsub -V -j y -l mem_free=5G -r yes #-verify
 # QSUBCMD := echo 
@@ -69,13 +71,7 @@ tabulate_run_on_grid_bitext_extrinsic:
 run_on_grid_bitext_extrinsic_test:
 	for i in  200 250 300 ; do for t in logCount ; do \
           $(QSUBMAKE) log/bitext_extrinsic_test_300_7000_1e-8_"$$t"."$$i" ; \
-	done ; done
-
-res/word_sim/rw_simplified.txt: res/word_sim/rw.txt
-	awk '{print $$1, $$2, $$3}' $+ > $@
-
-res/word_sim/scws_simplified.txt: res/word_sim/scws.txt
-	awk -F $$'\t' '{print $$2, $$4, $$8}' $+ > $@
+	done ; done | tee $@
 
 # TARGET: log/bitext_extrinsic_test_300_7000_1e-8_logCount.150 log/bitext_extrinsic_test_300_7000_1e-8_Count.150
 # This is basically doing CCA with resulting 150 dimensions over the original gn embeddings and the GCCA embeddings.
@@ -90,6 +86,12 @@ res/word_sim/scws_simplified.txt: res/word_sim/scws.txt
 #         300_7000_1e-8_Count/logCount are basically Hyper parameters that were used while creating the GCCA embeddings.
 log/bitext_extrinsic_test_%: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word res/wordnet.test res/ppdb_paraphrase_rating $(STORE2)/gcca_run_sans_mu_300_7000_1e-8_Count.mat $(STORE2)/gcca_run_sans_mu_300_7000_1e-8_logCount.mat
 	$(MATCMD)"options=strsplit('$*','.'); load(sprintf('$(STORE2)/gcca_run_sans_mu_%s', options{1})); dimension_after_cca=str2num(options{2}); load('$(word 1,$+)'); word=textread('$(word 2,$+)', '%s'); wordnet_test_filename='$(word 3,$+)'; ppdb_paraphrase_rating_filename='$(word 4,$+)'; G=G'; sort_idx=sort_idx'; word=word(sort_idx); bvgn_count=bvgn_count(sort_idx); bvgn_embedding=bvgn_embedding(sort_idx,:);bitext_true_extrinsic_test;exit; " | tee $@
+
+res/word_sim/rw_simplified.txt: res/word_sim/rw.txt
+	awk '{print $$1, $$2, $$3}' $+ > $@
+
+res/word_sim/scws_simplified.txt: res/word_sim/scws.txt
+	awk -F $$'\t' '{print $$2, $$4, $$8}' $+ > $@
 
 # TARGET: this creates things like /export/a14/prastog3/gcca_run_sans_mu_300_7000_1e-8_logCount.mat
 #       :                     and  /export/a14/prastog3/gcca_run_sans_mu_300_7000_1e-8_Count.mat
@@ -115,8 +117,20 @@ test_gcca_run: res/tmp_bitext_svd.mat
 #trick because the data is gonna be large and I would be doing append
 #only
 
-# TARGET: A single mat file containing S, B, mu1 and mu2 arrays in a cell
-# SOURCE:
+# TARGET: A single mat file containing S, B, mu1 and mu2 arrays in a cell. Currently only three targets exist
+# gcca_result_svd_2.mat
+# gcca_result_svd_500_Count.mat
+# gcca_result_svd_500_logCount.mat
+# SOURCE: GCCA_RESULT_SVD_MAT_DEP referes to $(STORE2)/bitext_svd_fr/cs_500.mat (500 means the dimensionality of the SVD result)
+# Then all those are put into a single cell called S and B
+# It calls on the the following files.
+# bitext_svd_ar_500_Count.mat                    bitext_svd_ar_500_logCount.mat
+# bitext_svd_cs_500_Count.mat                    bitext_svd_cs_500_logCount.mat
+# bitext_svd_de_500_Count.mat                    bitext_svd_de_500_logCount.mat
+# bitext_svd_es_500_Count.mat                    bitext_svd_es_500_logCount.mat
+# bitext_svd_fr_500_Count.mat                    bitext_svd_fr_500_logCount.mat
+# bitext_svd_zh_500_Count.mat                    bitext_svd_zh_500_logCount.mat
+# I am planning on adding SVD of 
 GCCA_RESULT_SVD_MAT_DEP = $(foreach lang,$(BIG_LANG),$(STORE2)/bitext_svd_$(lang)_%.mat)
 GCCA_RESULT_TODO = $(patsubst %,load %; B=[B b]; S=[S s]; Mu1=[Mu1 full(mu1)]; Mu2=[Mu2 full(mu2)]; whos;,$+)
 $(STORE2)/gcca_result_svd_%.mat: $(GCCA_RESULT_SVD_MAT_DEP)
@@ -137,7 +151,7 @@ $(STORE2)/bitext_svd_%.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.m
 # TARGET: A sparse matrix of english co-occurence counts.
 # This took 1hour 16 minutes
 $(STORE2)/cooccur_en.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word $(BIG_INPUT)
-	time pypy src/create_sparse_cooccurmat.py $+ 1> tmp_cooccur 2> log/cooccur_en.mat && sort -n tmp_cooccur | uniq -c > tmp_cooccur_en 
+	time pypy src/create_sparse_cooccurmat.py $+ 1> tmp_cooccur 2> log/cooccur_en.mat && sort -n tmp_cooccur | uniq -c | tee tmp_cooccur_en &&  pypy src/create_cooccur_en_mat.py tmp_cooccur_en $$(wc -l $$STORE2/big_vocabcount_en_intersect_gn_embedding_word  awk '{print $$1}') $@
 
 # TARGET: Mat file which contains the google embeddings.
 # bvgn means big vocab google news

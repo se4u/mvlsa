@@ -1,5 +1,8 @@
 import sys
+# This file is used to map words to numeric indexes.
 en_word_filename=sys.argv[1]
+
+# This file contains all the bitext data. But only the english portion of those is used.
 alignment_filenames=sys.argv[2:]
 en_word={}
 en_word["<BOS>"]=-1
