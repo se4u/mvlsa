@@ -1,4 +1,4 @@
-function [n_total, n_attempt, scws_correlation]=scws_test_impl( ...
+function [n_total, n_attempt, pred_simil, true_simil]=scws_test_impl( ...
                                                   word, get_emb, fn)
 scws_file=getenv(fn);
 [w1, w2, true_simil]=textread(scws_file, '%s %s %f');
@@ -17,4 +17,3 @@ for i=1:n_total
         pred_simil(i)=0;
     end
 end
-scws_correlation=corr(pred_simil, true_simil, 'type', 'Pearson');

@@ -67,7 +67,7 @@ tabulate_run_on_grid_bitext_extrinsic:
 	for t in logCount Count; do printf "$$t original G U V" && for i in 50 75 100 125 150 175 200 225 250 275 300 ; do  echo "" && printf "$$i " && grep -e "The Pearson Corr over " log/bitext_extrinsic_test_300_7000_1e-8_"$$t"."$$i" | tee -a $@ | awk '{printf "%s ", $$NF}' ; done && echo ""; done
 
 run_on_grid_bitext_extrinsic_test:
-	for i in 50 100 150 200 250 300 ; do for t in logCount ; do \
+	for i in  200 250 300 ; do for t in logCount ; do \
           $(QSUBMAKE) log/bitext_extrinsic_test_300_7000_1e-8_"$$t"."$$i" ; \
 	done ; done
 
