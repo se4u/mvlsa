@@ -4,3 +4,6 @@ res/*
 TAGS
 submit_grid_stub.sh.o*
 tmp_cooccur_en
+tex/mvppdb.aux
+tex/mvppdb.log
+tex/mvppdb.pdf
