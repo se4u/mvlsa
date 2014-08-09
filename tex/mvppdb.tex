@@ -4,10 +4,13 @@
 % Contact: koller@ling.uni-potsdam.de, yusuke@nii.ac.jp
 
 \documentclass[11pt]{article}
+\usepackage[ruled,]{algorithm2e}
 \usepackage{acl2014}
 \usepackage{times}
+\usepackage{mathtools}
 \usepackage{url}
 \usepackage{latexsym}
+\usepackage{amsfonts}
 
 %\setlength\titlebox{5cm}
 
@@ -34,19 +37,105 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-  Sentence aligned bilingual text corpora and Unannotated Monolingual
-  text corpora can be used to learn large collections of semantically
-  similar paraphrases. These two data sources can be modelled as two
-  views over underlying latent representation of the words and
-  phrases.
-
-  OR
-  
-  We use CCA to adapt the features present in an existing collection
-  of paraphrases to learn a more useful representation of the existing features.
+  Real valued vector space representations of words have become an
+  important research topic recently. Many researchers have reported
+  that vector representations of words which place similar words close
+  to each other are useful as features for tasks like Pos tagging,
+  Parsing, etc. In this paper we use the framework of generalized CCA
+  to learn representations and leverage sentence aligned bitext to
+  learn representations. We find that representations learnt using
+  word aligned bitext out-perform mono-lingual representations on many
+  standard word similarity benchmarks.
 \end{abstract}
 
 \section{Introduction}
+Vector space representations of words or embeddings have emerged as a
+hot topic of research over recently. These representations have been
+used for many tasks and have been learnt using many frameworks [ADD
+  CITATIONS]
+
+In this paper we pose the problem of learning representations as the
+problem of learning the underlying factors that can explain the
+co-occurrence statistics in a large text dataset. A natural
+way to learn latent factors from multiple sources of data is the
+framework of generalized CCA which we use in this paper. Another
+result of this work is that we find that bitext data produces
+embeddings that perform much better than state of the art embeddings
+learnt using monolingual data.
+
+In Section\ref{sec:cca} and \ref{sec:gcca} we briefly present
+ CCA and GCCA. 
+
+\section{Introduction to CCA}
+\label{sec:cca}
+In CCA the objective is to find optimal orthogonal subspaces of a given order such that once we
+project two datasets X and Y to those subspaces then the correlation
+between the projections is maximized amongst corresponding directions
+and orthogonal to other directions.
+
+For example, let's say we want to find subspaces of order 1
+(i.e. single directions) a and b such that $a^TX$ and $b^TY$ are
+maximally correlated. Here X and Y are vector valued random variables
+and correlation between two random variables X and Y with zero mean is defined as
+O = \frac{E[X^TY]}{\sqrt{E[X^TX]\timesE[Y^TY]}}. By substituting this
+formula to maximize correlation between $a^TX$ and $b^TY$ we get the objective as
+$$\arg_{a,b}\max \frac{E[a^TX \times
+    b^TY]}{\sqrt{E[(a^TX)^2]\timesE[(a^TY)^2]}}$$
+This problem of finding  a and b which maximize this objective is a
+sub-problem of the generalized eigen value problem. Refer to
+\cite{borga2001canonical} for more details.
+
+We also note here that minimizing the euclidean distance between two
+vectors when their magnitude are fixed is the same as maximizing their
+correlation. For example, consider two vector valued random variables X and Y. The
+expected euclidean distance between X and Y is
+$$D = E[(X-Y)^T(X-Y)] =  E[X^TX + Y^TY - 2 * X^TY] $$
+This is an informal way to give some intuition of how CCA is related
+to the problem of Least Squares Regression. See \cite{hastie2009elements} for a detailed
+explanation of the relation between CCA and problem of Least Squares.
+
+We also make another note that CCA has a probabilistic interpretation
+as finding the bayes estimates of a hidden factor given samples from
+two dependent random variables. This interpretation was first
+explained in \cite{bach2005probabilistic}.
+
+\section{Introduction to GCCA}
+\label{sec:gcca}
+Conventional CCA considers only two random variables and finds optimal
+projections of those random variables. Generalized CCA extends this to
+the case when we have more than two random variables.
+
+For example, let's say we have samples from three random variables  X,
+Y and Z and we want to find three rank 1 subspaces a, b, and c such
+that a^TX, b^TY and c^TZ are maximally correlated to each other. We
+saw earlier that maximizing correlation is related to finding the
+least squares solution to a problem and we would use this direction to
+define GCCA.
+
+GCCA seeks to find the common latent representation G and [ADD CITATION]
+transformation matrices such that
+\sum_{j=1}^J ||G - U_j^T X_j||^2_F subject to GG^T = I is minimized.
+This group configuration can be found as the solution of the
+eigenvalue problem [ADD CITATION]
+$$(\sum_{j=1}^J X_J^T(X_j X_J^T)^{-1}X_j)G^T = G^T \Lambda  $$
+let $$M = (\sum_{j=1}^J X_J^T(X_j X_J^T)^{-1}X_j) $$
+and the transformation matrices U_j are given as $$(X_j X_J^T)^-1 X_j
+G^T$$
+
+There is also a regularized version of GCCA which adds r_jI to each
+autocovariance term X_J X_j^T
+
+We note that GCCA involves finding the eigenvectors of a matrix which
+is the sum of $J$ projection matrices. A projection matrix itself
+has the property that its eigenvalue is either 0 or 1 which implies
+that eigenvalue of sum of J matrices must lie between 0 and J. Also a
+projection matrix is dense even if the original data matrix was
+sparse. This leads us to the problem of finding the SVD of large dense
+matrices which do not have a large absolute difference between the
+highest and lowest eigenvalues.
+
+\section{Finding SVD for performing GCCA}
+  
 Bilingual text and monolingual text has been used to learn large
 collections of paraphrases. \cite{bannard2005paraphrasing} introduced the trick and
 then \cite{ganitkevitch2013ppdb} built upon it. The reason why these two views work is
@@ -95,13 +184,79 @@ To perform this experiment we do the following.\\
 4. Train-Test plain regression coefficients of normalized data. \\
    (Basically find regression coefficients that best fit the training
 data in the original vector space, with the original basis.)\\
-5. Train-Test regression coefficients of CCA-type-latent-representations (We will not have to do normalization since CCA should take care of that.)
+5. Train-Test regression coefficients of
+CCA-type-latent-representations (We will not have to do normalization
+since CCA should take care of that.) 
 
 The second experiment is the following. \\
 Q. Can we learn reduced dimensionality embeddings which correlate with
 Monolingual alignment ?  \\
 
+\section{Proof Of GCCA}
+Following \cite{arora2014multiview} we will perform GCCA by finding a
+group configuration matrix G that satisfies
+$$ \arg\min_G \sum_{j=1}^{J} ||G-U_j^T X_j ||^2_F$$ such that
+$$G \in \mathbb{R}^{r\times N} $$ and $$ GG^T = I $$
+Here $X_j \in \mathbb{R}^{d_j \times N}$.
+The solution is $$G^T$$, a matrix contaning $r$
+eigen vectors of $$M = \sum_{j=1}^J (X_j^T(X_j X_j^T)^{-1}X_j)$$ with the
+highest eigenvalues and $$U_j = (X_j X_j^T)^{-1}X_jG$$
+Following the notation of \cite{hastie2009elements} we call $XX^T$ the
+scatter matrix. (Caution that the notation is reversed since $X \in
+\mathbb{R}^{d_j \times N}$ instead of $\mathbb{R}^{d_j \times N}$)
+We regularize each scatter matrix by adding $r_j \times I_{d_j}$
+Let $$T_{j (N \times N)} = X_j^T(X_j X_j^T + r_j I_{d_j})^{-1}X_j$$,
+And $$ A_{j (d_j \times d_j)} S_{j(d_j \times N)} B^T_{j (N \times N)}\xleftarrow{SVD_{m_j}} X_j$$.
+Where $S_j$ is a diagonal matrix with $m_j$ non-zero entries, 
+and $A_j$ and $B_j$ are orthonormal, unitary (importantly $A_j^{-1} = A_j^{T}$ and $B_j^{-1} = B_j^{T}$)
+then $$T_j = B_j S_j^T(r_j I_{d_j} + S_j S_J^T)^{-1}S_j B_J^T$$
+Since $T_j$ are large and hard to compute we approximate them by
+computing only the top $m$ singular values, i.e. we approximate
+$$R'_j = S_j^T(r_j I_{d_j} + S_j S_J^T)^{-1}S_j$$
+, a diagonal matrix with $m$ non-zero entries (\textbf{Note:} We could use
+more sophisticated methods like incrementally computing singular
+values till we achieve some criteria, but there isn't a simple way to
+judge whether we have reduced the reconstruction error. We can't
+actually compute errors since they would create a dense N by N
+matrix. We could look at the pattern of singular values to judge
+whether we should provision more.)
 
+This implies that
+$$T_j = \sum_{i=1}^m \frac{s_{ji}^2}{s_{ji}^2+r_j} B_{j(:,i)}B_{j(:,i)}^T$$
+Where $s_{ji}$ is the ith diagonal element of $S_j$, $B_{j(:,i)}$ is the
+ith column of $B_{j}$
+Let $r'_j = diag(R'_j)$, the row vector composed of diagonal elements
+of $R'_j$. Then the kth column of $T_j$,
+$$T_{j (:,k)} = B_j (r'_j .\times B_{j(k,:)})^T$$
+where $.\times$ denotes element wise multiplication.
+Since $$M_{(:,k)} = \sum_{j=1}^J T_{j (:,k)}$$, this implies we can
+compute N columns of M is $$\mathcal{O}(N(J(m+mN)) + J(Nm + m^2))$$
+Now we use the iterative SVD method of \cite{brand2002incremental} to
+compute the top $r$ eigen values of $M$ (\textbf{Note:} since M is
+symmetric therefore either the right singular or the right
+singular vectors are the eigen vector and we don't need to compute
+both. For sake of speed it would be useful to not compute the right
+singular vectors.)
+
+Now we state the method for incremental SVD (with minor tweaks over the
+original by Brand.)
+Since we 
+
+\begin{algorithm}[H]
+ \KwData{this text}
+ \KwResult{}
+ initialization\;
+ \While{not at end of this document}{
+  read current\;
+  \eIf{understand}{
+   go to next section\;
+   current section becomes this one\;
+   }{
+   go back to the beginning of current section\;
+  }
+ }
+ \caption{How to write algorithms}
+\end{algorithm}
 
 
 \section*{Acknowledgments}
