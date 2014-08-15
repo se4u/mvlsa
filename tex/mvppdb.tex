@@ -1,8 +1,3 @@
-%
-% File acl2014.tex
-%
-% Contact: koller@ling.uni-potsdam.de, yusuke@nii.ac.jp
-
 \documentclass[11pt]{article}
 \usepackage[ruled,]{algorithm2e}
 \usepackage{acl2014}
@@ -11,7 +6,9 @@
 \usepackage{url}
 \usepackage{latexsym}
 \usepackage{amsfonts}
-
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{graphicx}
 %\setlength\titlebox{5cm}
 
 % You can expand the titlebox if you need extra space
@@ -20,17 +17,13 @@
 % in the camera-ready version and ask you to change it back.
 
 
-\title{Multi View approach for Paraphrasing OR Supervised embeddings
-  for improved performance}
+\title{Regularized Generalized CCA to create
+  representations from multiple sources of data}
 
-%% \author{Pushpendre Rastogi \\
-%%   Johns Hopkins University \\
-%%   {\tt pushpendre@jhu.edu} \\\And
-%%   Second Author \\
-%%   Affiliation / Address line 1 \\
-%%   Affiliation / Address line 2 \\
-%%   Affiliation / Address line 3 \\
-%%   {\tt email@domain} \\}
+\author{Pushpendre Rastogi \\
+  Johns Hopkins University \\
+  {\tt pushpendre@jhu.edu} 
+}
 
 \date{}
 
@@ -40,102 +33,464 @@
   Real valued vector space representations of words have become an
   important research topic recently. Many researchers have reported
   that vector representations of words which place similar words close
-  to each other are useful as features for tasks like Pos tagging,
-  Parsing, etc. In this paper we use the framework of generalized CCA
-  to learn representations and leverage sentence aligned bitext to
-  learn representations. We find that representations learnt using
-  word aligned bitext out-perform mono-lingual representations on many
-  standard word similarity benchmarks.
+  to each other are useful as features for tasks like pos tagging, NER and 
+  parsing. In this paper we employ the framework of regularized generalized CCA
+  to fuse new sources of co-occurence statistics and other representations to learn vector
+   representations of words which outperform the base
+   representations. The main aim of the paper is to present
+   regularized GCCA as a natural and simple way that can fuse lots of
+   data sources.
 \end{abstract}
 
 \section{Introduction}
-Vector space representations of words or embeddings have emerged as a
-hot topic of research over recently. These representations have been
-used for many tasks and have been learnt using many frameworks [ADD
-  CITATIONS]
+Vector space representations of words which assign
+ real vectors to words have been shown to enhance performance for nlp
+ tasks recently. These representations learnt under diverse frameworks like
+ SVD and Neural Networks make use of the co-occurence information
+ present in text and are commonly evaluated on tasks
+ like word similarity prediction, word analogy prediction and
+ NER~\cite{dhillon2011multi,dhillon2012two,mikolov2013efficient,mikolov2013distributed,collobert2013word,zou2013bilingual,faruqui2014improving,pennington2014glove,bansal2014tailoring,levy2014dependency,levy2014linguistic}.
 
 In this paper we pose the problem of learning representations as the
-problem of learning the underlying factors that can explain the
-co-occurrence statistics in a large text dataset. A natural
-way to learn latent factors from multiple sources of data is the
-framework of generalized CCA which we use in this paper. Another
-result of this work is that we find that bitext data produces
-embeddings that perform much better than state of the art embeddings
-learnt using monolingual data.
+problem of estimating latent factors/sufficient statistics that can explain the
+co-occurrence statistics that may arise from a number of different
+sources. For example cooccurence statistics can be extracted from
+word aligned parallel bitext corpora by defining the columns to be the
+foreign language words and the rows to be english language words and
+counting the number of times an english word was aligned to a
+particular foreign language word. Viewed this way every language pair between english
+and a foreign language becomes a source of cooccurence
+statistics. Similarly, even a single monolingual corpus made by
+concatening all the text in this world can provide multiple sources of
+cooccurence statistics depending on the definition of the
+context. By changing the window size we can create an infinite number
+of different sources of cooccurence statistics. Another source of
+cooccurence statistics are structured databases like Roget Thesaurus,
+WordNet and FrameNet which can be used to create cooccurence
+statistics. Finally, we may want to fuse predefined vector
+representations released by other
+researchers in the hope that the resulting embedding would be better
+than the components.\footnote{\url{http://lebret.ch/embeddings/200/words.txt}}
+  \footnote{\url{http://nlp.stanford.edu/projects/glove/}}
+  \footnote{\url{https://code.google.com/p/word2vec/}}
+  \footnote{\url{http://metaoptimize.com/projects/wordreprs/}}
+  \footnote{\url{http://ttic.uchicago.edu/~mbansal/data/syntacticEmbeddings.zip}}
+  \footnote{\url{http://www.cs.cmu.edu/~mfaruqui/soft.html}}
 
-In Section\ref{sec:cca} and \ref{sec:gcca} we briefly present
- CCA and GCCA. 
 
-\section{Introduction to CCA}
-\label{sec:cca}
-In CCA the objective is to find optimal orthogonal subspaces of a given order such that once we
-project two datasets X and Y to those subspaces then the correlation
-between the projections is maximized amongst corresponding directions
-and orthogonal to other directions.
+Regularized Generalized CCA is a well-studied statistical method which
+can be used to find representations. Those representations have
+guarantees of optimality under assumptions of normality however
+empirically they work well under other distributions as well. The
+focus of this work is to use RGCCA to fuse multiple large sparse
+matrices of cooccurence statistics with existing representations and to
+check the performance of the resulting representations.
+An important reason why GCCA is appealing for this fusion is that it
+learns affine invariant transformations which reduces the number of
+pre-processing options. For example, we don't have to choose 
+between log(tf) and log(tf-idf) transformation since log(tf) is the
+same as log(tf-idf) upto an affine transformation. Also since we can
+fuse the statistics generated by 
+using different window sizes we don't have to tune for the best window
+size. Also, we can easily fuse embeddings created using
+different frameworks like word2vec, HPCA, ivLBL, Glove etc. into a single representation.
 
-For example, let's say we want to find subspaces of order 1
-(i.e. single directions) a and b such that $a^TX$ and $b^TY$ are
-maximally correlated. Here X and Y are vector valued random variables
-and correlation between two random variables X and Y with zero mean is defined as
-O = \frac{E[X^TY]}{\sqrt{E[X^TX]\timesE[Y^TY]}}. By substituting this
-formula to maximize correlation between $a^TX$ and $b^TY$ we get the objective as
-$$\arg_{a,b}\max \frac{E[a^TX \times
-    b^TY]}{\sqrt{E[(a^TX)^2]\timesE[(a^TY)^2]}}$$
-This problem of finding  a and b which maximize this objective is a
-sub-problem of the generalized eigen value problem. Refer to
-\cite{borga2001canonical} for more details.
+In Section~\ref{sec:gcca} we present GCCA and our notation. In
+Section\ref{sec:rgcca} we present regularized GCCA 
+ and how we compute it. Then we present data and experiments and results.
 
-We also note here that minimizing the euclidean distance between two
-vectors when their magnitude are fixed is the same as maximizing their
-correlation. For example, consider two vector valued random variables X and Y. The
-expected euclidean distance between X and Y is
-$$D = E[(X-Y)^T(X-Y)] =  E[X^TX + Y^TY - 2 * X^TY] $$
-This is an informal way to give some intuition of how CCA is related
-to the problem of Least Squares Regression. See \cite{hastie2009elements} for a detailed
-explanation of the relation between CCA and problem of Least Squares.
-
-We also make another note that CCA has a probabilistic interpretation
-as finding the bayes estimates of a hidden factor given samples from
-two dependent random variables. This interpretation was first
-explained in \cite{bach2005probabilistic}.
-
-\section{Introduction to GCCA}
+\section{Background}
 \label{sec:gcca}
-Conventional CCA considers only two random variables and finds optimal
-projections of those random variables. Generalized CCA extends this to
-the case when we have more than two random variables.
+%% \subsection{CCA}
+%% \label{ssec:cca}
+%% In CCA the objective is to find optimal orthogonal subspaces of a given order such that once we
+%% project two datasets X and Y to those subspaces then the correlation
+%% between the projections is maximized amongst corresponding directions
+%% and orthogonal to other directions.
 
-For example, let's say we have samples from three random variables  X,
-Y and Z and we want to find three rank 1 subspaces a, b, and c such
-that a^TX, b^TY and c^TZ are maximally correlated to each other. We
-saw earlier that maximizing correlation is related to finding the
-least squares solution to a problem and we would use this direction to
-define GCCA.
+%% For example, let's say we want to find subspaces of order 1
+%% (i.e. single directions) a and b such that $a^TX$ and $b^TY$ are
+%% maximally correlated. Here X and Y are vector valued random variables
+%% and correlation between two random variables X and Y with zero mean is defined as,
+%% $$O = \frac{E[X^TY]}{\sqrt{E[X^TX] \times E[Y^TY]}}$$ By substituting this
+%% formula to maximize correlation between $a^TX$ and $b^TY$ we get the objective as
+%% $$\arg_{a,b}\max \frac{E[a^TX \times b^TY]}{\sqrt{E[(a^TX)^2] \times E[(a^TY)^2]}}$$
+%% This problem of finding  a and b which maximize this objective is a
+%% sub-problem of the generalized eigen value problem. Refer to
+%% \cite{borga2001canonical} for more details.
 
-GCCA seeks to find the common latent representation G and [ADD CITATION]
-transformation matrices such that
-\sum_{j=1}^J ||G - U_j^T X_j||^2_F subject to GG^T = I is minimized.
-This group configuration can be found as the solution of the
-eigenvalue problem [ADD CITATION]
-$$(\sum_{j=1}^J X_J^T(X_j X_J^T)^{-1}X_j)G^T = G^T \Lambda  $$
-let $$M = (\sum_{j=1}^J X_J^T(X_j X_J^T)^{-1}X_j) $$
-and the transformation matrices U_j are given as $$(X_j X_J^T)^-1 X_j
-G^T$$
+%% We also note here that minimizing the euclidean distance between two
+%% vectors when their magnitude are fixed is the same as maximizing their
+%% correlation. For example, consider two vector valued random variables X and Y. The
+%% expected euclidean distance between X and Y is
+%% $$D = E[(X-Y)^T(X-Y)] =  E[X^TX + Y^TY - 2 * X^TY] $$
+%% This is an informal way to give some intuition of how CCA is related
+%% to the problem of Least Squares Regression. See \cite{hastie2009elements} for a detailed
+%% explanation of the relation between CCA and problem of Least Squares.
 
-There is also a regularized version of GCCA which adds r_jI to each
-autocovariance term X_J X_j^T
+%% We also make another note that CCA has a probabilistic interpretation
+%% as finding the bayes estimates of a hidden factor given samples from
+%% two dependent random variables. This interpretation was first
+%% explained in \cite{bach2005probabilistic}.
 
-We note that GCCA involves finding the eigenvectors of a matrix which
-is the sum of $J$ projection matrices. A projection matrix itself
-has the property that its eigenvalue is either 0 or 1 which implies
-that eigenvalue of sum of J matrices must lie between 0 and J. Also a
-projection matrix is dense even if the original data matrix was
-sparse. This leads us to the problem of finding the SVD of large dense
-matrices which do not have a large absolute difference between the
-highest and lowest eigenvalues.
+%% \subsection{GCCA}
+%% \label{ssec:gcca}
+Generalized CCA
+\cite{kettenring1971canonical,carroll1968generalization} is an
+extension of CCA to the case when we have data from more than two
+vector valued random variables. 
+
+Let $X_j \in \mathbb{R}^{N\times d_j}$ be the matrix containing cooccurence statistics from view
+$j$ where the rows represent words in the vocabulary and columns
+represent the contexts. Therefore $N$ remains the
+same across views but the $d_j$ varies.
+We use the method of \cite{carroll1968generalization} to find the
+so called group configuration matrix $G \in \mathbb{R}^{r\times N}$, which is also our latent
+representation, and linear transformation matrices $U_j$ to solve
+\begin{equation}
+  \label{eq:gcca}
+\begin{split}
+  \operatorname*{arg\,min}_G & \sum_{j=1}^J ||G - U_j^\top X_j^{-1}||^2_F \\
+  \text{such that } & G G^\top = I 
+\end{split}
+\end{equation}
+The solution for Equation~\ref{eq:gcca} is given by the following \cite{carroll1968generalization}.
+
+\begin{eqnarray}
+M &=& \sum_{j=1}^J X_j(X_j^\top X_j)^{-1}X_j^\top\\
+M G^\top &=& G^\top \Lambda\\
+U_j &=& \left(X_j^\top X_j\right)^{-1} X_j^\top G^\top
+\end{eqnarray}
+We can see that $M$ is just the sum of $J$ projection matrices and
+$U_j$ are the product of $G$ and view specific projection matrices.
+We note that since projection matrices themselves have the property
+that their eigenvalues are either 0 or 1 that implies
+that eigenvalues of sum of J matrices must lie between 0 and J.
+Also a projection matrices is dense even when the original data matrix
+is sparse. This leads us to the problem of finding the SVD of large
+dense matrices which do not have a large absolute difference between
+the highest and lowest eigenvalues.
+
+\subsection{Regularized GCCA}
+Following the notation of \cite{hastie2009elements} we call $X^\top X$
+the scatter matrix. To perform regularized GCCA we add $r_jI$ to each
+scatter matrix $X_J X_j^\top$ before doing the inversion. Typically
+$r_j$ is chosen to be very small, e.g. 1e-8.
+\begin{eqnarray}
+M &=& \sum_{j=1}^J X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top \\
+U_j &=& (X_j^\top X_j+r_jI)^{-1} X_jG^\top
+\end{eqnarray}
+
+
+Let $$T_{j} = X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top$$
+And $$ A_{j} S_{j} B^T_{j} \xleftarrow{SVD_{partial}} X_j$$.
+Note that we compute only a partial SVD and keep the top $m$ eigen
+vectors since $X_j$ is a large sparse matrix and we can not store its
+complete SVD in memory.
+Where $S_j$ is a diagonal matrix with $m$ non-zero entries, 
+and $A_j$ and $B_j$ are orthonormal, unitary matrices.
+Then $$T_j = B_j S_j^T(r_j I + S_j S_J^T)^{-1}S_j B_J^T$$ which
+implies that 
+
+%% (\textbf{Note:} We could use
+%% more sophisticated methods like incrementally computing singular
+%% values till we achieve some criteria, but there isn't a simple way to
+%% judge whether we have reduced the reconstruction error. We can't
+%% actually compute errors since they would create a dense N by N
+%% matrix. We could look at the pattern of singular values to judge
+%% whether we should provision more.)
+
+$$T_j = \sum_{i=1}^m \frac{s_{ji}^2}{s_{ji}^2+r_j} B_{j(:,i)}B_{j(:,i)}^T$$
+Where $s_{ji}$ is the ith diagonal element of $S_j$, $B_{j(:,i)}$ is the
+ith column of $B_{j}$
+Let $r'_j = diag(R'_j)$, the row vector composed of diagonal elements
+of $R'_j$. Then the kth column of $T_j$,
+$$T_{j (:,k)} = B_j (r'_j .\times B_{j(k,:)})^T$$
+where $.\times$ denotes element wise multiplication.
+Since $$M_{(:,k)} = \sum_{j=1}^J T_{j (:,k)}$$, this implies we can
+compute N columns of M is $$\mathcal{O}(N(J(m+mN)) + J(Nm + m^2))$$
+Now we use the iterative SVD method of \cite{brand2002incremental} to
+compute the top $r$ eigen values of $M$
+
+We note that since $M$ is
+symmetric therefore either of the left or the right
+singular vectors are eigen vector and we don't need to compute
+both. For sake of speed we do not compute the right
+singular vectors.
 
 \section{Finding SVD for performing GCCA}
-  
+\label{sec:rgcca}
+Now we state the method for incremental SVD which is the same as the
+original by Brand with one minor trick. The trick is that we
+precompute the norm of 
+all the columns of the matrix once before finding the SVD and then
+arrange the columns and rows in descending order so that the matrix
+remains symmetric and the increamental SVD algorithm is initialized
+with the columns having highest norm.
+
+Remember that $j$ indexes over language pairs $j \in [1, J]$ and $ X_j \in \mathbb{R}^{N\times d_j}$.
+Since we cannot store $M$ in memory therefore, we take one pass over
+the$M$ and calculate $b$ number of columns from left to right at each
+step. At each step we compute an approximation of the SVD and keep
+updating it. See Algorithm~\ref{alg:incsvd} for details.
+
+\begin{algorithm}[htp]
+  \label{alg:incsvd}
+ \KwData{C = A matrix of columns\;
+   b = Number of columns in C\;
+   r = the rank that we want to estimate upto\;
+   $\widetilde{U}, \widetilde{S}$ = The current rank r estimates of
+   the singular vectors and the singular values.
+ }
+ %\KwResult{}
+ \textbf{Algorithm}\;
+ C = M[:, 1:b]\;
+ [$\widetilde{U}, \widetilde{S}$]=SVD(C, r)\;
+ \For{l = b:b:N}{
+   C = M[:, l+1:l+b]\;
+   [$\widetilde{U}, \widetilde{S}$]=incrSVD(C, $\widetilde{U},
+   \widetilde{S}$, r)\;
+ }
+ \textbf{function incrSVD}(C, $\widetilde{U}, \widetilde{S}$, r)
+ 
+ 
+ L = $\widetilde{U}^TC$ \% Project C onto U \;
+ H = C - $\widetilde{U}$L\;
+ Q = $\begin{bmatrix} 
+   \widetilde{S} & L\\
+   0 & W \\
+   \end{bmatrix}$ \;
+ [$U', S', V'$]=SVD(Q, b)\;
+ $\widetilde{U'}$ = $[\widetilde{U} J][U'(:, 1:r)]$\;
+ $\widetilde{S'}$ = S'[1:r]\;
+ return $[\widetilde{U'}, \widetilde{S'}]$\;
+ \caption{Incremental SVD}
+\end{algorithm}
+
+
+
+
+
+
+
+
+\section{Experiments and Results}
+We made the following decisions to experiment with the method of GCCA.
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{ccc}
+    Language & Sentences & English Tokens \\
+    Arabic   & 8,860,048   & 190,796,525  \\
+    Czech    & 726,804     & 17,254,309   \\
+    German   & 1,870,847   & 44,640,847   \\
+    Spanish  & 11,097,173  & 241,454,907  \\
+    French   & 30,945,093  & 671,382,577  \\
+    Chinese  & 10,290,031  & 215,120,478  \\
+    Total    & 63,789,996  & 1,380,649,643  \\
+  \end{tabular}  
+  \caption{Data used to create GCCA embeddings.}
+  \label{tab:dataperlang}
+\end{table}
+
+\textbf{Training Data}: We trained our embeddings using cooccurence
+statistics from the Spanish, Czech, French and German portions of the
+Europarl v7 bitext corpus \cite{koehn2005europarl}, the $10^9$
+French-English corpus \cite{callisonburch2009findings}, The Czech,
+German, Spanish and French portions of the News Commentary
+\cite{koehn2007experiments}, the United Nations French and Spanish
+bitext corpora \cite{eisele2010multiun} and the Chinese and Arabic
+Newswire corpora used for the GALE machine translation
+project.\footnote{{http://projects.ldc.upenn.edu/gale/data/Catalog.html}}. We
+used the berkeley aligner to word align the parallel corpora and then
+created cooccurence matrices with rows as english words and columns as
+the foreign language word that the english word was aligned
+to. Finally we used a total of 6 different languages (French, German,
+Czech, Arabic, Spanish and Chinese). The amount of data varied from
+language to language as shown in Table~\ref{tab:dataperlang}. We also
+used the English portion of the bitext corpora to gather cooccurence
+statistics with a symmetric window of size 3. Here the context was the
+bigram consisting of the left and right words that an english word
+appeared in.  
+
+\textbf{Test Data}: We evaluated the representations on the word
+analogy task presented in \cite{mikolov2013distributed} and word similarity
+datasets which have been widely used to test the linguistic
+and semantic regularity of representations. Specifically we used the following
+MEN~\cite{bruni2012distributional},
+MTURK~\cite{Radinsky2011word},MC~\cite{miller1991contextual},
+RG~\cite{Rubenstein1965Contextual}, SCWS~\cite{Huang2012Improving},
+WS\_353~\cite{finkelstein2001placing}, WS\_353\_SEM and WS\_353\_SEM
+~\cite{aggire2009study}, RW~\cite{Luong2013morpho}. For the word
+similarity tasks we calculate the Spearman and
+Pearson correlation and for the Word Analogy task we report
+accuracies. 
+
+%% \begin{table}[htbp]
+%%   \centering
+%%   \begin{tabular}{ccc}
+%%     Name  & Description & Citation
+%%     TOEFL & 
+%%     SCWS  & Word pair similarity in context              & Huang2012Improving
+%%     RW    &                                              & Luong2013morpho
+%%     MEN   &                                              & bruni2012distributional
+%%     MC & 30                                        & miller1991contextual
+%%     MTURK & 287                                    & Radinsky2011word
+%%     RG & 65                                        & Rubenstein1965Contextual
+%%     WS & 353                                        & finkelstein2001placing
+%%   \end{tabular}
+%%   \caption{caption}
+%%   \label{"waiting for reftex-label call..."}
+%% \end{table}
+\textbf{Hyper parameters and Pre-processing}: Even though CCA is
+affine invariant it is still learning a linear transformation
+therefore we need to experiment with the right non linear
+preprocessing transform. We experiment with the raw cooccurence
+statistics and the log of the cooccurence statistics. Since we do not
+mean normalize before doing CCA therefore practically our procedure
+does not remain affine invariant therefore using cooccurence frequency
+instead of counts and tfidf, simple ll etc. might make a difference.
+Let C = Observed co-occurrence counts
+and F = Observed co-occurrence frequency
+and E =  the expected frequency of the word pair.
+Then we should try out the following
+a. C
+b. log(C)
+c. C/F
+d. log(C)-log(F)
+Also we can try to find an appropriate power $\alpha$ to scale the
+observed counts C and F.
+
+\subsection{Representations generated}
+We are using data from multiple source and using Generalized CCA to come up with an embedding that explains all of the co-occurence data from all of the sources. 
+
+\begin{itemize}[noitemsep]
+  \item glove42\_eval\_by\_push
+\item glove6\_eval\_by\_push
+\item Mikolov\_Full\_Vocab
+\item Mikolov\_Pruned
+\item G\_bitext : The embeddings created by using bitext data alone and performing GCCA on it.
+\item U\_bitext : The embeddings created by performing CCA between G\_bitext embeddings and Mikov\_Pruned embeddings
+\item V\_bitext
+\item G\_bi+mono : The embeddings created by using bitext data with monolingual co-occurence statistics
+\item U\_bi+mono : The embeddings created by performing CCA between 
+\item V\_bi+mono
+\end{itemize}
+
+
+\subsection{Results}
+The numbers in parenthesis indicate the number of test samples that
+were actually used. The rest of the test points were not used because
+one of the words was not in our vocabulary.  
+
+In Table~\ref{tab:eval} we see that even though the representation
+learnt through GCCA are not better than glove or Mikolov's embeddings,
+however taking CCA between representations learnt using GCCA and
+Mikolov's representations improves Mikolov's representation. our goal
+would be to increase the number of views and to increase the number of
+tokens and to directly take GCCA 
+
+\begin{table*}[htbp]
+  \centering
+  \begin{tabular}{ccc}
+Dataset (with recall)                     & glove6\_eval\_by\_pushp & glove42\_eval\_by\_push  \\
+JURI                                      &        0.4730           &       0.551353           \\
+TOEFL (78 out of 80)                      &        0.8750           &      0.8625              \\
+SCWS (2003 out of 2003)                   &        0.5450    [53.9] &      0.5422  [59.6]      \\
+RW (2013 out of 2034)                     &        0.3368    [38.1] &      0.3690  [47.8]      \\
+MEN (3000 out of 3000)                    &        0.7377    [72.7] &      0.7490  [83.6]      \\
+EN\_MC\_30 (30 out of 30)                 &        0.6510           &        0.7761            \\
+EN\_MTURK\_287 (287 out of 287)           &        0.6290    [77.8] &        0.6490  [82.9]    \\
+EN\_RG\_65 (65 out of 65)                 &        0.7367           &        0.8008            \\
+EN\_WS\_353\_ALL (353 out of 353)         &        0.5915    [65.8] &         0.6443  [75.9]   \\
+EN\_WS\_353\_REL (252 out of 252)         &        0.5534           &         0.5843           \\
+EN\_WS\_353\_SIM (203 out of 203)         &        0.6435           &         0.7089           \\
+EN\_TOM\_ICLR13\_SYN (10675 out of 10675) &        0.6715           &         0.6942           \\
+EN\_TOM\_ICLR13\_SEM (8869 out of 8869)   &        0.7705           &         0.8102           \\
+    
+  \end{tabular}
+  \caption{caption}
+  \label{tab:glove}
+\end{table*}
+
+
+Spearman
+\begin{table*}[tp]
+  \centering
+  \resizebox{2.5\columnwidth}{!}{
+  \begin{tabular}{cccccccccccc}
+Dataset (with attempts)        & Mikolov\_Full\_Vocab  &Mikolov\_Pruned &G\_bitext    &U\_bitext      &V\_bitext  &G\_bi+mono  &U\_bi+mono  & V\_bi+mono  &G\_bi+mono+mikolov & U\_bi+mono+mikolov &V\_bi+mono+mikolov  \\
+JURI                           &        0.6283         &       0.6313   &    0.7090   &     0.6607   &     0.7326 &  0.7132    &   0.6607   &    0.7333   &       0.7264     &   0.6607         &  0.7241               \\
+TOEFL (78 out of 80)           &        0.8625 (79)    &       0.8625   &    0.8750   &     0.8750   &     0.9000 &  0.9000    &   0.8750   &    0.9000    &      0.9500     &  0.8750          &  0.9500               \\
+SCWS (1978 out of 2003)        &        0.6353 (1979)  &       0.6476   &    0.5896   &     0.6207   &     0.6097 &  0.6011    &   0.6215   &    0.6101    &      0.6054     &  0.6216          &  0.5824               \\
+RW (1808 out of 2034)          &        0.4083 (1825)  &       0.4485   &    0.3189   &     0.4780   &     0.3088 &  0.3361    &   0.4780   &    0.3211    &      0.4263     &  0.4780          &  0.4202               \\
+MEN (2946 out of 3000)         &        0.7067         &       0.7428   &    0.4810   &     0.7391   &     0.4918 &  0.4869    &   0.7391   &    0.4978    &      0.5134     &  0.7391          &  0.5126               \\
+EN\_MC\_30 (30 out of 30)      &          0.7656       &         0.7886 &      0.3591 &       0.7883 &       0.4592 &  0.3862  &     0.7883 &      0.4715  &      0.3905     &  0.7883          &  0.5307               \\
+EN\_MTURK\_287 (275 out of 287)&          0.6168       &         0.6327 &      0.4790 &       0.6007 &       0.5218 &  0.4748  &     0.6007 &      0.5367  &      0.4885     &  0.6007          &  0.4241               \\
+EN\_RG\_65 (65 out of 65)      &          0.7257       &         0.7607 &      0.5519 &       0.7774 &       0.5847 &  0.5777  &     0.7774 &      0.6241  &      0.5443     &  0.7774          &  0.6249               \\
+EN\_WS\_353\_ALL (350 out of 353)       &0.6477        &        0.6833  &     0.5341  &      0.6496  &      0.5494  & 0.5400   &    0.6496  &     0.5338   &      0.5551     &  0.6496          &  0.5368               \\
+EN\_WS\_353\_REL (250 out of 252)       & 0.5498       &         0.5996 &      0.4710 &       0.5464 &       0.5300 &  0.4688  &     0.5464 &      0.5020  &      0.4813     &  0.5464          &  0.4979               \\
+EN\_WS\_353\_SIM (202 out of 203)        &0.7522       &         0.7783 &      0.5961 &       0.7499 &       0.6235 &  0.6243  &     0.7499 &      0.6284  &      0.6446     &  0.7499          &  0.6064               \\
+EN\_TOM\_ICLR13\_SYN (10043 out of 10675)&0.0163       &         0.6336 &      0.3170 &       0.5734 &       0.3265 &  0.3432  &     0.5734 &      0.3474  &      0.3615     &  0.5734          &  0.2987               \\
+EN\_TOM\_ICLR13\_SEM (3662 out of 8869)  &0.0046       &         0.1097 &      0.0392 &       0.1110 &       0.0438 &  0.0414  &     0.1110 &      0.0462  &      0.0470     &  0.1110          &  0.0504               \\
+
+  \end{tabular}}
+  \caption{caption}
+  \label{tab:eval}
+\end{table*}
+
+
+
+%% Pearson
+%% JURI (0 out of 0)                       0.597420
+%% JURI (0 out of 0)                       0.663180        0.761930        0.687952        0.773492
+%% JURI (0 out of 0)                       0.663180        0.765517        0.687952        0.775001
+%% JURI (0 out of 0)                       0.663180        0.773290        0.687952        0.770819
+%% JURI (0 out of 0)                       0.499079
+%% JURI (0 out of 0)                       0.586661
+%% Miko_Full  Miko_pruned       G_bitext       U_bitext       V_bitext         G_bi_mono       U_bi_mono       V_bi_mono       G_bi+mono+miko       U_bi+mono+miko       V_bi+mono+miko
+%% 0.862500   0.862500        0.875000        0.875000        0.900000           0.900000        0.875000        0.900000            0.950000        0.875000        0.950000
+%% 0.635373   0.647620        0.589620        0.620769        0.609743           0.601182        0.621538        0.610108            0.605402        0.621615        0.582404
+%% 0.408386   0.448516        0.318983        0.478068        0.308842           0.336182        0.478068        0.321116            0.426346        0.478068        0.420290
+%% 0.706774   0.742855        0.481012        0.739194        0.491814           0.486905        0.739194        0.497840            0.513432        0.739194        0.512681
+%% 0.725771   0.760783        0.551999        0.777458        0.584782           0.577767        0.777458        0.624100            0.544306        0.777458        0.624930
+%% 0.616830   0.632702        0.479025        0.600778        0.521848           0.474859        0.600778        0.536787            0.488514        0.600778        0.424147
+%% 0.765688   0.788607        0.359146        0.788385        0.459279           0.386293        0.788385        0.471518            0.390521        0.788385        0.530708 
+%% 0.647728   0.683337        0.534191        0.649617        0.549409           0.540096        0.649617        0.533813            0.555136        0.649617        0.536844
+%% 0.549857   0.599603        0.471022        0.546479        0.530096           0.468858        0.546479        0.502031            0.481364        0.546479        0.497938
+%% 0.752261   0.778387        0.596106        0.749919        0.623577           0.624321        0.749919        0.628400            0.644622        0.749919        0.606490
+%% TOMAS\_ANALOGY
+%% 0.016300   0.633630        0.317096        0.573489        0.326557           0.343232        0.573489        0.347447            0.361593        0.573489        0.298735
+%% 0.004623   0.109708        0.039238        0.111061        0.043861           0.041493        0.111061        0.046228            0.047018        0.111061        0.050400
+
+
+\section{Previous Work}
+Multi view learning and CCA have been applied previously in the following papers.
+The following two papers were good overviews for work done before 2008.
+a. Kakade, S. M. and Foster, D. P. (2007).  Multi-view regression via canonical correlation analysis, Learning Theory
+b. Ganchev, K., Graca, J., Blitzer, J., and Taskar, B. (2008).  Multi-View Learning over Structured and Non-Identical Outputs, Uncertainty in AI
+The multi-view learning approaches were algorithms like "Co-Training" (Blum and Mitchell, 1998, 3200 citations), "CoBoosting" (Collins and Singer, 1999, 801 citations), and "2 view perceptrons" (Brefeld et al 2005). The applications considered in these papers were NER(detecting the type of an named entity) and Web Page Type detection(faculty page, versus student page) but they were general techniques for labeling sequences. These approaches forced predictors trained on individual views to agree with each other. 
+
+Later though after the paper, A probabilistic interpretation of canonical correlation analysis, Bach, F. R. and Jordan, M. I. (2005). 
+
+
+Dan Klein and Ben Taskar's group applied that view of CCA and multi view learning to tasks of Parsing, MT, NER. 
+- Ganchev, K., Graca, J., Blitzer, J., and Taskar, B. (2008).  Multi-View Learning over Structured and Non-Identical Outputs, Uncertainty in Artificial Intelligence
+- Burkett, D. and Klein, D. (2008).  Two Languages Are Better Than One (for Syntactic Parsing), EMNLP
+- Haghighi, A., Liang, P., Berg-Kirkpatrick, T., and Klein, D. (2008).  Learning Bilingual Lexicons from Monolingual Corpora., 2008, ACL
+- Burkett, D., Petrov, S., Blitzer, J., and Klein, D. (2010).  Learning better monolingual models with unannotated bilingual text, ACL
+
+3. Mengqiu Wang's dissertation about Bilingual embeddings, Bilingual and Cross-lingual Learning of Sequence Models with Bitext, PhD Dissertation Thesis, 2014
+
+The "Learning Bilingual Lexicons"  paper had a very similar aim to ours. They applied CCA to 2 types of features
+a. Character 3-grams inside words 
+b. Contextual features (they missed unigram frequency features)
+But amongst the 4 papers there is considerable variation in the how the objective is set up ? (Whether it uses Bhattacharya Distance or Hellinger, does variational inference or uses EM or a directed graphical model versus undirected or used log linear models.
+
+Representations have been learnt using CCA in Manaal's paper 
+
+Representations have been learnt using bilingual data in the following
+papers. b. Zou, W. Y., Socher, R., Cer, D., and Manning, C. D. (2013).  Bilingual Word Embeddings for Phrase-Based Machine Translation. Their approach was one great heuristic. Essentially they first learn embeddings for english. Then they use word aligned parallel corpus to create a Language-to-Language word co-occurence matrix M (Basically a table which counts which words were aligned) and then in a coordinate-ascent hill-climbing fashion first optimizes english embeddings with respect to chinese embeddings, then optimizes chinese with respect to english.
+
 Bilingual text and monolingual text has been used to learn large
 collections of paraphrases. \cite{bannard2005paraphrasing} introduced the trick and
 then \cite{ganitkevitch2013ppdb} built upon it. The reason why these two views work is
@@ -149,119 +504,63 @@ using CCA or other multi view learning techniques.
 The main point of the paper is to learn embeddings or features
 that best correlate with both the views. 
 
-\textbf{But to check our own understanding} \textit{(I am speaking
-  my mind here)} of CCA we first just use the
-features that are already present in PPDB. and then learn a regression
-function with and without sparsity constraints and with and without
-CCA type dimensionality reduction and learn regression
-coefficients. (The reason why it is obvious that there would be an
-improvement is that we are specifically learning the representation to
-optimize some objective, with the extra tuning knob of how many
-dimensions to keep we must be able to do better than basic regression,
-EVEN THOUGH BOTH ARE LINEAR!!)
+\section{Future Work}
+We are not using larger monolingual datasets as well as other larger
+datasets, for example the ClueWeb-FreeBase aligned dataset and other
+sources of alignments.
 
-\section{Previous Work}
-Multi view learning and CCA have been applied previously in the following
-papers.
+We are also using a small vocabulary size of 100,000 words. Increasing
+that would involve scaling up the SVD algorithm to 
+larger problems and for that we would have to implement faster methods
+of finding SVD like the following.
 
-\section{Data Used}
+Also we are using only a basic incremental method of finding SVD and we have not quantified the amount of error that our
+method of finding SVD is introducing in the calculations. 
+We haven't used newer methods for example Stochastic Optimization for
+PCA and PLS [TODO: Add Citation]
+
+Currently some of our results use CCA to fuse the representation learnt from GCCA and the embeddings learnt by Mikolov et. al. and the Glove embeddings.
+We would like to take GCCA over all of them directly.
+
+We have not done Kernel CCA also.
+
+- I guess the time complexity quadratic in n because the matrices are nxn, right? In other words if you view the columns/rows as an incoming stream of vectors for incremental SVD, the dimensionality is as large as the sample size for projection matrices. In that case, we can consider incremental SVD with missing entries and process partial columns of the projection matrices. We can discuss that next week. 
+
+- The batch size does not have to be large for the incremental SVD to
+converge. That would be make each computation expensive. The point of
+stochastic approximation is to make each computation as inexpensive as
+possible even if it is a gross approximation and be able to take many
+such steps in the same amount of runtime. In fact b=1 should be fine.
+
+Note 3: The algorithm properly requires SVD of projection matrices calculated from centered matrices. But I can't explicitly center the alignment matrices. They would become dense and I would not be able to store them or to take their SVD. so I am using non-centered matrices. I have worked out the math to get around this problem but not implemented it yet. 
+Note 4:  (The time complexity is,  $t =  (3rnb + nr^2 + nb^2 + nb + (r+b)^3)*n/b + 2 (N(J(m + mN)) + J(Nm + m^2))$;
+  The memory complexity is m =  n*r + n*b 
+  here r is the final dimension of embeddings = 300
+n is the number of words we want embeddings for = 131,133
+b is the batch size of the increment. = 7000 ((In general we want to make b as high as possible. To reduce run time and to improve accuracy of incemental SVD)
+J is the number of language pairs = 6 )
+So the main thing is that we are quadratic in n.  The current method:
+would have problems if we also want to get phrase embeddings (we might
+be fine if the number of words we align to remains small though, then
+we would have to switch to the primal space).
 
 
-\section{Experiments}
-The first experiment was the following. \\
-Q. Can we learn reduced dimensionality embeddings which correlate with
-Human semantic judgement better than the original basis ? \\
-A. This is not really an experiment, more like a test. We expect an
-improvement in correlation, in fact we would be very 
-surprised if we can't improve and we would think there is a bug, that
-is why this is a test. The reason why we are so confident is that we are actually
-optimizing the representation and reducing dimensionality to learn 
+\section{Conclusion}
+We have shown that GCCA is a natural framework to fuse data from
+multiple sources specifically when all we want is to learn a common
+latent representation.
 
-To perform this experiment we do the following.\\
-1. Gather likert-scale type human judgments about word similarity.\\
-2. Gather PPDB features for the word-pairs and make a big matrix \\
-3. Split that into train-dev-test\\
-4. Train-Test plain regression coefficients of normalized data. \\
-   (Basically find regression coefficients that best fit the training
-data in the original vector space, with the original basis.)\\
-5. Train-Test regression coefficients of
-CCA-type-latent-representations (We will not have to do normalization
-since CCA should take care of that.) 
+We have shown that Bilingual data is a useful source of information
+that should be utilized more heavily.
 
-The second experiment is the following. \\
-Q. Can we learn reduced dimensionality embeddings which correlate with
-Monolingual alignment ?  \\
-
-\section{Proof Of GCCA}
-Following \cite{arora2014multiview} we will perform GCCA by finding a
-group configuration matrix G that satisfies
-$$ \arg\min_G \sum_{j=1}^{J} ||G-U_j^T X_j ||^2_F$$ such that
-$$G \in \mathbb{R}^{r\times N} $$ and $$ GG^T = I $$
-Here $X_j \in \mathbb{R}^{d_j \times N}$.
-The solution is $$G^T$$, a matrix contaning $r$
-eigen vectors of $$M = \sum_{j=1}^J (X_j^T(X_j X_j^T)^{-1}X_j)$$ with the
-highest eigenvalues and $$U_j = (X_j X_j^T)^{-1}X_jG$$
-Following the notation of \cite{hastie2009elements} we call $XX^T$ the
-scatter matrix. (Caution that the notation is reversed since $X \in
-\mathbb{R}^{d_j \times N}$ instead of $\mathbb{R}^{d_j \times N}$)
-We regularize each scatter matrix by adding $r_j \times I_{d_j}$
-Let $$T_{j (N \times N)} = X_j^T(X_j X_j^T + r_j I_{d_j})^{-1}X_j$$,
-And $$ A_{j (d_j \times d_j)} S_{j(d_j \times N)} B^T_{j (N \times N)}\xleftarrow{SVD_{m_j}} X_j$$.
-Where $S_j$ is a diagonal matrix with $m_j$ non-zero entries, 
-and $A_j$ and $B_j$ are orthonormal, unitary (importantly $A_j^{-1} = A_j^{T}$ and $B_j^{-1} = B_j^{T}$)
-then $$T_j = B_j S_j^T(r_j I_{d_j} + S_j S_J^T)^{-1}S_j B_J^T$$
-Since $T_j$ are large and hard to compute we approximate them by
-computing only the top $m$ singular values, i.e. we approximate
-$$R'_j = S_j^T(r_j I_{d_j} + S_j S_J^T)^{-1}S_j$$
-, a diagonal matrix with $m$ non-zero entries (\textbf{Note:} We could use
-more sophisticated methods like incrementally computing singular
-values till we achieve some criteria, but there isn't a simple way to
-judge whether we have reduced the reconstruction error. We can't
-actually compute errors since they would create a dense N by N
-matrix. We could look at the pattern of singular values to judge
-whether we should provision more.)
-
-This implies that
-$$T_j = \sum_{i=1}^m \frac{s_{ji}^2}{s_{ji}^2+r_j} B_{j(:,i)}B_{j(:,i)}^T$$
-Where $s_{ji}$ is the ith diagonal element of $S_j$, $B_{j(:,i)}$ is the
-ith column of $B_{j}$
-Let $r'_j = diag(R'_j)$, the row vector composed of diagonal elements
-of $R'_j$. Then the kth column of $T_j$,
-$$T_{j (:,k)} = B_j (r'_j .\times B_{j(k,:)})^T$$
-where $.\times$ denotes element wise multiplication.
-Since $$M_{(:,k)} = \sum_{j=1}^J T_{j (:,k)}$$, this implies we can
-compute N columns of M is $$\mathcal{O}(N(J(m+mN)) + J(Nm + m^2))$$
-Now we use the iterative SVD method of \cite{brand2002incremental} to
-compute the top $r$ eigen values of $M$ (\textbf{Note:} since M is
-symmetric therefore either the right singular or the right
-singular vectors are the eigen vector and we don't need to compute
-both. For sake of speed it would be useful to not compute the right
-singular vectors.)
-
-Now we state the method for incremental SVD (with minor tweaks over the
-original by Brand.)
-Since we 
-
-\begin{algorithm}[H]
- \KwData{this text}
- \KwResult{}
- initialization\;
- \While{not at end of this document}{
-  read current\;
-  \eIf{understand}{
-   go to next section\;
-   current section becomes this one\;
-   }{
-   go back to the beginning of current section\;
-  }
- }
- \caption{How to write algorithms}
-\end{algorithm}
-
+We have shown that SVD algorithms can be made to scale with some
+work. We believe that with more research we would be able to come up
+with more user friendly software that could do the job. 
 
 \section*{Acknowledgments}
 This material is based on research sponsored DARPA under agreement
-number FA8750-13-2-0017 (the DEFT program).
+number FA8750-13-2-0017 (the DEFT program). We were greatly helped by
+the carefully curated list of datasets created by Manaal Faruqui at \url{http://www.cs.cmu.edu/~mfaruqui/suite.html}
 
 % include your own bib file like this:
 \bibliographystyle{acl}
