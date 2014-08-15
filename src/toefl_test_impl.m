@@ -17,9 +17,9 @@ n_correct=0;
 for qst_idx=1:n_total
     i=qst_idx*5-4;
     qst_word=toefl_data{i};
-    qst_emb=get_emb(qst_word);
     ans_sim=[];
     try
+        qst_emb=get_emb(qst_word);
         for wi=1:4
             ans_word=toefl_data{i+wi};
             ans_sim(wi)=sum(qst_emb.*get_emb(ans_word));

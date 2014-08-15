@@ -1,15 +1,5 @@
-global G;
-global bvgn_embedding;
-global dimension_after_cca;
-global wordnet_test_filename;
-global ppdb_paraphrase_rating_filename;
-global word;
-tic;
-golden_paraphrase_map=create_golden_paraphrase_map(...
-    wordnet_test_filename,word);
-ppdb_paraphrase_rating=create_ppdb_paraphrase_rating(...
-    ppdb_paraphrase_rating_filename,word);
-fprintf(1, 'time taken to create gold standards = %f seconds\n', toc);
+function bitext_true_extrinsic_test(G, bvgn_embedding, dimension_after_cca, ...
+                               word)
 bvgn_embedding=normalize_embedding(bvgn_embedding);
 G=normalize_embedding(G);
 
@@ -17,12 +7,10 @@ G=normalize_embedding(G);
     G, bvgn_embedding, dimension_after_cca);
 
 rank_cell_orig=conduct_extrinsic_test_impl(...
-    bvgn_embedding, golden_paraphrase_map, ...
-    ppdb_paraphrase_rating,'original embedding', word);
+    bvgn_embedding,'original embedding', word);
 
 rank_cell_orig=conduct_extrinsic_test_impl(...
-    G, golden_paraphrase_map,...
-    ppdb_paraphrase_rating, 'G', word);
+    G, 'G', word);
 
 get_mu = @(M) repmat(mean(M), size(M,1),1)
 mean_center = @(M) M-get_mu(M);
@@ -30,12 +18,10 @@ U = normalize_embedding(mean_center(bvgn_embedding)*Wy);
 V = normalize_embedding(mean_center(G)*Wx);
 
 rank_cell_cca_U=conduct_extrinsic_test_impl(...
-    U, golden_paraphrase_map, ...
-    ppdb_paraphrase_rating, 'U', word);
+    U, 'U', word);
 
 rank_cell_cca_V=conduct_extrinsic_test_impl(...
-    V, golden_paraphrase_map, ...
-    ppdb_paraphrase_rating, 'V', word);
+    V, 'V', word);
 
 assert(length(rank_cell_orig)==length(rank_cell_cca_U));
 for i=1:length(rank_cell_orig)

@@ -13,7 +13,7 @@ for i,e in enumerate(open(en_word_filename, "rb")):
     en_word[e.strip()]=i
 for i,e in enumerate(open(fr_word_filename)):
     fr_word[e.strip().split("\t")[0]]=i
-am_shape=(len(en_word), len(fr_word))
+
 idx_en_list=[]
 idx_fr_list=[]
 gc.disable()
@@ -50,7 +50,7 @@ for i,row in enumerate(open(alignment_filename, "rb")):
 d=ones((len(idx_en_list),))
 sparse_d=(d, (idx_en_list, idx_fr_list))
 try:
-    align_mat=sparse(sparse_d, shape=am_shape)
+    align_mat=sparse(sparse_d, shape=(len(en_word), len(fr_word)))
     savemat(out_mat_filename, dict(align_mat=align_mat))
 except:
     import pdb; pdb.set_trace()
