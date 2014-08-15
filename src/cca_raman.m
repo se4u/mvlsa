@@ -48,7 +48,7 @@ end
 % --- Calculate covariance matrices ---
 z=[X;Y];
 C=cov(z.');
-C=(C+C')/2;                  % WHY ??? cov is guranteed symmetric.
+C=(C+C')/2;
 Cxx=C(1:p,1:p)+regX*eye(p);
 Cxy=C(1:p,p+1:p+q);
 Cyx=Cxy';
@@ -61,7 +61,7 @@ if(emsg==0)
     Rxx=Rxx';
     invRxx=inv(Rxx);
     A=invRxx*Cxy*invCyy*Cyx*invRxx'; % Symmetric matrix
-    A=(A+A')/2;                      % Symmetrize A  %% Again Guaranteed Symmetric ??? WHY
+    A=(A+A')/2;                      % Symmetrize A  
     [V,r]=eig(A);                    % Basis in X
     V=invRxx'*V;                     % Map back through Rxx
 else

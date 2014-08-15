@@ -4,11 +4,13 @@ function [G, S_tilde, sort_idx] = se_gcca(S, B, r, b, svd_reg_seq)
 % r is the number of gcca components we want
 % b is the step size from 1 to N
 % svd_reg_seq is the regularization to apply to each component.
-J = length(S);
-N = size(B{1}, 1);
+J = length(S); % This is the number of sources of data. S is a cell
+N = size(B{1}, 1); % This is the number of rows. The number of
+                   % types whose cooccurence statistics we have gathered
 assert(length(svd_reg_seq)==J && length(B)==J); 
 assert(all(arrayfun(@(i) size(B{i}, 1), 1:J)==N));
-assert(length(S{1})==size(B{1}, 2));
+assert(length(S{1})==size(B{1}, 2)); % This is the number of
+                                     % singular vectors that data has.
 ovguard = @(l, b) min(l+b-1, N);
 for i=1:J
     if size(S{i}, 1)~=1
@@ -26,9 +28,8 @@ S_tilde=zeros(1, r);
 
 tic; 
 for l=1:b:N
-    column_norm(l:ovguard(l, b))=sum(...
-        get_columns(S, B, l:ovguard(l, b), svd_reg_seq).^2, ...
-        1);
+    column_norm(l:ovguard(l, b))=...
+        sum(get_columns(S, B, l:ovguard(l, b), svd_reg_seq).^2, 1);
 end
 [~, sort_idx]=sort(column_norm, 'descend');
 assert(size(sort_idx,1)==1);

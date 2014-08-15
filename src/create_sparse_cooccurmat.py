@@ -1,9 +1,9 @@
 import sys
 # This file is used to map words to numeric indexes.
-en_word_filename=sys.argv[1]
-
+context_window_size=int(sys.argv[1]) # This is the context window size on one side. The actualy window is 3 if this number is 1.
+en_word_filename=sys.argv[2]
 # This file contains all the bitext data. But only the english portion of those is used.
-alignment_filenames=sys.argv[2:]
+alignment_filenames=sys.argv[3:]
 en_word={}
 en_word["<BOS>"]=-1
 en_word["<EOS>"]=-2
@@ -20,12 +20,17 @@ for c_filename in alignment_filenames:
             print >>sys.stderr, "COULD NOT SPLIT", row
             continue
         en=["<BOS>"]+en.strip().split(" ")+["<EOS>"]
-        for i in range(1,len(en)-1):
-            try:
-                arr=[str(en_word[en[e]]) for e in [i-1, i, i+1]]
-                sys.stdout.write(" ".join(arr))
-                sys.stdout.write("\n")
-            except:
-                print >>sys.stderr, "COULD NOT PROCESS", en[i-1], en[i], en[i+1]
-                continue
+        i=context_window_size
+        while i < len(en)-context_window_size:
+            arr=[]
+            for e in range(i-context_window_size,i+context_window_size+1):
+                try:
+                    arr.append(str(en_word[en[e]]))
+                except:
+                    print >>sys.stderr, "Error: ", en[e]
+                    i=e+1+context_window_size
+                    break
+            sys.stdout.write(" ".join(arr))
+            sys.stdout.write("\n")
+            
 
