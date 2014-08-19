@@ -1,18 +1,22 @@
 import sys
 file_name=sys.argv[1]
-col_names={"bvgnFull_extrinsic_test":["bvgnFull"],
-           "bitext_extrinsic_test_300_7000_1e-8_logCount.300":["O", "G", "U", "V"],
-           "monotext_extrinsic_test_v2_gcca_run_sans_mu_300_7000_1e-8_logCount":["O", "G", "U", "V"],
-           "fullgcca_extrinsic_test_v3_gcca_run_sans_mu_300_1000_1e-8_logCount":["O", "G", "U", "V"],
-           "other_extrinsic_test_glove.42B.300d":["glove42"],
-           "other_extrinsic_test_glove.6B.300d":["glove6"]}[file_name]
-
+def get_col_name(file_name):
+    if file_name == "bvgnFull_extrinsic_test":
+        col_name=["bvgnFull"]
+    elif any(file_name.startswith(e) for e in ["bitext_extrinsic_test", "monotext_extrinsic_test", "fullgcca_extrinsic_test"]):
+        col_name=["O", "G", "U", "V"]
+    elif file_name=="other_extrinsic_test_glove.6B.300d":
+        col_name=["glove6"]
+    elif file_name=="other_extrinsic_test_glove.42B.300d":
+        col_name=["glove42"]
+    return col_name
+col_name=get_col_name(file_name)
 row_header=[]
 row_cnt=0
 data={}
 for i,row in enumerate(sys.stdin):
     row=[e.strip() for e in row.strip().split("\t")]
-    if row[1]==col_names[0]:
+    if row[1]==col_name[0]:
         row_header.append(row[0])
         row_cnt+=1
     else:
@@ -21,8 +25,8 @@ for i,row in enumerate(sys.stdin):
 
 # TODO: Pretty insert tabs on the basis of maximum length of
 # row_header that appear on the left hand side. 
-print "\t\t"+"\t".join(col_names)
+print "\t\t"+"\t".join(col_name)
 for r in row_header:
-    print "\t".join([r, "\t"]+[data[(r, c)] for c in col_names])
+    print "\t".join([r, "\t"]+[data[(r, c)] for c in col_name])
     
         
