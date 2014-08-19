@@ -1,3 +1,4 @@
+% se means space efficient
 function [G, S_tilde, sort_idx] = se_gcca(S, B, r, b, svd_reg_seq)
 % S is a cell with singular values
 % B contains associated singular vectors
