@@ -7,3 +7,6 @@ tmp_cooccur_en
 tex/mvppdb.aux
 tex/mvppdb.log
 tex/mvppdb.pdf
+submit_grid_stub.sh.[oep]*
+v5_indisvd*
+tmp*

@@ -1,14 +1,14 @@
 import sys
 file_name=sys.argv[1]
 def get_col_name(file_name):
-    if file_name == "bvgnFull_extrinsic_test":
-        col_name=["bvgnFull"]
-    elif any(file_name.startswith(e) for e in ["bitext_extrinsic_test", "monotext_extrinsic_test", "fullgcca_extrinsic_test"]):
+    if any(file_name.startswith(e) for e in ["bitext_extrinsic_test", "monotext_extrinsic_test", "fullgcca_extrinsic_test"]):
         col_name=["O", "G", "U", "V"]
     elif file_name=="other_extrinsic_test_glove.6B.300d":
         col_name=["glove6"]
     elif file_name=="other_extrinsic_test_glove.42B.300d":
         col_name=["glove42"]
+    elif file_name.endswith("_extrinsic_test"):
+        col_name=[file_name[0:-15]]
     return col_name
 col_name=get_col_name(file_name)
 row_header=[]

@@ -1,4 +1,8 @@
-function rank_cell=conduct_extrinsic_test_impl(U, id, word)
+function rank_cell=conduct_extrinsic_test_impl(U, id, word, ...
+                                               domikolov)
+if nargin < 4
+    domikolov=1;
+end
 word_map=containers.Map(word, 1:length(word));
 
 get_emb=@(wrd) U(word_map(lower(wrd)), :);
@@ -38,7 +42,7 @@ fprintf(1, 'The TOEFL dataset over %s took %f minutes\n', id, toc/60);
 % 5. Find the score on SCWS, RW, MEN, MC_30, EN_MTURK_287,
 % EN_RG_65, EN_WS_353_(ALL/REL/SIM) datasets
 for dataset={ 'SCWS', 'RW', 'MEN', 'EN_MC_30', 'EN_MTURK_287', 'EN_RG_65', ...
-             'EN_WS_353_ALL', 'EN_WS_353_REL', 'EN_WS_353_SIM' }
+             'EN_WS_353_ALL', 'EN_WS_353_REL', 'EN_WS_353_SIM', 'SIMLEX' }
     dataset_fn=[dataset{1}, '_FILENAME'];
     disp(['Now working on ', dataset_fn]);
     [n_total, n_attempt, pred_simil, true_simil]=scws_test_impl(...
@@ -54,9 +58,9 @@ for dataset={ 'SCWS', 'RW', 'MEN', 'EN_MC_30', 'EN_MTURK_287', 'EN_RG_65', ...
     fprintf(1, 'The %s dataset over %s took %f minutes\n', dataset{1}, ...
             id, toc/60);
 end
-
 % 6. Find score on TOM_ICLR13_SEM and TOM_ICLR_SYN dataset
-for dataset = {'EN_TOM_ICLR13_SYN', 'EN_TOM_ICLR13_SEM'}
+if domikolov
+    for dataset = {'EN_TOM_ICLR13_SYN', 'EN_TOM_ICLR13_SEM'}
     tic;
     dataset_fn=[dataset{1}, '_FILENAME'];
     disp(['Now working on ', dataset_fn]);
@@ -69,8 +73,8 @@ for dataset = {'EN_TOM_ICLR13_SYN', 'EN_TOM_ICLR13_SEM'}
             n_total);
     fprintf(1, 'The %s dataset over %s took %f minutes\n', dataset{1}, ...
             id, toc/60);
+    end
 end
-
 % 7. Use wordnet test
 tic;
 golden_paraphrase_map=create_golden_paraphrase_map(...
