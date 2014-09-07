@@ -49,7 +49,7 @@ Vector space representations of words which assign
  SVD and Neural Networks make use of the co-occurence information
  present in text and are commonly evaluated on tasks
  like word similarity prediction, word analogy prediction and
- NER~\cite{dhillon2011multi,dhillon2012two,mikolov2013efficient,mikolov2013distributed,collobert2013word,zou2013bilingual,faruqui2014improving,pennington2014glove,bansal2014tailoring,levy2014dependency,levy2014linguistic}.
+ NER~\cite{dhillon2011multi,dhillon2012two,mikolov2013efficient,mikolov2013distributed,collobert2013word,zou2013bilingual,faruqui2014improving,pennington2014glove,bansal2014tailoring,levy2014dependency,levy2014linguistic,dhillon2011multi,dhillon2012two}.
 
 In this paper we pose the problem of learning representations as the
 problem of estimating latent factors/sufficient statistics that can explain the
@@ -76,6 +76,7 @@ than the components.\footnote{\url{http://lebret.ch/embeddings/200/words.txt}}
   \footnote{\url{http://metaoptimize.com/projects/wordreprs/}}
   \footnote{\url{http://ttic.uchicago.edu/~mbansal/data/syntacticEmbeddings.zip}}
   \footnote{\url{http://www.cs.cmu.edu/~mfaruqui/soft.html}}
+  \footnote{\url{http://www.cis.upenn.edu/~ungar/eigenwords/}}
 
 
 Regularized Generalized CCA is a well-studied statistical method which
@@ -97,7 +98,7 @@ different frameworks like word2vec, HPCA, ivLBL, Glove etc. into a single repres
 
 In Section~\ref{sec:gcca} we present GCCA and our notation. In
 Section\ref{sec:rgcca} we present regularized GCCA 
- and how we compute it. Then we present data and experiments and results.
+ and an efficient way to compute it. Then we present data and experiments and results.
 
 \section{Background}
 \label{sec:gcca}
@@ -109,12 +110,12 @@ Section\ref{sec:rgcca} we present regularized GCCA
 %% and orthogonal to other directions.
 
 %% For example, let's say we want to find subspaces of order 1
-%% (i.e. single directions) a and b such that $a^TX$ and $b^TY$ are
+%% (i.e. single directions) a and b such that $a^\topX$ and $b^\topY$ are
 %% maximally correlated. Here X and Y are vector valued random variables
 %% and correlation between two random variables X and Y with zero mean is defined as,
-%% $$O = \frac{E[X^TY]}{\sqrt{E[X^TX] \times E[Y^TY]}}$$ By substituting this
-%% formula to maximize correlation between $a^TX$ and $b^TY$ we get the objective as
-%% $$\arg_{a,b}\max \frac{E[a^TX \times b^TY]}{\sqrt{E[(a^TX)^2] \times E[(a^TY)^2]}}$$
+%% $$O = \frac{E[X^\topY]}{\sqrt{E[X^\topX] \times E[Y^\topY]}}$$ By substituting this
+%% formula to maximize correlation between $a^\topX$ and $b^\topY$ we get the objective as
+%% $$\arg_{a,b}\max \frac{E[a^\topX \times b^\topY]}{\sqrt{E[(a^\topX)^2] \times E[(a^\topY)^2]}}$$
 %% This problem of finding  a and b which maximize this objective is a
 %% sub-problem of the generalized eigen value problem. Refer to
 %% \cite{borga2001canonical} for more details.
@@ -123,7 +124,7 @@ Section\ref{sec:rgcca} we present regularized GCCA
 %% vectors when their magnitude are fixed is the same as maximizing their
 %% correlation. For example, consider two vector valued random variables X and Y. The
 %% expected euclidean distance between X and Y is
-%% $$D = E[(X-Y)^T(X-Y)] =  E[X^TX + Y^TY - 2 * X^TY] $$
+%% $$D = E[(X-Y)^\top(X-Y)] =  E[X^\topX + Y^\topY - 2 * X^\topY] $$
 %% This is an informal way to give some intuition of how CCA is related
 %% to the problem of Least Squares Regression. See \cite{hastie2009elements} for a detailed
 %% explanation of the relation between CCA and problem of Least Squares.
@@ -140,142 +141,176 @@ Generalized CCA
 extension of CCA to the case when we have data from more than two
 vector valued random variables. 
 
-Let $X_j \in \mathbb{R}^{N\times d_j}$ be the matrix containing cooccurence statistics from view
+Let $X_j \in \mathbb{R}^{N\times d_j}$ be the mean centered matrices containing cooccurence statistics from view
 $j$ where the rows represent words in the vocabulary and columns
 represent the contexts. Therefore $N$ remains the
-same across views but the $d_j$ varies.
+same across views but  $d_j$ varies.
 We use the method of \cite{carroll1968generalization} to find the
-so called group configuration matrix $G \in \mathbb{R}^{r\times N}$, which is also our latent
-representation, and linear transformation matrices $U_j$ to solve
+ group configuration matrix $G \in \mathbb{R}^{N\times r}$, which is
+ also our vector representation, and linear transformation matrices
+ $U_j$ to solve 
 \begin{equation}
   \label{eq:gcca}
 \begin{split}
-  \operatorname*{arg\,min}_G & \sum_{j=1}^J ||G - U_j^\top X_j^{-1}||^2_F \\
-  \text{such that } & G G^\top = I 
+  \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} G - X_jU_j^\top \end{Vmatrix}^2_F \\
+  \text{such that } & G^\top G = I
 \end{split}
 \end{equation}
 The solution for Equation~\ref{eq:gcca} is given by the following \cite{carroll1968generalization}.
 
 \begin{eqnarray}
-M &=& \sum_{j=1}^J X_j(X_j^\top X_j)^{-1}X_j^\top\\
-M G^\top &=& G^\top \Lambda\\
-U_j &=& \left(X_j^\top X_j\right)^{-1} X_j^\top G^\top
+P_j &=& X_j(X_j^\top X_j)^{-1}X_j^\top \\
+M &=& \sum_{j=1}^J P_j\\
+M G &=& G \Lambda\\
+U_j &=& \left(X_j^\top X_j\right)^{-1} X_j^\top G
 \end{eqnarray}
-We can see that $M$ is just the sum of $J$ projection matrices and
-$U_j$ are the product of $G$ and view specific projection matrices.
-We note that since projection matrices themselves have the property
-that their eigenvalues are either 0 or 1 that implies
-that eigenvalues of sum of J matrices must lie between 0 and J.
+We can see that $P_j$ is a projection matrix. Since eigenvalues of
+projection matrices are either 0 or 1 that implies 
+that eigenvalues of sum of M must lie between 0 and J.
 Also a projection matrices is dense even when the original data matrix
 is sparse. This leads us to the problem of finding the SVD of large
 dense matrices which do not have a large absolute difference between
 the highest and lowest eigenvalues.
 
-\subsection{Regularized GCCA}
+\section{Computing Regularized GCCA}
+\label{sec:rgcca}
 Following the notation of \cite{hastie2009elements} we call $X^\top X$
 the scatter matrix. To perform regularized GCCA we add $r_jI$ to each
-scatter matrix $X_J X_j^\top$ before doing the inversion. Typically
-$r_j$ is chosen to be very small, e.g. 1e-8.
+scatter matrix $X_j X_j^\top$ before doing the inversion. Typically
+$r_j$ is chosen to be very small e.g. 1e-8.
 \begin{eqnarray}
-M &=& \sum_{j=1}^J X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top \\
-U_j &=& (X_j^\top X_j+r_jI)^{-1} X_jG^\top
+  \widetilde{P}_{j} &=& X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top\\
+  M &=& \sum_{j=1}^J \widetilde{P}_{j} \\
+  MG &=& G\Lambda \\
+  U_j &=& (X_j^\top X_j+r_jI)^{-1} X_j^\top G
 \end{eqnarray}
 
 
-Let $$T_{j} = X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top$$
-And $$ A_{j} S_{j} B^T_{j} \xleftarrow{SVD_{partial}} X_j$$.
-Note that we compute only a partial SVD and keep the top $m$ eigen
-vectors since $X_j$ is a large sparse matrix and we can not store its
-complete SVD in memory.
-Where $S_j$ is a diagonal matrix with $m$ non-zero entries, 
+Let $$ A_{j} S_{j} B^\top_{j} \xleftarrow{SVD_{m}} X_j$$
+Note that $SVD_m$ denotes a partial SVD where we keep only the top $m$ eigen
+vectors of $X_j$. This is required since $X_j$ is a large sparse
+matrix and we can not store its complete SVD in memory.
+Here $S_j$ is a rectangular diagonal matrix with $m$ non-zero entries, 
 and $A_j$ and $B_j$ are orthonormal, unitary matrices.
-Then $$T_j = B_j S_j^T(r_j I + S_j S_J^T)^{-1}S_j B_J^T$$ which
-implies that 
+Then $$\widetilde{P}_j = A_j S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j A_j^\top$$.
+Let $T_j \in \mathbb{R}^{m \times m}$ be a diagonal matrix such that
+$$T_jT_j^\top = S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j $$ then
+$$\widetilde{P}_j = A_j T_j T_j^\top A_j^\top$$
+Let
+$$\tilde{M} = \left[ A_1T_1 \ldots A_JT_J \right] \in \mathbb{R}^{N
+  \times mJ}$$
+Then 
+$$M = \tilde{M} \tilde{M}^\top$$
+Perform a QR decomposition of $\tilde{M}$ to get
+$$QR \xleftarrow{QR} \tilde{M}$$ where $$R \in \mathbb{R}^{mJ \times mJ}$$
+ then perform eigen decomposition of $RR^\top$ such that
+$$ U S U^\top \xleftarrow{eig} RR^\top$$
+to get
+$$M = Q U S U^\top Q^\top$$
+ which implies that
+ $$G = QU$$
 
-%% (\textbf{Note:} We could use
-%% more sophisticated methods like incrementally computing singular
-%% values till we achieve some criteria, but there isn't a simple way to
-%% judge whether we have reduced the reconstruction error. We can't
-%% actually compute errors since they would create a dense N by N
-%% matrix. We could look at the pattern of singular values to judge
-%% whether we should provision more.)
+\subsection{Computing SVD of mean centered $X_j$}
+Since $X_j$ are large sparse matrices therefore we cannot explicitly
+substract the mean from them. In order to compute the SVD of mean
+centered matrices $X_j$ we first compute the partial SVD of uncentered
+matrices $\tilde{X}_j$ and then update it using the method of
+\cite{brand2006fast}.
 
-$$T_j = \sum_{i=1}^m \frac{s_{ji}^2}{s_{ji}^2+r_j} B_{j(:,i)}B_{j(:,i)}^T$$
-Where $s_{ji}$ is the ith diagonal element of $S_j$, $B_{j(:,i)}$ is the
-ith column of $B_{j}$
-Let $r'_j = diag(R'_j)$, the row vector composed of diagonal elements
-of $R'_j$. Then the kth column of $T_j$,
-$$T_{j (:,k)} = B_j (r'_j .\times B_{j(k,:)})^T$$
-where $.\times$ denotes element wise multiplication.
-Since $$M_{(:,k)} = \sum_{j=1}^J T_{j (:,k)}$$, this implies we can
-compute N columns of M is $$\mathcal{O}(N(J(m+mN)) + J(Nm + m^2))$$
-Now we use the iterative SVD method of \cite{brand2002incremental} to
-compute the top $r$ eigen values of $M$
+%% $$T_j = \sum_{i=1}^m \frac{s_{ji}^2}{s_{ji}^2+r_j} B_{j(:,i)}B_{j(:,i)}^\top$$
+%% Where $s_{ji}$ is the ith diagonal element of $S_j$, $B_{j(:,i)}$ is the
+%% ith column of $B_{j}$
+%% Let $r'_j = diag(R'_j)$, the row vector composed of diagonal elements
+%% of $R'_j$. Then the kth column of $T_j$,
+%% $$T_{j (:,k)} = B_j (r'_j .\times B_{j(k,:)})^\top$$
+%% where $.\times$ denotes element wise multiplication.
+%% Since $$M_{(:,k)} = \sum_{j=1}^J T_{j (:,k)}$$, this implies we can
+%% compute N columns of M is $$\mathcal{O}(N(J(m+mN)) + J(Nm + m^2))$$
+%% Now we use the iterative SVD method of \cite{brand2002incremental} to
+%% compute the top $r$ eigen values of $M$
 
-We note that since $M$ is
-symmetric therefore either of the left or the right
-singular vectors are eigen vector and we don't need to compute
-both. For sake of speed we do not compute the right
-singular vectors.
+%% We note that since $M$ is
+%% symmetric therefore either of the left or the right
+%% singular vectors are eigen vector and we don't need to compute
+%% both. For sake of speed we do not compute the right
+%% singular vectors.
 
-\section{Finding SVD for performing GCCA}
-\label{sec:rgcca}
-Now we state the method for incremental SVD which is the same as the
-original by Brand with one minor trick. The trick is that we
-precompute the norm of 
-all the columns of the matrix once before finding the SVD and then
-arrange the columns and rows in descending order so that the matrix
-remains symmetric and the increamental SVD algorithm is initialized
-with the columns having highest norm.
+%% \section{Finding SVD for performing GCCA}
+%% Now we state the method for incremental SVD which is the same as the
+%% original by Brand with one minor trick. The trick is that we
+%% precompute the norm of 
+%% all the columns of the matrix once before finding the SVD and then
+%% arrange the columns and rows in descending order so that the matrix
+%% remains symmetric and the increamental SVD algorithm is initialized
+%% with the columns having highest norm.
 
-Remember that $j$ indexes over language pairs $j \in [1, J]$ and $ X_j \in \mathbb{R}^{N\times d_j}$.
-Since we cannot store $M$ in memory therefore, we take one pass over
-the$M$ and calculate $b$ number of columns from left to right at each
-step. At each step we compute an approximation of the SVD and keep
-updating it. See Algorithm~\ref{alg:incsvd} for details.
+%% Remember that $j$ indexes over language pairs $j \in [1, J]$ and $ X_j \in \mathbb{R}^{N\times d_j}$.
+%% Since we cannot store $M$ in memory therefore, we take one pass over
+%% the$M$ and calculate $b$ number of columns from left to right at each
+%% step. At each step we compute an approximation of the SVD and keep
+%% updating it. See Algorithm~\ref{alg:incsvd} for details.
 
-\begin{algorithm}[htp]
-  \label{alg:incsvd}
- \KwData{C = A matrix of columns\;
-   b = Number of columns in C\;
-   r = the rank that we want to estimate upto\;
-   $\widetilde{U}, \widetilde{S}$ = The current rank r estimates of
-   the singular vectors and the singular values.
- }
- %\KwResult{}
- \textbf{Algorithm}\;
- C = M[:, 1:b]\;
- [$\widetilde{U}, \widetilde{S}$]=SVD(C, r)\;
- \For{l = b:b:N}{
-   C = M[:, l+1:l+b]\;
-   [$\widetilde{U}, \widetilde{S}$]=incrSVD(C, $\widetilde{U},
-   \widetilde{S}$, r)\;
- }
- \textbf{function incrSVD}(C, $\widetilde{U}, \widetilde{S}$, r)
+%% \begin{algorithm}[htp]
+%%   \label{alg:incsvd}
+%%  \KwData{C = A matrix of columns\;
+%%    b = Number of columns in C\;
+%%    r = the rank that we want to estimate upto\;
+%%    $\widetilde{U}, \widetilde{S}$ = The current rank r estimates of
+%%    the singular vectors and the singular values.
+%%  }
+%%  %\KwResult{}
+%%  \textbf{Algorithm}\;
+%%  C = M[:, 1:b]\;
+%%  [$\widetilde{U}, \widetilde{S}$]=SVD(C, r)\;
+%%  \For{l = b:b:N}{
+%%    C = M[:, l+1:l+b]\;
+%%    [$\widetilde{U}, \widetilde{S}$]=incrSVD(C, $\widetilde{U},
+%%    \widetilde{S}$, r)\;
+%%  }
+%%  \textbf{function incrSVD}(C, $\widetilde{U}, \widetilde{S}$, r)
  
  
- L = $\widetilde{U}^TC$ \% Project C onto U \;
- H = C - $\widetilde{U}$L\;
- Q = $\begin{bmatrix} 
-   \widetilde{S} & L\\
-   0 & W \\
-   \end{bmatrix}$ \;
- [$U', S', V'$]=SVD(Q, b)\;
- $\widetilde{U'}$ = $[\widetilde{U} J][U'(:, 1:r)]$\;
- $\widetilde{S'}$ = S'[1:r]\;
- return $[\widetilde{U'}, \widetilde{S'}]$\;
- \caption{Incremental SVD}
-\end{algorithm}
+%%  L = $\widetilde{U}^\top C$ \% Project C onto U \;
+%%  H = C - $\widetilde{U}$L\;
+%%  Q = $\begin{bmatrix} 
+%%    \widetilde{S} & L\\
+%%    0 & W \\
+%%    \end{bmatrix}$ \;
+%%  [$U', S', V'$]=SVD(Q, b)\;
+%%  $\widetilde{U'}$ = $[\widetilde{U} J][U'(:, 1:r)]$\;
+%%  $\widetilde{S'}$ = S'[1:r]\;
+%%  return $[\widetilde{U'}, \widetilde{S'}]$\;
+%%  \caption{Incremental SVD}
+%% \end{algorithm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% DONE TILL HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Experiments}
+\textbf{Training Data}: We trained our embeddings using cooccurence
+statistics from a single large bitext corpus that was made by
+concatenating Spanish, Czech, French and German portions of the
+Europarl v7 bitext corpus \cite{koehn2005europarl}, the $10^9$
+French-English corpus \cite{callisonburch2009findings}, The Czech,
+German, Spanish and French portions of the News Commentary
+\cite{koehn2007experiments}, the United Nations French and Spanish
+bitext corpora \cite{eisele2010multiun} and the Chinese and Arabic
+Newswire corpora used for the GALE machine translation
+project.\footnote{{http://projects.ldc.upenn.edu/gale/data/Catalog.html}}. We
+used the berkeley aligner to word align the parallel corpora and then
+created cooccurence matrices with rows as english words and columns as
+the foreign language word that the english word was aligned
+to. Finally we used a total of 6 different languages (French, German,
+Czech, Arabic, Spanish and Chinese). The amount of data varied from
+language to language as shown in Table~\ref{tab:dataperlang}. We also
+used the English portion of the bitext corpora to gather cooccurence
+statistics with a symmetric window of size 3. Here the context was the
+bigram composed of the left and right words that a word
+appeared with.
 
+\textbf{:NOTE: 0 We note that corpus size and corpus type can make a huge
+  difference to the quality of embeddings therefore we would
+  experiment with different types and sizes of corpora as well}
 
-
-
-
-
-
-
-\section{Experiments and Results}
-We made the following decisions to experiment with the method of GCCA.
 \begin{table}[htbp]
   \centering
   \begin{tabular}{ccc}
@@ -292,35 +327,14 @@ We made the following decisions to experiment with the method of GCCA.
   \label{tab:dataperlang}
 \end{table}
 
-\textbf{Training Data}: We trained our embeddings using cooccurence
-statistics from the Spanish, Czech, French and German portions of the
-Europarl v7 bitext corpus \cite{koehn2005europarl}, the $10^9$
-French-English corpus \cite{callisonburch2009findings}, The Czech,
-German, Spanish and French portions of the News Commentary
-\cite{koehn2007experiments}, the United Nations French and Spanish
-bitext corpora \cite{eisele2010multiun} and the Chinese and Arabic
-Newswire corpora used for the GALE machine translation
-project.\footnote{{http://projects.ldc.upenn.edu/gale/data/Catalog.html}}. We
-used the berkeley aligner to word align the parallel corpora and then
-created cooccurence matrices with rows as english words and columns as
-the foreign language word that the english word was aligned
-to. Finally we used a total of 6 different languages (French, German,
-Czech, Arabic, Spanish and Chinese). The amount of data varied from
-language to language as shown in Table~\ref{tab:dataperlang}. We also
-used the English portion of the bitext corpora to gather cooccurence
-statistics with a symmetric window of size 3. Here the context was the
-bigram consisting of the left and right words that an english word
-appeared in.  
-
 \textbf{Test Data}: We evaluated the representations on the word
-analogy task presented in \cite{mikolov2013distributed} and word similarity
-datasets which have been widely used to test the linguistic
-and semantic regularity of representations. Specifically we used the following
+analogy task presented in \cite{mikolov2013distributed} and the
+following word similarity datasets: 
 MEN~\cite{bruni2012distributional},
 MTURK~\cite{Radinsky2011word},MC~\cite{miller1991contextual},
 RG~\cite{Rubenstein1965Contextual}, SCWS~\cite{Huang2012Improving},
 WS\_353~\cite{finkelstein2001placing}, WS\_353\_SEM and WS\_353\_SEM
-~\cite{aggire2009study}, RW~\cite{Luong2013morpho}. For the word
+~\cite{agirre2009study}, RW~\cite{Luong2013morpho}. For the word
 similarity tasks we calculate the Spearman and
 Pearson correlation and for the Word Analogy task we report
 accuracies. 
@@ -343,12 +357,13 @@ accuracies.
 %% \end{table}
 \textbf{Hyper parameters and Pre-processing}: Even though CCA is
 affine invariant it is still learning a linear transformation
-therefore we need to experiment with the right non linear
-preprocessing transform. We experiment with the raw cooccurence
-statistics and the log of the cooccurence statistics. Since we do not
+therefore we experiment with non linear preprocessing of the raw
+counts. \textbf{:NOTE: 1 Additionally since  we do not
 mean normalize before doing CCA therefore practically our procedure
 does not remain affine invariant therefore using cooccurence frequency
-instead of counts and tfidf, simple ll etc. might make a difference.
+instead of counts and tfidf, simple ll etc. might make a difference.}
+Apart from the identity transform we experiment with logarithmic
+transform and power transform
 Let C = Observed co-occurrence counts
 and F = Observed co-occurrence frequency
 and E =  the expected frequency of the word pair.
@@ -360,20 +375,43 @@ d. log(C)-log(F)
 Also we can try to find an appropriate power $\alpha$ to scale the
 observed counts C and F.
 
-\subsection{Representations generated}
-We are using data from multiple source and using Generalized CCA to come up with an embedding that explains all of the co-occurence data from all of the sources. 
+\textbf{Representations generated}
 
+\textbf{:NOTE: 2 This list describes the types of
+  embeddings generated in later tables.}
 \begin{itemize}[noitemsep]
-  \item glove42\_eval\_by\_push
-\item glove6\_eval\_by\_push
-\item Mikolov\_Full\_Vocab
-\item Mikolov\_Pruned
-\item G\_bitext : The embeddings created by using bitext data alone and performing GCCA on it.
-\item U\_bitext : The embeddings created by performing CCA between G\_bitext embeddings and Mikov\_Pruned embeddings
-\item V\_bitext
-\item G\_bi+mono : The embeddings created by using bitext data with monolingual co-occurence statistics
-\item U\_bi+mono : The embeddings created by performing CCA between 
-\item V\_bi+mono
+\item glove6\_eval\_by\_push : Glove embeddings generated from 6B
+  tokens and their evaluation scores as generated by us by 15 August
+  2014. 
+\item glove42\_eval\_by\_push : Glove embeddings generated from 42B
+  tokens and their evaluation scores as generated by us by 15 August
+  2014. \textbf{:NOTE: 3 The difference from numbers in square brackets points to a
+  bug/misunderstanding in evaluation.}
+\item Mikolov\_Full\_Vocab : word2vec embeddings generated from 100B token
+  google news corpus.
+\item Mikolov\_Pruned : word2vec embeddings which were pruned down by
+  types of words (the rows) by interesecting with the vocabulary
+  present in the bitext data. This was done so that I could perform
+  GCCA. 
+\item G\_bitext : The embeddings created by using bitext data alone
+  and performing GCCA on it. 
+\item U\_bitext : The embeddings created by performing CCA between
+  G\_bitext embeddings and Mikolov\_Pruned embeddings and then
+  projecting the Mikolov\_Pruned embeddings by using the CCA
+  projection matrices. 
+\item V\_bitext : The embeddings created by performing CCA between
+  G\_bitext embeddings and Mikolov\_Pruned embeddings and then
+  projecting the G\_bitext embeddings by using the projection matrices
+  created after CCA. 
+\item G\_bi+mono : The embeddings created by using bitext data with
+  monolingual co-occurence statistics
+\item U\_bi+mono : (Same pattern as U\_bitext and G\_bitext)
+\item V\_bi+mono : (Same pattern as V\_bitext and G\_bitext)
+\item G\_bi+mono+mikolov : Take GCCA over bitext data and monolingual
+  text data and mikolov embeddings and then create
+  embeddings. \textbf{:NOTE: 4 SINCE WE ARE TAKING GCCA OVER BITEXT DATA AND
+    MONOLINGUAL TEXT DATA. IT WOULD BE GREAT IF THE NUMBERS IN
+    THIS COLUMN ARE MORE THAN THE NUMBERS IN MIKOLOV\_PRUNED!!!} 
 \end{itemize}
 
 
@@ -464,36 +502,39 @@ EN\_TOM\_ICLR13\_SEM (3662 out of 8869)  &0.0046       &         0.1097 &      0
 
 
 \section{Previous Work}
-Multi view learning and CCA have been applied previously in the following papers.
-The following two papers were good overviews for work done before 2008.
-a. Kakade, S. M. and Foster, D. P. (2007).  Multi-view regression via canonical correlation analysis, Learning Theory
-b. Ganchev, K., Graca, J., Blitzer, J., and Taskar, B. (2008).  Multi-View Learning over Structured and Non-Identical Outputs, Uncertainty in AI
-The multi-view learning approaches were algorithms like "Co-Training" (Blum and Mitchell, 1998, 3200 citations), "CoBoosting" (Collins and Singer, 1999, 801 citations), and "2 view perceptrons" (Brefeld et al 2005). The applications considered in these papers were NER(detecting the type of an named entity) and Web Page Type detection(faculty page, versus student page) but they were general techniques for labeling sequences. These approaches forced predictors trained on individual views to agree with each other. 
+CCA is a specific approach to multi view learning. The general task of
+multi view learning is to leverage multiple data sources to expedite
+learning and improve performance in tasks. The earliest multi view
+learning approaches were algorithms like
+"Co-Training"~\cite{blum1998combining},
+"CoBoosting"~\cite{collins1999unsupervised} and "2 view
+perceptrons"~\cite{brefeld2006efficient}. The applications considered
+in these papers were NER and Web Page Type detection but they were
+general techniques for labeling sequences. These approaches forced
+predictors trained on individual views to agree with each other.  
+The following two papers were good overviews of application of CCA for
+multi view learning: \cite{kakade2007multi},\cite{ganchevuai08}.
 
-Later though after the paper, A probabilistic interpretation of canonical correlation analysis, Bach, F. R. and Jordan, M. I. (2005). 
+After the publication of the paper \cite{bach2005probabilistic} which gave a probabilistic
+interpretation of CCA at least the groups of Dan Klein and Ben Taskar
+applied that view of CCA and multi view learning to tasks of Parsing,
+MT, NER \cite{ganchevuai08,Burkett2008Two,burkett2010learning,haghighi2008learning}.
+%% Amongst these 4 papers there was considerable variation in the
+%% objective, whether it used Bhattacharya Distance or Hellinger, does
+%% variational inference or uses EM or a directed graphical model
+%% versus undirected or used log linear models. 
 
-
-Dan Klein and Ben Taskar's group applied that view of CCA and multi view learning to tasks of Parsing, MT, NER. 
-- Ganchev, K., Graca, J., Blitzer, J., and Taskar, B. (2008).  Multi-View Learning over Structured and Non-Identical Outputs, Uncertainty in Artificial Intelligence
-- Burkett, D. and Klein, D. (2008).  Two Languages Are Better Than One (for Syntactic Parsing), EMNLP
-- Haghighi, A., Liang, P., Berg-Kirkpatrick, T., and Klein, D. (2008).  Learning Bilingual Lexicons from Monolingual Corpora., 2008, ACL
-- Burkett, D., Petrov, S., Blitzer, J., and Klein, D. (2010).  Learning better monolingual models with unannotated bilingual text, ACL
-
-3. Mengqiu Wang's dissertation about Bilingual embeddings, Bilingual and Cross-lingual Learning of Sequence Models with Bitext, PhD Dissertation Thesis, 2014
-
-The "Learning Bilingual Lexicons"  paper had a very similar aim to ours. They applied CCA to 2 types of features
-a. Character 3-grams inside words 
-b. Contextual features (they missed unigram frequency features)
-But amongst the 4 papers there is considerable variation in the how the objective is set up ? (Whether it uses Bhattacharya Distance or Hellinger, does variational inference or uses EM or a directed graphical model versus undirected or used log linear models.
-
-Representations have been learnt using CCA in Manaal's paper 
-
-Representations have been learnt using bilingual data in the following
-papers. b. Zou, W. Y., Socher, R., Cer, D., and Manning, C. D. (2013).  Bilingual Word Embeddings for Phrase-Based Machine Translation. Their approach was one great heuristic. Essentially they first learn embeddings for english. Then they use word aligned parallel corpus to create a Language-to-Language word co-occurence matrix M (Basically a table which counts which words were aligned) and then in a coordinate-ascent hill-climbing fashion first optimizes english embeddings with respect to chinese embeddings, then optimizes chinese with respect to english.
+\cite{faruqui2014improving} used CCA to learn bilingual
+representations whereas \cite{dhillon2011multi,dhillon2012two} used
+CCA as the primary method to learn vector representations. Their work
+is most closely related to ours, since our 
+work can be considered a direct generalization of theirs. 
 
 Bilingual text and monolingual text has been used to learn large
-collections of paraphrases. \cite{bannard2005paraphrasing} introduced the trick and
-then \cite{ganitkevitch2013ppdb} built upon it. The reason why these two views work is
+collections of paraphrases. \cite{bannard2005paraphrasing} introduced
+the trick and 
+then \cite{ganitkevitch2013ppdb} built upon it. The reason why these
+two views work is 
 that they complement each other. Monolingual data can't distinguish
 between antonyms but bilingual data can. And bilingual data confounds
 words that occur in the same sentence but monolingual data can
@@ -501,8 +542,12 @@ distinguish them based on their context. So these are two different
 views over the same underlying representation which we can learn by
 using CCA or other multi view learning techniques.
 
-The main point of the paper is to learn embeddings or features
-that best correlate with both the views. 
+Such bilingual data has been used before to learn
+representations. For example \cite{zou2013bilingual} used word aligned
+parallel corpus to create a Language-to-Language word co-occurence
+matrix M and then in a coordinate-ascent hill-climbing fashion first
+optimized the english embeddings with respect to chinese embeddings,
+and chinese with respect to english.
 
 \section{Future Work}
 We are not using larger monolingual datasets as well as other larger
@@ -519,12 +564,18 @@ method of finding SVD is introducing in the calculations.
 We haven't used newer methods for example Stochastic Optimization for
 PCA and PLS [TODO: Add Citation]
 
-Currently some of our results use CCA to fuse the representation learnt from GCCA and the embeddings learnt by Mikolov et. al. and the Glove embeddings.
-We would like to take GCCA over all of them directly.
+Currently some of our results use CCA to fuse the representation
+learnt from GCCA and the embeddings learnt by Mikolov et. al. and the
+Glove embeddings. We would like to take GCCA over all of them directly.
 
 We have not done Kernel CCA also.
 
-- I guess the time complexity quadratic in n because the matrices are nxn, right? In other words if you view the columns/rows as an incoming stream of vectors for incremental SVD, the dimensionality is as large as the sample size for projection matrices. In that case, we can consider incremental SVD with missing entries and process partial columns of the projection matrices. We can discuss that next week. 
+- I guess the time complexity quadratic in n because the matrices are
+nxn, right? In other words if you view the columns/rows as an incoming
+stream of vectors for incremental SVD, the dimensionality is as large
+as the sample size for projection matrices. In that case, we can
+consider incremental SVD with missing entries and process partial
+columns of the projection matrices. We can discuss that next week.  
 
 - The batch size does not have to be large for the incremental SVD to
 converge. That would be make each computation expensive. The point of
@@ -532,8 +583,14 @@ stochastic approximation is to make each computation as inexpensive as
 possible even if it is a gross approximation and be able to take many
 such steps in the same amount of runtime. In fact b=1 should be fine.
 
-Note 3: The algorithm properly requires SVD of projection matrices calculated from centered matrices. But I can't explicitly center the alignment matrices. They would become dense and I would not be able to store them or to take their SVD. so I am using non-centered matrices. I have worked out the math to get around this problem but not implemented it yet. 
-Note 4:  (The time complexity is,  $t =  (3rnb + nr^2 + nb^2 + nb + (r+b)^3)*n/b + 2 (N(J(m + mN)) + J(Nm + m^2))$;
+The algorithm properly requires SVD of projection matrices
+calculated from centered matrices. But I can't explicitly center the
+alignment matrices. They would become dense and I would not be able to
+store them or to take their SVD. so I am using non-centered
+matrices. I have worked out the math to get around this problem but
+not implemented it yet.
+
+(The time complexity is,  $t =  (3rnb + nr^2 + nb^2 + nb + (r+b)^3)*n/b + 2 (N(J(m + mN)) + J(Nm + m^2))$;
   The memory complexity is m =  n*r + n*b 
   here r is the final dimension of embeddings = 300
 n is the number of words we want embeddings for = 131,133
@@ -561,7 +618,8 @@ with more user friendly software that could do the job.
 This material is based on research sponsored DARPA under agreement
 number FA8750-13-2-0017 (the DEFT program). We were greatly helped by
 the carefully curated list of datasets created by Manaal Faruqui at \url{http://www.cs.cmu.edu/~mfaruqui/suite.html}
-
+We acknolwedge Juri Ganitkevitch for providing the aligned bitext
+corpora 
 % include your own bib file like this:
 \bibliographystyle{acl}
 \bibliography{references}
