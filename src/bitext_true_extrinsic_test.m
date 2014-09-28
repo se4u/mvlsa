@@ -1,19 +1,19 @@
 function bitext_true_extrinsic_test(G, bvgn_embedding, dimension_after_cca, ...
-                               word, domikolov)
+                               word, domikolov,  do_only_G)
 if nargin < 5
     domikolov=1;
 end
 bvgn_embedding=normalize_embedding(bvgn_embedding);
 G=normalize_embedding(G);
-
-[Wx, Wy, r]=get_CCA_projection_matrices(...
-    G, bvgn_embedding, dimension_after_cca);
-
+if ~do_only_G
 rank_cell_orig=conduct_extrinsic_test_impl(...
     bvgn_embedding,'original embedding', word,domikolov);
-
+end
 rank_cell_orig=conduct_extrinsic_test_impl(...
     G, 'G', word,domikolov);
+if ~do_only_G
+[Wx, Wy, r]=get_CCA_projection_matrices(...
+    G, bvgn_embedding, dimension_after_cca);
 
 get_mu = @(M) repmat(mean(M), size(M,1),1)
 mean_center = @(M) M-get_mu(M);
@@ -31,4 +31,5 @@ for i=1:length(rank_cell_orig)
     fprintf(1, '%s\t%s\t%d\t%d\n', rank_cell_orig{i, 1}, ...
             rank_cell_orig{i, 2}, rank_cell_orig{i, 3}, ...
             rank_cell_cca_U{i, 3});
+end
 end
