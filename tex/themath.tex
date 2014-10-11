@@ -1,0 +1,46 @@
+\documentclass[11pt]{article}
+\usepackage{mathtools}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\begin{document}
+\raggedright
+Consider a general matrix $X \in \mathbb{R}^{N \times d}$
+\begin{description}
+\item[Fact] $\exists A S B$ such that $A, B$ are unitary matrices and $S$ is
+  rectangular diagonal. $A \in \mathbb{R}^{N \times N}$, $B \in
+  \mathbb{R}^{d \times d}$, $S \in \mathbb{R}^{N \times d}$
+\item[Fact] $(AB)^{-1} = B^{-1}A^{-1}$ as long as $(AB)^{-1}, B^{-1},
+  A^{-1}$ exist. Similarly $(ABC)^{-1} = C^{-1}B^{-1}A^{-1}$ as long
+  as $(ABC)^{-1}, C^{-1}, B^{-1}, A^{-1}$ exist.
+\item[Assumption] $S$ has only m non-zero elements
+\end{description}
+Consider $$P = X(X'X+rI)^{-1}X'$$ then
+\begin{eqnarray}
+  P &=& X(X'X+rI)^{-1}X'\\
+  &=&  ASB(B'S'A'ASB + rI)^{-1}B'S'A'\\
+  &=&  ASB(B'S'ISB + rB'IB)^{-1}B'S'A'\\
+  &=&  ASB(B'S'SB + rB'IB)^{-1}B'S'A'\\
+  &=&  ASB(B'S'SB + rB'IB)^{-1}B'S'A'\\
+\end{eqnarray}
+
+Consider $$(B'S'SB + rB'IB)^{-1}$$
+\begin{eqnarray*}
+  &(B'S'SB + rB'IB)^{-1}\\
+  =& (B'(S'S + rI)B)^{-1}\\
+  =& B'(S'S + rI)^{-1}B\\
+\end{eqnarray*}
+This is true since $B$ is full rank, unitary, orthonormal and $(S'S +
+rI)^{-1}$ is defined and because of Fact~1.
+
+Plug this in to get
+\begin{eqnarray}
+  P &=& AS(S'S + rI)^{-1}S'A'\\
+\end{eqnarray}
+From the assumption $S$ has only m non zero elements, then $S(S'S +
+rI)^{-1}S'$ also has only m non zero elements. Then we only need m
+left singular vectors from A.
+
+\end{document}
