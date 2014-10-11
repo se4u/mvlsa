@@ -9,6 +9,8 @@
 \usepackage{enumitem}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{changepage}
 \newcommand{\cwindow}{1, 2, 4, 6, 8, 10, 12, 14, 15}
 \newcommand{\cwinlen}{9}
 \newcommand{\ctotalview}{16}
@@ -135,7 +137,7 @@ of \cite{carroll1968generalization} who finds the
 \begin{equation}
   \label{eq:gcca}
 \begin{split}
-  \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} G - X_jU_j^\top \end{Vmatrix}^2_F \\
+  \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} G - X_jU_j \end{Vmatrix}^2_F \\
   \text{such that } & G^\top G = I
 \end{split}
 \end{equation}
@@ -323,6 +325,12 @@ remaining pairs. We present our recall values in table~\ref{tab:testrecall}.
   \label{tab:testrecall}
 \end{table}
 
+\textbf{Vocabulary Creation Procedure}: The vocab needs to be
+preprocessed with the following
+Convert all words with more than 3 non alphabetical symbols to NUM
+and which are more than 5 character long to be num. This preserves
+things like year and single digits which can be important. 
+
 \textbf{Hyper parameters and Pre-processing}: Hyper parameter
 optimization is the bane of machine learning. Even though a prime
 appeal of GCCA is its affine invariance which liberates us from the 
@@ -367,51 +375,93 @@ options.
   effect of varying $r$ from 1e-2 to 1e-10.
 \end{description}
 
-\begin{table}[htbp]
+\begin{table*}[htbp]
   \centering
-  \begin{tabular}{c}
-    TODO
-  \end{tabular}
-  \caption{Performance versus m}
+  \begin{tabular}{cccccc}
+    m=50 & m=100 &  m=300 &  m=500 &  m=800 &  m=1000 \\
+0.555827 & 0.648926 & 0.711428 & 0.724909 & 0.732627 & 0.733112 \\
+0.712500 & 0.762500 & 0.850000 & 0.850000 & 0.850000 & 0.862500 \\
+0.544399 & 0.570095 & 0.622407 & 0.642227 & 0.646592 & 0.645691 \\
+0.245799 & 0.290344 & 0.347764 & 0.382991 & 0.421676 & 0.428494 \\
+0.423827 & 0.535231 & 0.658581 & 0.679029 & 0.689935 & 0.696914 \\
+0.402537 & 0.347575 & 0.539163 & 0.613040 & 0.670450 & 0.660436 \\
+0.531079 & 0.543425 & 0.589109 & 0.592226 & 0.586522 & 0.615109 \\
+0.368983 & 0.399231 & 0.587055 & 0.653736 & 0.650698 & 0.659680 \\
+0.387503 & 0.456188 & 0.600852 & 0.649570 & 0.672371 & 0.665699 \\
+0.353347 & 0.418960 & 0.581796 & 0.624353 & 0.641651 & 0.630626 \\
+0.483668 & 0.533453 & 0.674508 & 0.724754 & 0.741866 & 0.735849 \\
+0.295635 & 0.364080 & 0.462987 & 0.493386 & 0.508669 & 0.514100 \\
+0.148852 & 0.222576 & 0.480094 & 0.478314 & 0.461171 & 0.466885 \\
+0.020634 & 0.035179 & 0.102041 & 0.105423 & 0.103394 & 0.098320 \\
+  \end{tabular} 
+  \caption{Performance versus m. This uses mc\_FreqPow025-truncatele200\_"m"~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300\_1e-5,monomultiwindow.300}
   \label{tab:m}
-\end{table}
+\end{table*}
 
 \begin{table}[htbp]
   \centering
-  \begin{tabular}{c}
-    TODO
-  \end{tabular}
+  \begin{tabular}{cccc}
+trunc=20 & trunc=200 & trunc=1000 & trunc=2000 \\
+0.662695 & 0.648926 & 0.628651 & 0.617984  \\
+0.775000 & 0.762500 & 0.775000 & 0.775000  \\
+0.578443 & 0.570095 & 0.568602 & 0.564312  \\
+0.288889 & 0.290344 & 0.285947 & 0.283235  \\
+0.542850 & 0.535231 & 0.524412 & 0.514771  \\
+0.332221 & 0.347575 & 0.370939 & 0.383623  \\
+0.545714 & 0.543425 & 0.552376 & 0.563701  \\
+0.402749 & 0.399231 & 0.389636 & 0.385855  \\
+0.466542 & 0.456188 & 0.436868 & 0.425998  \\
+0.435103 & 0.418960 & 0.402427 & 0.390047  \\
+0.549303 & 0.533453 & 0.513538 & 0.504565  \\
+0.381018 & 0.364080 & 0.343012 & 0.338609  \\
+0.237377 & 0.222576 & 0.210398 & 0.199532  \\
+0.037208 & 0.035179 & 0.029767 & 0.023903  \\
+  \end{tabular} 
   \caption{Performance versus t}
   \label{tab:t}
 \end{table}
 
-\begin{table}[htbp]
-  \centering
-  \begin{tabular}{c}
-    TODO
-  \end{tabular}
-  \caption{Performance versus n}
+\begin{table*}[htbp]
+  \resizebox{2.2\columnwidth}{!}{
+  \begin{tabular}{cccccccccc}
+ n=Count & n=Freq   &n=logFreq &n=logCount& n=CountPow050 & n=FreqPow050 & n=CountPow025 & n=FreqPow025 & n=CountPow012 & n=FreqPow012 \\
+0.498816 & 0.510894 & 0.633840 & 0.677297 & 0.630242 & 0.598831 & 0.705173 & 0.648926 & 0.696399 & 0.672731\\
+0.575000 & 0.700000 & 0.675000 & 0.775000 & 0.787500 & 0.725000 & 0.825000 & 0.762500 & 0.787500 & 0.787500\\
+0.377417 & 0.442312 & 0.511126 & 0.520742 & 0.540030 & 0.527911 & 0.597877 & 0.570095 & 0.592681 & 0.581406\\
+0.202837 & 0.208576 & 0.202293 & 0.132610 & 0.260255 & 0.257585 & 0.336898 & 0.290344 & 0.305030 & 0.279237\\
+0.194874 & 0.220522 & 0.521145 & 0.357487 & 0.473159 & 0.415191 & 0.609435 & 0.535231 & 0.604190 & 0.567486\\
+0.418558 & 0.361148 & 0.435024 & 0.333111 & 0.376947 & 0.274143 & 0.538496 & 0.347575 & 0.554295 & 0.310414\\
+0.320453 & 0.376403 & 0.542126 & 0.502289 & 0.517778 & 0.497963 & 0.587404 & 0.543425 & 0.574772 & 0.566881\\
+0.226945 & 0.168417 & 0.482783 & 0.304182 & 0.380501 & 0.365399 & 0.571669 & 0.399231 & 0.572762 & 0.478347\\
+0.262648 & 0.258519 & 0.480815 & 0.422909 & 0.475126 & 0.364711 & 0.626877 & 0.456188 & 0.560919 & 0.508127\\
+0.180723 & 0.171228 & 0.402079 & 0.317505 & 0.410990 & 0.346932 & 0.601806 & 0.418960 & 0.520509 & 0.490950\\
+0.421715 & 0.383676 & 0.546706 & 0.527739 & 0.581404 & 0.459896 & 0.642545 & 0.533453 & 0.608657 & 0.569659\\
+0.120988 & 0.254483 & 0.288272 & 0.325800 & 0.320096 & 0.322283 & 0.399447 & 0.364080 & 0.407408 & 0.394213\\
+0.050773 & 0.076815 & 0.242248 & 0.259485 & 0.306230 & 0.190632 & 0.355035 & 0.222576 & 0.289649 & 0.242155\\
+0.016913 & 0.002142 & 0.051528 & 0.030781 & 0.034728 & 0.009809 & 0.061788 & 0.035179 & 0.056376 & 0.043410\\
+  \end{tabular}}
+  \caption{Performance versus n. This uses tab\_Spearman\_fullgcca\_extrinsic\_test\_v5\_embedding\_mc\_"n"-truncatele200\_100~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300\_1e-5,monomultiwindow.300}}
   \label{tab:n}
-\end{table}
+\end{table*}
 
 \begin{table}[htbp]
   \centering
   \begin{tabular}{cc}
-Mean Normalization=mc &             Mean Normalization=muc\\
-0.640971              &             0.640803 \\
-0.750000              &             0.750000 \\
-0.552239              &             0.554700 \\
-0.278719              &             0.278998 \\
-0.543660              &             0.543744 \\
-0.298620              &             0.285492 \\
-0.531836              &             0.529717 \\
-0.343369              &             0.342778 \\
-0.435791              &             0.435940 \\
-0.417394              &             0.417066 \\
-0.489623              &             0.489734 \\
-0.369461              &             0.369314 \\
-0.222763              &             0.222295 \\
-0.025933              &             0.025482 \\
+Mean Normalization=mc &    Mean Normalization=muc\\
+0.640971     &    0.640803 \\
+0.750000     &    0.750000 \\
+0.552239     &    0.554700 \\
+0.278719     &    0.278998 \\
+0.543660     &    0.543744 \\
+0.298620     &    0.285492 \\
+0.531836     &    0.529717 \\
+0.343369     &    0.342778 \\
+0.435791     &    0.435940 \\
+0.417394     &    0.417066 \\
+0.489623     &    0.489734 \\
+0.369461     &    0.369314 \\
+0.222763     &    0.222295 \\
+0.025933     &    0.025482 \\
   \end{tabular} 
   \caption{Performance versus binary decision of mean normalization and unnormalization. The model spec was v5\_embedding\_\$m\_FreqPow025-truncatele200\_100~stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8,300\_1e-5,monomultiwindow.300 }
   \label{tab:mean}
@@ -459,24 +509,26 @@ a window of length 15 with bilingual data to window of length 1. \textbf{BEN,
   performance.}
 
 \begin{table*}[htbp]
-  \centering
-  \begin{tabular}{ccccccccccc}
-  -m1,en & -m12,en  & -m124,en &-m1246,en &-m12468,en & -m12468,10,en & -m12468,10,12,en & -m12468,10,12,14,en & -m12468,12,14,en & -m123468,12,14 & -m12468,12,14-bar,cs,de,es,fr,zh     \\
-0.647976 & 0.641259 & 0.641086 & 0.641408 & 0.640971 & 0.641149       & 0.641569         &         0.639144   & 0.642455 & 0.648926                &     \\       
-0.762500 & 0.762500 & 0.750000 & 0.750000 & 0.750000 & 0.762500       & 0.750000         &         0.762500   & 0.750000 & 0.762500                &     \\       
-0.557016 & 0.552484 & 0.550946 & 0.549844 & 0.552239 & 0.555853       & 0.558617         &         0.555967   & 0.558045 & 0.571063                &     \\       
-0.284785 & 0.285994 & 0.277012 & 0.278847 & 0.278719 & 0.278324       & 0.274790         &         0.257988   & 0.275386 & 0.290344                &     \\       
-0.549989 & 0.543328 & 0.543617 & 0.542285 & 0.543660 & 0.545212       & 0.545916         &         0.509456   & 0.545458 & 0.535230                &     \\       
-0.320205 & 0.299956 & 0.289497 & 0.308189 & 0.298620 & 0.322207       & 0.352025         &         0.287939   & 0.365599 & 0.347575                &     \\       
-0.542715 & 0.537844 & 0.534365 & 0.531796 & 0.531836 & 0.531556       & 0.532738         &         0.534990   & 0.530412 & 0.543425                &     \\       
-0.360612 & 0.348505 & 0.329184 & 0.346188 & 0.343369 & 0.349422       & 0.373201         &         0.414748   & 0.381331 & 0.399231                &     \\       
-0.433314 & 0.433213 & 0.430101 & 0.433433 & 0.435791 & 0.440036       & 0.446463         &         0.417079   & 0.445875 & 0.456188                &     \\       
-0.415089 & 0.410835 & 0.407877 & 0.413699 & 0.417394 & 0.421745       & 0.431181         &         0.403093   & 0.429666 & 0.418960                &     \\       
-0.499126 & 0.496963 & 0.488863 & 0.487644 & 0.489623 & 0.496532       & 0.506971         &         0.484234   & 0.505545 & 0.533453                &     \\       
-0.373794 & 0.373203 & 0.371000 & 0.369774 & 0.369461 & 0.369004       & 0.367857         &         0.365531   & 0.369491 & 0.364080                &     \\       
-0.242436 & 0.233162 & 0.227260 & 0.224731 & 0.222763 & 0.222295       & 0.219578         &         0.199906   & 0.220422 & 0.222576                &     \\       
-0.029090 & 0.026610 & 0.028075 & 0.026610 & 0.025933 & 0.024467       & 0.023114         &         0.017702   & 0.022663 & 0.035179                &     \\       
-  \end{tabular}
+  \begin{adjustwidth}{-2.6cm}{}
+  \resizebox{2.7\columnwidth}{!}{
+  \begin{tabular}{cccccccccccccccc}
+  -m1,en & -m12,en  & -m124,en &-m1246,en &-m1-8,en & -m1-8,10en & -m1-8,10,12en & -m1-8,10-14en & -m1-8,12,14en& -m1-8,12,14 &   +m10,15, &+m10,15,zh &+m10,15,zh,fr&+m10,15,zh,fr,es&+m10,15,zh,fr,es,de&+m10,15,zh,cs     \\
+0.647976 & 0.641259 & 0.641086 & 0.641408 & 0.640971 & 0.641149       & 0.641569         & 0.639144           & 0.642455         & 0.648926       &   0.532521 &  0.594833 &  0.585402   &0.618655        &        0.642503   &0.631143          \\       
+0.762500 & 0.762500 & 0.750000 & 0.750000 & 0.750000 & 0.762500       & 0.750000         & 0.762500           & 0.750000         & 0.762500       &   0.775000 &  0.750000 &  0.750000   &0.775000        &        0.762500   &0.737500          \\       
+0.557016 & 0.552484 & 0.550946 & 0.549844 & 0.552239 & 0.555853       & 0.558617         & 0.555967           & 0.558045         & 0.571063       &   0.539627 &  0.561718 &  0.571354   &0.572475        &        0.573988   &0.567798          \\       
+0.284785 & 0.285994 & 0.277012 & 0.278847 & 0.278719 & 0.278324       & 0.274790         & 0.257988           & 0.275386         & 0.290344       &   0.300906 &  0.297969 &  0.302155   &0.307935        &        0.286159   &0.274433          \\       
+0.549989 & 0.543328 & 0.543617 & 0.542285 & 0.543660 & 0.545212       & 0.545916         & 0.509456           & 0.545458         & 0.535230       &   0.516595 &  0.529811 &  0.543278   &0.541705        &        0.537355   &0.536095          \\       
+0.320205 & 0.299956 & 0.289497 & 0.308189 & 0.298620 & 0.322207       & 0.352025         & 0.287939           & 0.365599         & 0.347575       &   0.425234 &  0.421896 &  0.333556   &0.365376        &        0.313084   &0.332443          \\       
+0.542715 & 0.537844 & 0.534365 & 0.531796 & 0.531836 & 0.531556       & 0.532738         & 0.534990           & 0.530412         & 0.543425       &   0.508728 &  0.544475 &  0.537176   &0.568089        &        0.559061   &0.553051          \\       
+0.360612 & 0.348505 & 0.329184 & 0.346188 & 0.343369 & 0.349422       & 0.373201         & 0.414748           & 0.381331         & 0.399231       &   0.445061 &  0.434461 &  0.454262   &0.418004        &        0.385899   &0.379801          \\       
+0.433314 & 0.433213 & 0.430101 & 0.433433 & 0.435791 & 0.440036       & 0.446463         & 0.417079           & 0.445875         & 0.456188       &   0.458555 &  0.482204 &  0.475666   &0.479907        &        0.452223   &0.449089          \\       
+0.415089 & 0.410835 & 0.407877 & 0.413699 & 0.417394 & 0.421745       & 0.431181         & 0.403093           & 0.429666         & 0.418960       &   0.353533 &  0.388926 &  0.420160   &0.434316        &        0.415505   &0.401088          \\       
+0.499126 & 0.496963 & 0.488863 & 0.487644 & 0.489623 & 0.496532       & 0.506971         & 0.484234           & 0.505545         & 0.533453       &   0.587995 &  0.597522 &  0.564436   &0.565815        &        0.539500   &0.530027          \\       
+0.373794 & 0.373203 & 0.371000 & 0.369774 & 0.369461 & 0.369004       & 0.367857         & 0.365531           & 0.369491         & 0.364080       &   0.284565 &  0.315576 &  0.317761   &0.332818        &        0.354387   &0.357290          \\       
+0.242436 & 0.233162 & 0.227260 & 0.224731 & 0.222763 & 0.222295       & 0.219578         & 0.199906           & 0.220422         & 0.222576       &   0.168150 &  0.224543 &  0.232319   &0.265761        &        0.248899   &0.210960          \\       
+0.029090 & 0.026610 & 0.028075 & 0.026610 & 0.025933 & 0.024467       & 0.023114         & 0.017702           & 0.022663         & 0.035179       &   0.052317 &  0.048822 &  0.048709   &0.044537        &        0.033375   &0.027850          \\       
+  \end{tabular}}
+  \end{adjustwidth}
   \caption{Performance versus subsets of views input to GCCA. The
     model specification string is
     ``mc\_FreqPow025-truncatele200\_100~"\$pc",300\_1e-5,monomultiwindow.300''. Replace
@@ -509,21 +561,21 @@ improve the performance of these models.
 \begin{table*}[htbp]
   \centering
   \begin{tabular}{cccc}
-                                     & word2vecBitext &  gloveBitext & mono1015(our recall is oldone)\\
-JURI (0 out of 0)                    &  0.609977      &     0.574885 &  0.648926 \\
-TOEFL (68 out of 80)                 &  0.612500      &     0.637500 &  0.762500 \\
-SCWS (1909 out of 2003)              &  0.518767      &     0.466286 &  0.571063 \\
-RW (946 out of 2034)                 &  0.045796      &     0.136810 &  0.290344 \\
-MEN (2831 out of 3000)               &  0.455359      &     0.469963 &  0.535230 \\
-EN\_MC\_30 (29 out of 30)              &  0.343792      &     0.378950 &  0.347575 \\
-EN\_MTURK\_287 (283 out of 287)        &  0.520690      &     0.510015 &  0.543425 \\
-EN\_RG\_65 (63 out of 65)              &  0.344465      &     0.395279 &  0.399231 \\
-EN\_WS\_353\_ALL (349 out of 353)       &  0.502696      &     0.376691 &  0.456188 \\
-EN\_WS\_353\_REL (252 out of 252)       &  0.467833      &     0.372237 &  0.418960 \\
-EN\_WS\_353\_SIM (199 out of 203)       &  0.540855      &     0.444957 &  0.533453 \\
-SIMLEX (993 out of 999)             &   0.237295     &      0.286670 &  0.364080 \\
-EN\_TOM\_ICLR13\_SYN (10199 out of 10675) & 0.271756    &       0.399063 &  0.222576 \\
-EN\_TOM\_ICLR13\_SEM (7598 out of 8869) &  0.130342     &      0.280302  & 0.035179 \\
+                                     & word2vecBitext &  gloveBitext &  mono1015(our recall is oldone)\\
+JURI (0 out of 0)                    &  0.609977      &     0.574885 &  0.724909 \\
+TOEFL (68 out of 80)                 &  0.612500      &     0.637500 &  0.850000 \\
+SCWS (1909 out of 2003)              &  0.518767      &     0.466286 &  0.642227 \\
+RW (946 out of 2034)                 &  0.045796      &     0.136810 &  0.382991 \\
+MEN (2831 out of 3000)               &  0.455359      &     0.469963 &  0.679029 \\
+EN\_MC\_30 (29 out of 30)            &  0.343792      &     0.378950 &  0.613040 \\
+EN\_MTURK\_287 (283 out of 287)      &  0.520690      &     0.510015 &  0.592226 \\
+EN\_RG\_65 (63 out of 65)            &  0.344465      &     0.395279 &  0.653736 \\
+EN\_WS\_353\_ALL (349 out of 353)    &  0.502696      &     0.376691 &  0.649570 \\
+EN\_WS\_353\_REL (252 out of 252)    &  0.467833      &     0.372237 &  0.624353 \\
+EN\_WS\_353\_SIM (199 out of 203)    &  0.540855      &     0.444957 &  0.724754 \\
+SIMLEX (993 out of 999)              &  0.237295      &     0.286670 &  0.493386 \\
+EN\_TOM\_ICLR13\_SYN (10199 out of 10675) & 0.271756  &     0.399063 &  0.478314 \\
+EN\_TOM\_ICLR13\_SEM (7598 out of 8869)   &  0.130342 &    0.280302  &  0.105423 \\
   \end{tabular}
   \caption{Comparison of word2vec, glove and multiview-lsa.}
   \label{tab:comparison}
@@ -640,6 +692,17 @@ using CCA or other multi view learning techniques.
 
 \section{Future Work}
 \label{sec:futurework}
+4. I formalized the idea of using the convex sum of the objectives and
+found that it cant be done unsupervised. I am attaching a pdf to
+better explain the arguments but the main point is that it cannot be
+done unsupervised and to do it in a supervised fashion would require
+me to posit a model and then optimize the embeddings. A lot of
+different methods could be used for that but they would borrow heavily
+from collobert-weston style of NLP. Since it is not unsupervised it
+would be a nice extension but I do not think we need to do this now.
+
+There is way on doign cosine of guassian based preprocessing to handle
+non-linear dependencies. 
 "Generalized CCA for disparate data fusion" is a paper by professor
 Carey Priebe which has different goals from ours but uses a lot of the
 same motivations. \url{arxiv.org/pdf/1209.3761v1.pdf} 
@@ -682,6 +745,23 @@ also \cite{zweig2011MSRSCC,zweig2012msrchallenge}.
 
 Also the Winograd Schema Challenge can possibly benefit from these
 embeddings so we could use these as well.
+
+Stacked CCA, Kernel CCA,
+1) All of these are not as tuned as they should be. 2) I want to check
+for bugs in my eval code. 3) I also want to understand better
+theoretically what would happen as I put more and more monolingual
+windows in GCCA. 4) My vocabulary size is only 100K 5) I am only using
+bitext data not wikipedia data. 5) There are issues of vocabulary in
+Mikolov SEM test.
+
+An interesting thing might be to learn embeddings over featurized
+words, rather than over just words.
+
+For example 
+Add gender, number, tense features to all words and postags features as well. 
+These features should then be reflected in the embedding that we learn
+somehow.
+
 \section{Conclusion}
 We have shown that GCCA is a natural framework to fuse data from
 multiple sources specifically for learning a distributed
