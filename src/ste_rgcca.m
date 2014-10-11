@@ -1,7 +1,7 @@
 % ste means space and time efficient.
 function [G, S_tilde, sort_idx]=ste_rgcca(S, B, r, svd_reg_seq)
 % S is a cell with singular values. 
-% B contains singular vectors. Each entry in cell is a mtrix
+% B contains singular vectors. Each entry in cell is a matrix
 % with rows corresponding to a word and a small number of columns
 % each corresponding to singular vectors.
 % r is the number of gcca_components we want.
@@ -19,8 +19,8 @@ for j=1:J
 end
 [Q, R]=qr(B_concat, 0);
 assert(size(Q,1)==N);
-[V, D]=eigs(R*R', r);
+[V, D,~]=svds(R, r);
 % Now Q*V is the GCCA embedding.
 G = Q*V;
-S_tilde = D;
+S_tilde = D.^2;
 sort_idx=1:N;
