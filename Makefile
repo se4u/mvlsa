@@ -1,5 +1,5 @@
 .SECONDARY:
-.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate big_input 
+.PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate big_input $(STORE2)/agigastandep
 .INTERMEDIATE: gn_ppdb.itermediate
 ## GENERIC 
 # TARGET : Contains just the words. extracted from 1st column of source
@@ -25,8 +25,10 @@ join-with = $(subst $(space),$1,$(strip $2))
 
 ## VARIABLES
 # LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 addpath('src/kdtree');
-QSUBCMD := qsub -V -j y -l mem_free=15G -r yes #-verify
-QSUBP1CMD := qsub -p -1 -V -j y -l mem_free=15G -r yes
+QSUB1 := qsub
+QSUB2 := -V -j y -l mem_free=30G -r yes #-verify
+QSUBCMD := $(QSUB1) $(QSUB2) 
+QSUBP1CMD := $(QSUB1) -p -1 $(QSUB2)
 CWD_SUBMIT := -cwd submit_grid_stub.sh 
 QSUBMAKE := $(QSUBCMD) $(CWD_SUBMIT)
 QSUBP1MAKE := $(QSUBP1CMD) $(CWD_SUBMIT)
@@ -50,280 +52,47 @@ PREPROCESS_OPT := Count logCount logCount-truncatele20 Count-truncatele20 logFre
 MATCMD := time matlab -nojvm -nodisplay -r "warning('off', 'MATLAB:maxNumCompThreads:Deprecated'); warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); maxNumCompThreads(10); "
 MATCMDENV := $(MATCMD)"setenv('TOEFL_QUESTION_FILENAME', '$(RESPATH)/word_sim/toefl.qst'); setenv('TOEFL_ANSWER_FILENAME', '$(RESPATH)/word_sim/toefl.ans'); setenv('SCWS_FILENAME', '$(RESPATH)/word_sim/scws_simplified.txt'); setenv('RW_FILENAME', '$(RESPATH)/word_sim/rw_simplified.txt'); setenv('MEN_FILENAME', '$(RESPATH)/word_sim/MEN.txt'); setenv('EN_MC_30_FILENAME', '$(RESPATH)/word_sim/EN-MC-30.txt'); setenv('EN_MTURK_287_FILENAME', '$(RESPATH)/word_sim/EN-MTurk-287.txt'); setenv('EN_RG_65_FILENAME', '$(RESPATH)/word_sim/EN-RG-65.txt'); setenv('EN_TOM_ICLR13_SEM_FILENAME', '$(RESPATH)/word_sim/EN-TOM-ICLR13-SEM.txt'); setenv('EN_TOM_ICLR13_SYN_FILENAME', '$(RESPATH)/word_sim/EN-TOM-ICLR13-SYN.txt'); setenv('EN_WS_353_REL_FILENAME', '$(RESPATH)/word_sim/EN-WS-353-REL.txt'); setenv('EN_WS_353_SIM_FILENAME', '$(RESPATH)/word_sim/EN-WS-353-SIM.txt'); setenv('EN_WS_353_ALL_FILENAME', '$(RESPATH)/word_sim/EN-WS-353-ALL.txt'); setenv('WORDNET_TEST_FILENAME', '$(RESPATH)/wordnet.test'); setenv('PPDB_PARAPHRASE_RATING_FILENAME', '$(RESPATH)/ppdb_paraphrase_rating'); setenv('SIMLEX_FILENAME', '$(RESPATH)/word_sim/simlex_simplified.txt'); "
 
-#########################################################
-####################  TABULATION CODE
-#########################################################
-# make tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele200_100~stgcca,300_1e-8,mono1015.300
-# 		O	G	U	V
-# JURI (0 out of 0)			0.631346	0.650639	0.660756	0.620864
-# TOEFL (78 out of 80)			0.862500	0.812500	0.875000	0.775000
-# SCWS (1978 out of 2003)		0.647620	0.591340	0.620951	0.572749
-# RW (1808 out of 2034)			0.448516	0.363758	0.478068	0.348311
-# MEN (2946 out of 3000)		0.742855	0.598809	0.739194	0.539139
-# EN_MC_30 (30 out of 30)		0.788607	0.486871	0.788385	0.473075
-# EN_MTURK_287 (275 out of 287)		0.632702	0.563260	0.600778	0.550816
-# EN_RG_65 (65 out of 65)		0.760783	0.537924	0.777458	0.516506
-# EN_WS_353_ALL (350 out of 353)	0.683337	0.494308	0.649617	0.428453
-# EN_WS_353_REL (250 out of 252)	0.599603	0.447644	0.546479	0.392421
-# EN_WS_353_SIM (202 out of 203)	0.778387	0.585610	0.749919	0.527404
-# SIMLEX (999 out of 999)		0.441962	0.389407	0.473977	0.359768
-# EN_TOM_ICLR13_SYN (10043 out of 10675)0.633630	0.255363	0.573489	0.240562
-# EN_TOM_ICLR13_SEM (3662 out of 8869)	0.109708	0.040704	0.111061	0.031232
+######################################################################
+## PAPER MAKING CODE
+table_absbest: 
+	make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-truncatele20_500~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300_1e-8,monomultiwindow.300
 
-# for meanchoice in mc muc; do for preproc in logCount logFreq log1pFreq FreqPow025 FreqPow050; do\
-# 	  make -s tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_"$meanchoice"_"$preproc"-truncatele200_100~stgccaonlyen,100_1e-8.100 | sed s#G#G_"$meanchoice"_"$preproc"#g ; done; done  | awk -F"\t" '{print $2, $3, $4, $5}' | awk  '{print $2}'  | pr -10 -l 26 -w 170
-# G_mc_logCount	 G_mc_logFreq	  G_mc_log1pFreq   G_mc_FreqPow025  G_mc_FreqPow050  G_muc_logCount   G_muc_logFreq    G_muc_log1pFreq	G_muc_FreqPow025 G_muc_FreqPow050
-# 0.474211	 0.440235	  0.312606	   0.512131	    0.420461	     0.473770	      0.439944	       0.295662		0.512199	 0.419995
-# 0.575000	 0.487500	  0.487500	   0.675000	    0.600000	     0.587500	      0.537500	       0.487500		0.675000	 0.600000
-# 0.438919	 0.454679	  0.359987	   0.506922	    0.427360	     0.456407	      0.484059	       0.394187		0.507233	 0.428260
-# 0.160312	 0.153432	  0.153358	   0.224820	    0.197908	     0.180479	      0.171615	       0.154358		0.252367	 0.221693
-# 0.156696	 0.217420	  0.148584	   0.308438	    0.229430	     0.137952	      0.201318	       0.148686		0.308451	 0.224367
-# 0.319537	 0.395861	  0.427904	   0.400312	    0.439697	     0.283267	      0.286382	       0.525145		0.396306	 0.467735
-# 0.418275	 0.381498	  0.338722	   0.439867	    0.390910	     0.417446	      0.382357	       0.362406		0.443703	 0.392816
-# 0.244342	 0.288162	  0.254942	   0.377157	    0.356919	     0.268842	      0.325709	       0.306521		0.376370	 0.368284
-# 0.339407	 0.366513	  0.292194	   0.363187	    0.285198	     0.347494	      0.393826	       0.315903		0.365529	 0.285678
-# 0.167935	 0.227740	  0.180871	   0.243823	    0.192024	     0.154990	      0.218532	       0.223604		0.243006	 0.187143
-# 0.508421	 0.511649	  0.393528	   0.511895	    0.421038	     0.531636	      0.547310	       0.419327		0.517191	 0.428954
-# 0.163552	 0.152679	  0.165335	   0.249458	    0.219772	     0.171304	      0.173161	       0.175561		0.249748	 0.217144
-# 0.079157	 0.095082	  0.004309	   0.088525	    0.029883	     0.073630	      0.097143	       0.005152		0.083653	 0.026979
-# 0.019393	 0.027173	  0.006652	   0.019732	    0.016687	     0.018942	      0.028752	       0.006540		0.019506	 0.015898
+table_m: 
+	for m in 50 100 300 500 800 1000; do echo m=$$m && make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele200_"$$m"~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300_1e-5,monomultiwindow.300 ; done 
 
-# make tabulate_Spearman_word2vecBitext_extrinsic_test  # make tabulate_Spearman_gloveBitext_extrinsic_test #$for meanchoice in mc muc; do for preproc in logCount logFreq log1pFreq FreqPow025 FreqPow050; do  make -s tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_"$meanchoice"_"$preproc"-truncatele200_100~stgccanoenbvgn,300_1e-8.300 | sed s#G#G_"$meanchoice"_"$preproc"#g ; done; done  | awk -F"\t" '{print $2, $3, $4, $5}' | awk  '{print $2}'  | pr -10 -l 26 -w 170
-# 		                   word2vecBitext G_mc_stgccanobvgn G_muc_stgccanobvgn gloveBitext(mono1015) G_mc_logCount G_mc_logFreq	  G_mc_log1pFreq   G_mc_FreqPow025  G_mc_FreqPow050  G_muc_logCount   G_muc_logFreq    G_muc_log1pFreq	G_muc_FreqPow025 G_muc_FreqPow050 
-# JURI (0 out of 0)			0.609977    0.681989          0.681918	       	0.574885  0.648926 # 0.686661	 0.640717	  0.492306	   0.627458	    0.575766	     0.686785	      0.643534	       0.487849		0.627705	 0.576054	  
-# TOEFL (68 out of 80)			0.612500    0.737500          0.750000	       	0.637500  0.762500 # 0.737500	 0.687500	  0.700000	   0.712500	    0.712500	     0.750000	      0.700000	       0.700000		0.712500	 0.712500	  
-# SCWS (1909 out of 2003)		0.518767    0.536503          0.542240	       	0.466286  0.571063 # 0.533019	 0.525738	  0.397062	   0.518809	    0.494410	     0.533069	      0.528122	       0.388574		0.521203	 0.491021	  
-# RW (946 out of 2034)			0.045796    0.178746          0.214890	       	0.136810  0.290344 # 0.167818	 0.194352	  0.181530	   0.217943	    0.185825	     0.199358	      0.245670	       0.183154		0.215621	 0.192164	  
-# MEN (2831 out of 3000)		0.455359    0.372000          0.373856	       	0.469963  0.535230 # 0.383259	 0.421296	  0.174585	   0.333169	    0.257029	     0.385034	      0.421302	       0.168124		0.332987	 0.256393	  
-# EN_MC_30 (29 out of 30)		0.343792    0.388963          0.447041	       	0.378950  0.347575 # 0.303961	 0.103249	  0.301958	   0.062528	    0.285269	     0.334223	      0.092568	       0.273476		0.076101	 0.279261	  
-# EN_MTURK_287 (283 out of 287)		0.520690    0.489515          0.491324	       	0.510015  0.543425 # 0.459704	 0.472481	  0.319530	   0.476346	    0.414698	     0.461078	      0.468937	       0.295009		0.473998	 0.408225	  
-# EN_RG_65 (63 out of 65)		0.344465    0.473080          0.504114	       	0.395279  0.399231 # 0.414551	 0.234442	  0.100622	   0.282786	    0.319328	     0.428604	      0.231054	       0.125296		0.289233	 0.302084	  
-# EN_WS_353_ALL (349 out of 353)	0.502696    0.480037          0.490973	       	0.376691  0.456188 # 0.450338	 0.430266	  0.143697	   0.311522	    0.281854	     0.459412	      0.437907	       0.120061		0.311978	 0.280296	  
-# EN_WS_353_REL (252 out of 252)	0.467833    0.413397          0.419393	       	0.372237  0.418960 # 0.401157	 0.374978	  0.057942	   0.309357	    0.265662	     0.402453	      0.372771	       0.036994		0.309657	 0.266451	  
-# EN_WS_353_SIM (199 out of 203)	0.540855    0.547696          0.562167	       	0.444957  0.533453 # 0.510515	 0.463199	  0.244611	   0.361338	    0.358920	     0.526663	      0.476838	       0.223590		0.362239	 0.353526	  
-# SIMLEX (993 out of 999)		0.237295    0.364863          0.367377	       	0.286670  0.364080 # 0.394337	 0.293126	  0.241932	   0.339661	    0.295190	     0.396807	      0.294622	       0.238087		0.339671	 0.293926	  
-# EN_TOM_ICLR13_SYN (10199 out of 10675)0.271756    0.206745          0.204309	       	0.399063  0.222576 # 0.191475	 0.070258	  0.056956	   0.165714	    0.132272	     0.187166	      0.068103	       0.055550		0.162810	 0.131803	  
-# EN_TOM_ICLR13_SEM (7598 out of 8869)	0.130342    0.014432          0.013418         	0.280302  0.035179 # 0.008682	 0.014883	  0.001015	   0.008682	    0.002255	     0.008118	      0.012967	       0.000789		0.008005	 0.002368          
+table_t: 
+	for trunc in 20 200 1000 2000 ; do echo trunc=$$trunc && make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele"$$trunc"_100~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300_1e-5,monomultiwindow.300 ; done
 
-# for s in log1pFreq FreqPow025 FreqPow050 ; do make -s tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_"$s"-truncatele200_100~stgcca,300_1e-8.300 | sed s#G#G_"$s"#g ; done  | awk -F"\t" '{print $2, $3, $4, $5}'|  pr -3 -l 27 -w 100 
-#  O G_log1pFreq U		  O G_FreqPow025 U		   O G_FreqPow050 U
-#   0.631346 0.538630		   0.631346 0.646816		    0.631346 0.605284
-#   0.862500 0.775000		   0.862500 0.800000		    0.862500 0.775000
-#   0.647620 0.566940		   0.647620 0.582181		    0.647620 0.568515
-#   0.448516 0.356455		   0.448516 0.372053		    0.448516 0.326614
-#   0.742855 0.602660		   0.742855 0.546721		    0.742855 0.540118
-#   0.788607 0.683356		   0.788607 0.396306		    0.788607 0.520694
-#   0.632702 0.518654		   0.632702 0.540580		    0.632702 0.531600
-#   0.760783 0.646917		   0.760783 0.533510		    0.760783 0.665822
-#   0.683337 0.522149		   0.683337 0.433876		    0.683337 0.471005
-#   0.599603 0.439877		   0.599603 0.368509		    0.599603 0.427389
-#   0.778387 0.638927		   0.778387 0.546907		    0.778387 0.584056
-#   0.441962 0.387350		   0.441962 0.386922		    0.441962 0.373980
-#   0.633630 0.203185		   0.633630 0.211148		    0.633630 0.220890
-#   0.109708 0.007554		   0.109708 0.022550		    0.109708 0.010711
+table_n:
+	for n in Count Freq logFreq logCount CountPow050 FreqPow050 CountPow025 FreqPow025 ; do echo n=$$n && make tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_"$$n"-truncatele200_100~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300_1e-5,monomultiwindow.300 ; done
 
-# uses v5_embedding_mc_(preproc)-stgcca,300,1e-8.300          # for d2rm in stgccanoar stgccanocs stgccanode stgccanoes stgccanofr stgccanozh stgccanoen stgccanobvgn; do for meanchoice in mc muc; do make -s tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_"$meanchoice"_logCount-truncatele200_100~"$d2rm",300_1e-8.300 | sed s#G#G_"$meanchoice"_"$d2rm"#g ; done; done  | awk -F"\t" '{print $2, $3, $4, $5}' | awk  '{print $2}'  | pr -16 -l 26 -w 300   
-# G_logCount-truncatele200_100   G_logFreq-truncatele200_100  #G_mcst_ccanoar	  G_muc_stgccanoar  G_mc_stgccanocs   G_muc_stgccanocs	G_mc_stgccanode	  G_muc_stgccanode  G_mc_stgccanoes   G_muc_stgccanoes	G_mc_stgccanofr	  G_muc_stgccanofr  G_mc_stgccanozh   G_muc_stgccanozh	G_mc_stgccanoen	  G_muc_stgccanoen  G_mc_stgccanobvgn G_muc_stgccanobvgn
-# 0.682882		       0.646631			      # 0.685434	  0.685779	    0.692875	      0.692946		0.671726	  0.672160	    0.682316	      0.683213		0.673701	  0.673293	    0.678472	      0.679007		0.680293	  0.680309	    0.681989	      0.681918															   
-# 0.825000		       0.812500			      # 0.837500	  0.837500	    0.837500	      0.837500		0.825000	  0.825000	    0.812500	      0.812500		0.825000	  0.825000	    0.825000	      0.825000		0.850000	  0.850000	    0.737500	      0.750000															   
-# 0.609014		       0.582750			      # 0.605250	  0.605689	    0.606554	      0.606061		0.609691	  0.609434	    0.602125	      0.600615		0.609954	  0.608552	    0.597121	      0.596899		0.604721	  0.603519	    0.536503	      0.542240															   
-# 0.426652		       0.419632			      # 0.430595	  0.426965	    0.420140	      0.418068		0.422155	  0.421387	    0.427512	      0.424577		0.433549	  0.431182	    0.424133	      0.421346		0.426596	  0.424630	    0.178746	      0.214890															   
-# 0.655968		       0.669217			      # 0.650495	  0.647434	    0.651159	      0.648667		0.653166	  0.649931	    0.660577	      0.657709		0.643563	  0.640163	    0.637177	      0.632585		0.650230	  0.646951	    0.372000	      0.373856															   
-# 0.672452		       0.678460			      # 0.692924	  0.691811	    0.670227	      0.676903		0.670004	  0.665554	    0.692256	      0.690476		0.706720	  0.713396	    0.716288	      0.718514		0.658211	  0.655541	    0.388963	      0.447041															   
-# 0.612105		       0.580805			      # 0.634153	  0.630226	    0.602954	      0.597700		0.595526	  0.591515	    0.593199	      0.593763		0.578928	  0.576569	    0.565890	      0.560877		0.597814	  0.598089	    0.489515	      0.491324															   
-# 0.724962		       0.706472			      # 0.716766	  0.716264	    0.727344	      0.728983		0.723716	  0.724350	    0.736196	      0.733660		0.707347	  0.708527	    0.720897	      0.718799		0.721247	  0.719586	    0.473080	      0.504114															   
-# 0.593086		       0.558771			      # 0.577547	  0.575737	    0.587034	      0.584391		0.585133	  0.583195	    0.600201	      0.600736		0.574787	  0.577721	    0.587197	      0.587021		0.584666	  0.582843	    0.480037	      0.490973															   
-# 0.509166		       0.452617			      # 0.480424	  0.477881	    0.494025	      0.489542		0.488082	  0.484999	    0.514609	      0.515192		0.468357	  0.470385	    0.486284	      0.487352		0.496076	  0.492846	    0.413397	      0.419393															   
-# 0.673502		       0.676089			      # 0.679951	  0.676841	    0.681048	      0.679081		0.667494	  0.664255	    0.684348	      0.685069		0.669978	  0.672117	    0.684574	      0.682313		0.667372	  0.668330	    0.547696	      0.562167															   
-# 0.467130		       0.402567			      # 0.457662	  0.457686	    0.471802	      0.470861		0.464748	  0.463964	    0.457577	      0.456668		0.467128	  0.466659	    0.451004	      0.450005		0.478754	  0.478023	    0.364863	      0.367377															   
-# 0.401874		       0.376487			      # 0.385667	  0.384824	    0.416206	      0.415738		0.407494	  0.407869	    0.398782	      0.399157		0.375176	  0.374707	    0.362623	      0.362810		0.365902	  0.363747	    0.206745	      0.204309															   
-# 0.043410                     0.075431			      # 0.043071	  0.042620	    0.043748	      0.043071		0.043748	  0.043861	    0.049724	      0.049160		0.043184	  0.042282	    0.040929	      0.040365		0.033375	  0.032924	    0.014432	      0.013418                                                                                                                     
+table_n_ext:
+	for n in CountPow012 FreqPow012; do make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_"$$n"-truncatele200_100~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300_1e-5,monomultiwindow.300 ; done
 
-# $make tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_muc_FreqPow025-truncatele200_500~stgcca,300_1e-8.300
-# 		O	G	U	V
-# JURI (0 out of 0)			0.631346	0.724888	0.660756	0.708232
-# TOEFL (78 out of 80)			0.862500	0.900000	0.875000	0.925000
-# SCWS (1978 out of 2003)			0.647620	0.645942	0.621448	0.628325
-# RW (1808 out of 2034)			0.448516	0.438018	0.478068	0.421567
-# MEN (2946 out of 3000)			0.742855	0.620752	0.739194	0.561246
-# EN_MC_30 (30 out of 30)			0.788607	0.655541	0.788385	0.642190
-# EN_MTURK_287 (275 out of 287)			0.632702	0.538021	0.600778	0.528372
-# EN_RG_65 (65 out of 65)			0.760783	0.630503	0.777458	0.666128
-# EN_WS_353_ALL (350 out of 353)			0.683337	0.631271	0.649617	0.580749
-# EN_WS_353_REL (250 out of 252)			0.599603	0.562476	0.546479	0.525847
-# EN_WS_353_SIM (202 out of 203)			0.778387	0.710593	0.749919	0.679963
-# SIMLEX (999 out of 999)			0.441962	0.494072	0.473977	0.475125
+table_nconcat: 
+	for n in CountPow025^CountPow050^logFreq^FreqPow025^FreqPow050^logCount^Count^Freq \
+	         CountPow025^CountPow050^logFreq^FreqPow025^FreqPow050^logCount^Count \
+	         CountPow025^CountPow050^logFreq^FreqPow025^FreqPow050^logCount \
+	         CountPow025^CountPow050^logFreq^FreqPow025^FreqPow050 \
+	         CountPow025^CountPow050^logFreq^FreqPow025 \
+	         CountPow025^CountPow050^logFreq \
+	         CountPow025^CountPow050 ; do \
+	            echo $$n ; make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_"$$n"-truncatele200_100~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300_1e-5,monomultiwindow.300; \
+	done
 
-# for p in logFreq-truncatele600_50  logFreq-truncatele400_50  logFreq-truncatele600_100    logFreq-truncatele400_100  logFreq-truncatele200_100  FreqPow025-truncatele600_50 ; do make -s tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_"$p"~stgcca,300_1e-8.300  | sed s#G#G_"$p"#g  ; done | awk -F"\t" '{print $2, $3, $4, $5}' | awk  '{print $2}'  | pr -6 -l 25 -w 200
-# G_logFreq-truncatele600_50	 G_logFreq-truncatele400_50	  G_logFreq-truncatele600_100	   G_logFreq-truncatele400_100	    G_logFreq-truncatele200_100	     G_FreqPow025-truncatele600_50
-# 0.635788			 0.633831			  0.648441			   0.645083			    0.646631			     0.543789
-# 0.812500			 0.787500			  0.850000			   0.875000			    0.812500			     0.712500
-# 0.551958			 0.551100			  0.588798			   0.581126			    0.582750			     0.548381
-# 0.347366			 0.346795			  0.416331			   0.417075			    0.419632			     0.318247
-# 0.568530			 0.568691			  0.671315			   0.670907			    0.669217			     0.443183
-# 0.410102			 0.418781			  0.658656			   0.686471			    0.678460			     0.513129
-# 0.553836			 0.543199			  0.606255			   0.607635			    0.580805			     0.510767
-# 0.545749			 0.534362			  0.705030			   0.715980			    0.706472			     0.474194
-# 0.514097			 0.506608			  0.547056			   0.555222			    0.558771			     0.404736
-# 0.378312			 0.388795			  0.435982			   0.447083			    0.452617			     0.344932
-# 0.621266			 0.604803			  0.659818			   0.664294			    0.676089			     0.530939
-# 0.330595			 0.331012			  0.399168			   0.407856			    0.402567			     0.301618
-# 0.177705			 0.179953			  0.367963			   0.376393			    0.376487			     0.140141
-# 0.043861			 0.042282			  0.074078			   0.073965			    0.075431			     0.014432
-# for p in logCount-truncatele600_50  logCount-truncatele400_50  logCount-truncatele600_100    logCount-truncatele400_100  logCount-truncatele200_100  ; do make -s tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_"$p"~stgcca,300_1e-8.300  | sed s#G#G_"$p"#g  ; done | awk -F"\t" '{print $2, $3, $4, $5}' | awk  '{print $2}'  | pr -5 -l 25 -w 150
-#G_logCount-truncatele600_50   G_logCount-truncatele400_50   G_logCount-truncatele600_100  G_logCount-truncatele400_100	G_logCount-truncatele200_100
-# 0.658967		      0.663075			    0.684755			  0.684154			0.682882
-# 0.762500		      0.762500			    0.837500			  0.837500			0.825000
-# 0.558039		      0.556827			    0.604723			  0.605812			0.609014
-# 0.359413		      0.360894			    0.429268			  0.430235			0.426652
-# 0.544465		      0.546221			    0.652691			  0.654586			0.655968
-# 0.552292		      0.557410			    0.692034			  0.692479			0.672452
-# 0.572071		      0.579346			    0.615883			  0.622966			0.612105
-# 0.549551		      0.548655			    0.720329			  0.715062			0.724962
-# 0.512486		      0.510859			    0.599814			  0.591919			0.593086
-# 0.382309		      0.386254			    0.510369			  0.505357			0.509166
-# 0.629854		      0.632064			    0.675643			  0.670630			0.673502
-# 0.404087		      0.408572			    0.457986			  0.461226			0.467130
-# 0.231756		      0.229696			    0.401780			  0.401311			0.401874
-# 0.023678		      0.023340			    0.043635			  0.043184			0.043410                       
-# make tabulate_Spearman_fullgcca_extrinsic_test_v4_stgcca_run_sans_mu_300_1e-8_logCount.300
-# 		O	G	U	V
-# JURI (0 out of 0)			0.631346	0.708067	0.660756	0.714275
-# TOEFL (78 out of 80)			0.862500	0.862500	0.875000	0.925000
-# SCWS (1978 out of 2003)		0.647620	0.586859	0.620711	0.580175
-# RW (1808 out of 2034)			0.448516	0.380236	0.478068	0.409997
-# MEN (2946 out of 3000)		0.742855	0.487733	0.739194	0.506923
-# EN_MC_30 (30 out of 30)		0.788607	0.414775	0.788385	0.468180
-# EN_MTURK_287 (275 out of 287)		0.632702	0.498678	0.600778	0.435408
-# EN_RG_65 (65 out of 65)		0.760783	0.478828	0.777458	0.591579
-# EN_WS_353_ALL (350 out of 353)	0.683337	0.521329	0.649617	0.523833
-# EN_WS_353_REL (250 out of 252)	0.599603	0.466345	0.546479	0.473674
-# EN_WS_353_SIM (202 out of 203)	0.778387	0.601384	0.749919	0.610702
-# EN_TOM_ICLR13_SYN (10043 out of 10675)0.633630	0.391382	0.573489	0.309883
-# EN_TOM_ICLR13_SEM (3662 out of 8869)	0.109708	0.049949	0.111061	0.052994
-# for i in 5 6 7 8 9 ; do  make -s tabulate_Spearman_fullgcca_extrinsic_test_v3_stgcca_run_sans_mu_300_1e-"$i"_logCount | sed s#G#G_"$i"#g ; done  | awk -F"\t" '{print $2, $3, $4, $5}' | awk  '{print $2}' | pr -5 -l 24 -w 50
-# 2014-08-18 06:20                            Page 1
-# G_5          G_6        G_7      G_8	           G_9          G_Mean_centered
-# 0.708286  0.708286  0.708286  0.708286	0.708286       0.708067
-# 0.900000  0.900000  0.900000  0.900000	0.900000       0.862500
-# 0.607756  0.607756  0.608509  0.608509	0.608509       0.586859
-# 0.420422  0.420422  0.420422  0.420422	0.420422       0.380236
-# 0.478979  0.478979  0.478979  0.478979	0.478979       0.487733
-# 0.399421  0.399421  0.399421  0.399421	0.399421       0.414775
-# 0.516944  0.516944  0.516944  0.516944	0.516944       0.498678
-# 0.528374  0.528374  0.528374  0.528374	0.528374       0.478828
-# 0.547046  0.547046  0.547046  0.547046	0.547046       0.521329
-# 0.465086  0.465086  0.465086  0.465086	0.465086       0.466345
-# 0.632959  0.632959  0.632959  0.632959	0.632959       0.601384
-# 0.404122  0.404122  0.404122  0.404122	0.404122       0.391382
-# 0.049273  0.049273  0.049273  0.049273	0.049273       0.049949
+table_mean:
+	for m in mc muc ; do echo "Mean Normalization"=$$m && make  tab_Spearman_fullgcca_extrinsic_test_v5_embedding_"$$m"_FreqPow025-truncatele200_100~stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8,300_1e-5,monomultiwindow.300 ; done | pr -2
 
-# ROW HEADERS
-# JURI (0 out of 0)			  
-# TOEFL (78 out of 80)			  
-# SCWS (1978 out of 2003)			  
-# RW (1808 out of 2034)			  
-# MEN (2946 out of 3000)			  
-# EN_MC_30 (30 out of 30)			  
-# EN_MTURK_287 (275 out of 287)		  
-# EN_RG_preprocCountPow075_65 (65 out of 65)
-# EN_WS_353_ALL (350 out of 353)		  
-# EN_WS_353_REL (250 out of 252)		  
-# EN_WS_353_SIM (202 out of 203)		  
-# SIMLEX (999 out of 999)			  
-# EN_TOM_ICLR13_SYN (10043 out of 10675)	  
-# EN_TOM_ICLR13_SEM (3662 out of 8869)	  
+table_r:
+	for r in 2 3 4 5 6 7 8 9 10 ; do echo r=1e-$$r && make  tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele200_100~stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8,300_1e-"$$r",monomultiwindow.300; done | pr -9 -l 26
 
-# origdim effect
-# for origdim in 300 800 1000; do  make -s tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_muc_logCount-truncatele20_"$origdim"~stgcca,300_1e-8.300 | sed s#G#G_origdim"$origdim"#g ; done | awk -F"\t" '{print $2, $3, $4, $5}' | awk  '{print $2}'  | pr -3 -l 26 -w 100
-# 2014-08-28 03:28                                                                              Page 1
-# G_origdim300			 G_origdim800			  G_origdim1000
-# 0.707020			 0.717758			  0.705521
-# 0.912500			 0.937500			  0.937500
-# 0.600223			 0.607761			  0.615567
-# 0.415820			 0.438715			  0.418812
-# 0.441121			 0.511836			  0.519872
-# 0.440810			 0.334446			  0.430129
-# 0.573339			 0.552758			  0.521445
-# 0.533619			 0.511829			  0.544896
-# 0.575860			 0.569739			  0.590220
-# 0.495099			 0.515047			  0.565376
-# 0.641842			 0.638343			  0.635940
-# 0.430732			 0.494345			  0.478833
-# 0.383044			 0.368806			  0.367213
-# 0.049724			 0.048934			  0.044424
+table_multiviewcontri:
+	for pc in stgccanoenbvgnmonotext1 stgccanoenbvgnmonotext1@monotext2 stgccanoenbvgnmonotext1@monotext2@monotext4 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8@monotext10 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8@monotext10@monotext12 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8@monotext10@monotext12@monotext14 stgccano@en@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14 stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14
 
-# TRUNCATION EFFECT
-# for trunc in 20 40 60 80; do  make -s tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_muc_logCount-truncatele"$trunc"_500~stgcca,300_1e-8.300 | sed s#G#G_trunc"$trunc"#g ; done | awk -F"\t" '{print $2, $3, $4, $5}' | awk  '{print $2}'  | pr -4 -l 26 -w 100
-# 2014-08-28 03:44                                                                              Page 1
-# G_trunc20		 G_trunc40		  G_trunc60		   G_trunc80
-# 0.708075		 0.705920		  0.706139		   0.705507
-# 0.912500		 0.887500		  0.887500		   0.912500
-# 0.604867		 0.606613		  0.606612		   0.611189
-# 0.419957		 0.422049		  0.421240		   0.423434
-# 0.482634		 0.483635		  0.483005		   0.484574
-# 0.390521		 0.386070		  0.382065		   0.377837
-# 0.509374		 0.521147		  0.514972		   0.517071
-# 0.538012		 0.520178		  0.524003		   0.518014
-# 0.545194		 0.546518		  0.542044		   0.544546
-# 0.461668		 0.463596		  0.460235		   0.464785
-# 0.631622		 0.630286		  0.627033		   0.628449
-# 0.482694		 0.482086		  0.483605		   0.482767
-# 0.397845		 0.393817		  0.393724		   0.390632
-# 0.051641		 0.050626		  0.050400		   0.049949
-
-# Preprocessing Effect
-# $for preproc in CountPow075 CountPow050 CountPow025 Freq FreqPow075 logFreq; do  make -s tabulate_Spearman_fullgcca_extrinsic_test_v5_embedding_muc_"$preproc"-truncatele20_500~stgcca,300_1e-8.300 | sed s#G#G_preproc"$preproc"#g ; done | awk -F"\t" '{print $2, $3, $4, $5}' | awk  '{print $2}'  | pr -6 -l 26 -w 130
-# 2014-08-28 03:45                                                                                                            Page 1
-# G_preprocCountPow075 G_preprocCountPow050 G_preprocCountPow025 G_preprocFreq	    G_preprocFreqPow075	 G_preproclogFreq
-# 0.601202	     0.688071		  0.723071	       0.642454		    0.678717		 0.662494
-# 0.875000	     0.862500		  0.862500	       0.850000		    0.837500		 0.837500
-# 0.523833	     0.582392		  0.627079	       0.607728		    0.624460		 0.564207
-# 0.323877	     0.398517		  0.439824	       0.393101		    0.402747		 0.344365
-# 0.332868	     0.416284		  0.497342	       0.657529		    0.649033		 0.334414
-# 0.451268	     0.325768		  0.419226	       0.567423		    0.662216		 0.251446
-# 0.404660	     0.464999		  0.537656	       0.563635		    0.536043		 0.464672
-# 0.398772	     0.481144		  0.507414	       0.677689		    0.762444		 0.334320
-# 0.427116	     0.493939		  0.559144	       0.594472		    0.613389		 0.464069
-# 0.353687	     0.403619		  0.489726	       0.524231		    0.527678		 0.358445
-# 0.505380	     0.582492		  0.638279	       0.686033		    0.708104		 0.575453
-# 0.349698	     0.448060		  0.465607	       0.473387		    0.499217		 0.381461
-# 0.215082	     0.317377		  0.377424	       0.348103		    0.365246		 0.220234
-# 0.032924	     0.037547		  0.036306	       0.016575		    0.020070		 0.012854
-
-#                                         G_fast    G_slow
-# JURI (0 out of 0)		       0.708523  0.726437
-# TOEFL (78 out of 80)		       0.900000  0.950000
-# SCWS (1978 out of 2003)		       0.604498  0.605402
-# RW (1808 out of 2034)		       0.417530  0.426346
-# MEN (2946 out of 3000)		       0.481535  0.513432
-# EN_MC_30 (30 out of 30)		       0.395639  0.390521
-# EN_MTURK_287 (275 out of 287)	       0.501459  0.488514
-# EN_RG_65 (65 out of 65)		       0.527937  0.544306
-# EN_WS_353_ALL (350 out of 353)	       0.544601  0.555136
-# EN_WS_353_REL (250 out of 252)	       0.463560  0.481364
-# EN_WS_353_SIM (202 out of 203)	       0.628619  0.644622
-# EN_TOM_ICLR13_SYN (10043 out of 10675) 0.398501  0.361593
-# EN_TOM_ICLR13_SEM (3662 out of 8869)   0.051302  0.047018
-
-
-# for s in 1000 2000 3000; do for i in 5 6 7 8 9 ; do  make -s tabulate_Spearman_fullgcca_extrinsic_test_v3_gcca_run_sans_mu_300_"$s"_1e-"$i"_logCount | sed s#G#G_"$s"_"$i"#g ; done; done  | awk -F"\t" '{print $2, $3, $4, $5}' | awk  '{print $2}'  | pr -15 -l 24 -w 150
-# 2014-08-18 04:39                                                                                                                                Page 1
-# G_1000_5  G_1000_6  G_1000_7  G_1000_8  G_1000_9  G_2000_5  G_2000_6  G_2000_7	G_2000_8  G_2000_9  G_3000_5  G_3000_6	G_3000_7  G_3000_8  G_3000_9
-# 0.726437  0.726437  0.726437  0.726437  0.726437  0.719048  0.719048  0.719048	0.719048  0.719048  0.716399  0.716399	0.716399  0.716399  0.716399
-# 0.950000  0.950000  0.950000  0.950000  0.950000  0.912500  0.912500  0.912500	0.912500  0.912500  0.900000  0.900000	0.900000  0.900000  0.900000
-# 0.605153  0.604384  0.605155  0.605402  0.605060  0.610530  0.609579  0.607699	0.609209  0.609546  0.609402  0.609857	0.611355  0.610720  0.611713
-# 0.426346  0.426346  0.426346  0.426346  0.426346  0.426930  0.426930  0.426930	0.426930  0.426930  0.429377  0.429377	0.429377  0.429377  0.429377
-# 0.513432  0.513432  0.513432  0.513432  0.513432  0.512818  0.512818  0.512818	0.512818  0.512818  0.517337  0.517337	0.517337  0.517337  0.517337
-# 0.390521  0.390521  0.390521  0.390521  0.390521  0.414775  0.414775  0.414775	0.414775  0.414775  0.422341  0.422341	0.422341  0.422341  0.422341
-# 0.488514  0.488514  0.488514  0.488514  0.488514  0.496372  0.496372  0.496372	0.496372  0.496372  0.498824  0.498824	0.498824  0.498824  0.498824
-# 0.544306  0.544306  0.544306  0.544306  0.544306  0.567036  0.567036  0.567036	0.567036  0.567036  0.555015  0.555015	0.555015  0.555015  0.555015
-# 0.555136  0.555136  0.555136  0.555136  0.555136  0.562495  0.562495  0.562495	0.562495  0.562495  0.557018  0.557018	0.557018  0.557018  0.557018
-# 0.481364  0.481364  0.481364  0.481364  0.481364  0.486889  0.486889  0.486889	0.486889  0.486889  0.475850  0.475850	0.475850  0.475850  0.475850
-# 0.644622  0.644622  0.644622  0.644622  0.644622  0.647653  0.647653  0.647653	0.647653  0.647653  0.639149  0.639149	0.639149  0.639149  0.639149
-# 0.361593  0.361593  0.361593  0.361593  0.361593  0.367026  0.367026  0.367026	0.367026  0.367026  0.375644  0.375644	0.375644  0.375644  0.375644
-# 0.047018  0.047018  0.047018  0.047018  0.047018  0.047018  0.047018  0.047018	0.047018  0.047018  0.047130  0.047130	0.047130  0.047130  0.047130
-
+table_multiviewcontri2:
+	for pc in stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es@fr@zh stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es@fr stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar ; do echo pc=$$pc && make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele200_100~"$$pc",300_1e-5,monomultiwindow.300; done
+######################################################################
+##  TABULATION CODE
 # TARGET: Either MEGATAB_Spearman or MEGATAB_Pearson
 MEGATAB_%:
 	make tabulate_$*_bvgnFull_extrinsic_test && \
@@ -333,11 +102,20 @@ MEGATAB_%:
 	make tabulate_$*_other_extrinsic_test_glove.42B.300d && \
 	make tabulate_$*_other_extrinsic_test_glove.6B.300d 
 
-TABCMD = cat $$F | sed "s%original embedding%O%g" | sed "s%The EN_TOM_ICLR13_S\([EY]\)\([MN]\) dataset score over \([0-9A-Za-z_-]*\) \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The EN_TOM_ICLR13_S\1\2 $$corrtype score over \3 (\5 out of \4) is \7%g" | sed "s%The TOEFL score over \([0-9A-Za-z_-]*\) with bare \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The TOEFL $$corrtype score over \1 (\3 out of \2) is \5%g" | sed "s%The $$corrtype Corr over \([0-9A-Za-z_-]*\) is%The JURI $$corrtype correlation over \1 (0 out of 0) is%g" | grep -E "The .* $$corrtype "  | awk '{printf "%s %s out of %s \t %s \t %s\n", $$2, $$7, $$10, $$6, $$NF}' | python src/tabulation_script.py
+TABCMD = cat $$F | sed "s%original embedding%O%g" | sed "s%The EN_TOM_ICLR13_S\([EY]\)\([MN]\) dataset score over \([0-9A-Za-z_-]*\) \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The EN_TOM_ICLR13_S\1\2 $$corrtype score over \3 (\5 out of \4) is \7%g" | sed "s%The TOEFL score over \([0-9A-Za-z_-]*\) with bare \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The TOEFL $$corrtype score over \1 (\3 out of \2) is \5%g" | sed "s%The $$corrtype Corr over \([0-9A-Za-z_-]*\) is%The JURI $$corrtype correlation over \1 (0 out of 0) is%g" | grep -E "The .* $$corrtype"  | 
+TAB_SPEARMAN = export F=log/$* && export corrtype=Spearman &&
+TAB_PEARSON = export F=log/$* && export corrtype=Pearson && 
+TABCMD1 = grep "over G" | awk '{printf "%s\n", $$NF}'
+TABCMDA = awk '{printf "%s %s out of %s \t %s \t %s\n", $$2, $$7, $$10, $$6, $$NF}' | python src/tabulation_script.py
+TABCMDB = $(TABCMD) $(TABCMDA)
+tab_Spearman_%: log/%
+	$(TAB_SPEARMAN) $(TABCMD) $(TABCMD1)
+tab_Pearson_%: log/%
+	$(TAB_PEARSON) $(TABCMD) $(TABCMD1)
 tabulate_Spearman_%: log/%
-	export F=log/$* && export corrtype=Spearman && $(TABCMD) $*
+	$(TAB_SPEARMAN) $(TABCMD) $(TABCMDA) $*
 tabulate_Pearson_%: log/%
-	export F=log/$* && export corrtype=Pearson && $(TABCMD) $*
+	$(TAB_PEARSON) $(TABCMD) $(TABCMDA) $*
 
 ##################################
 #### GRID RUN CODE
@@ -467,7 +245,7 @@ ONLY_FANGLE_CAP: # 8003506  8003507  8003508  8003509  8003510  8003512  8003513
 # gcca, then perform test upon it.
 # SOURCE: big_vocabcount_en_intersect_gn_embedding which is the gn embeddings intersected with big_vocab that was made from 6 bitext files.
 #         300_7000_1e-8_logCount are basically Hyper parameters that were used while creating the GCCA embeddings.
-EXTRINSIC_TEST_CMD = "word=textread('$(word 1,$+)', '%s'); load('$(word 2,$+)'); load('$(word 3,$+)'); if size(G, 1) < size(G, 2); G=G'; end; sort_idx=sort_idx'; word=word(sort_idx); bvgn_count=bvgn_count(sort_idx); bvgn_embedding=bvgn_embedding(sort_idx,:); domikolov=1; bitext_true_extrinsic_test(G, bvgn_embedding, $(MYOPT), word, domikolov); exit;"
+EXTRINSIC_TEST_CMD = "word=textread('$(word 1,$+)', '%s'); load('$(word 2,$+)'); load('$(word 3,$+)'); if size(G, 1) < size(G, 2); G=G'; end; sort_idx=sort_idx'; word=word(sort_idx); bvgn_count=bvgn_count(sort_idx); bvgn_embedding=bvgn_embedding(sort_idx,:); domikolov=1; do_only_G=0; bitext_true_extrinsic_test(G, bvgn_embedding, $(MYOPT), word, domikolov, do_only_G); exit;"
 EXTRINSIC_TEST_DEP1 = $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat
 log/fullgcca_extrinsic_test_%: 
 	$(MAKE) TARGET=$@ MYOPT=$(word 2,$(subst ., ,$*)) MYDEP="$(EXTRINSIC_TEST_DEP1) $(STORE2)/$(word 1,$(subst ., ,$*)).mat" gcca_extrinsic_test_generic
@@ -519,262 +297,245 @@ $(STORE2)/glove_vocab_file: $(STORE2)/only_english_from_ppdb_input
 	$(GLOVEDIR)/vocab_count -min-count 100 -verbose 2 < $< > $@
 $(STORE2)/word2vec_embedding_file: $(STORE2)/only_english_from_ppdb_input
 	$(WORD2VECDIR)/word2vec -train $< -size 300 -window 10 -hs 0 -negative 15 -threads 20 -min-count 100 -output $@ -dumpcv $@_context
-#####################
+#######################################
 ## GCCA Running Code
-#####################
 # TARGET: A Typical run would 300_1000_1e-8 (300 is the number of
 # principal vectors, 1000 is the batch size, (higher is better))
 # Or v3_stgcca_run_sans_mu_300_1e-8_logCount.mat
 # Or $STORE2/v4_stgcca_run_sans_mu_300_1e-8_logCount.mat
 # SOURCE : A mat file containing S, B, Mu1, Mu2 which contain the
 # arabic, chinese, english bitext data 
-GCCA_RUN_SANS_MU_CMD = $(MATCMD)"options=strsplit('$*', '_'); r=str2num(options{1}); b=str2num(options{2}); load $<;svd_reg_seq=str2num(options{3})*ones(size(S)); [G, S_tilde, sort_idx]=se_gcca(S, B, r, b, svd_reg_seq); tic; save('$@', 'G', 'S_tilde', 'sort_idx'); toc; exit; "
-STE_GCCA_SANS_MU_CMD = $(MATCMD)"options=strsplit('$*', '_'); r=str2num(options{1}); load $<; svd_reg_seq=str2num(options{2})*ones(size(S)); [G, S_tilde, sort_idx]=ste_rgcca(S, B, r, svd_reg_seq); tic; save('$@', 'G', 'S_tilde', 'sort_idx'); toc; exit; "
 GCCA_OR_ST_EXTRACTOR = $(word 1,$(subst $(COMMA), ,$(word 2,$(subst ~, ,$*))))
 GCCA_OPT_EXTRACTOR = $(word 2,$(subst $(COMMA), ,$(word 2,$(subst ~, ,$*))))
+V5_PREPROC_OPT_EXTRACTOR = $(word 1,$(subst -, ,$(word 2,$(subst _, ,$*))))
 MONOMULTIWINDOW_DEP_OPT_EXTRACTOR = $(word 3,$(subst $(COMMA), ,$(word 2,$(subst ~, ,$*))))
 V56_EMBEDDING_CMD1 = TARGET=$@ V5_GCCA_OPT=$(GCCA_OPT_EXTRACTOR) GCCA_OR_ST=$(GCCA_OR_ST_EXTRACTOR) V56_GENERIC_DEP=
 V56_EMBEDDING_CMD2 = DATASET_TO_KEEP=`python src/calculate_index_of_dataset_to_keep.py $(GCCA_OR_ST_EXTRACTOR)` v5_generic 
 $(STORE2)/v5_embedding_%.mat:
 	if [ "$(MONOMULTIWINDOW_DEP_OPT_EXTRACTOR)" == "monomultiwindow" ] ; then \
-	    $(MAKE) $(V56_EMBEDDING_CMD1)"$(STORE2)/monomultiwindow_cell_input_$(word 1,$(subst ~, ,$*)).mat" $(V56_EMBEDDING_CMD2) ; \
+	   if [[ $(V5_PREPROC_OPT_EXTRACTOR) == *^* ]]; then \
+	       $(MAKE) $(V56_EMBEDDING_CMD1)"$(foreach ppopt,$(subst ^, ,$(V5_PREPROC_OPT_EXTRACTOR)),$(subst $(V5_PREPROC_OPT_EXTRACTOR),$(ppopt),$(STORE2)/monomultiwindow_cell_input_$(word 1,$(subst ~, ,$*)).mat))" $(V56_EMBEDDING_CMD2) ; \
+	   else \
+	       $(MAKE) $(V56_EMBEDDING_CMD1)"$(STORE2)/monomultiwindow_cell_input_$(word 1,$(subst ~, ,$*)).mat" $(V56_EMBEDDING_CMD2) ; \
+	   fi; \
 	elif [ "$(MONOMULTIWINDOW_DEP_OPT_EXTRACTOR)" == "" ] ; then \
-	    $(MAKE) $(V56_EMBEDDING_CMD1)"$(STORE2)/v5_cell_input_$(word 1,$(subst ~, ,$*)).mat" $(V56_EMBEDDING_CMD2) ; \
+	    if [[ $(V5_PREPROC_OPT_EXTRACTOR) == *^* ]]; then \
+	       echo $* && exit 1; \
+	    else \
+	       $(MAKE) $(V56_EMBEDDING_CMD1)"$(STORE2)/v5_cell_input_$(word 1,$(subst ~, ,$*)).mat" $(V56_EMBEDDING_CMD2) ; \
+	    fi; \
 	else \
 	    echo $* && exit 1 ; \
 	fi;
 
-V5_GENERIC_CMD1 = "options=strsplit('$(V5_GCCA_OPT)', '_'); r=str2num(options{1}); load $(word 1,$(V56_GENERIC_DEP)); svd_reg_seq=str2num(options{2})*ones(size(S)); "
+V5_GENERIC_CMD1 = "options=strsplit('$(V5_GCCA_OPT)', '_'); r=str2num(options{1}); "
 V5_GENERIC_CMD2 = "tic; save('$(TARGET)', 'G', 'S_tilde', 'sort_idx'); toc; exit; "
 v5_generic: $(V56_GENERIC_DEP)
 ifeq ($(findstring stgcca,$(GCCA_OR_ST)),stgcca)
-	$(MATCMD)$(V5_GENERIC_CMD1)"[G, S_tilde, sort_idx]=ste_rgcca(S([$(DATASET_TO_KEEP)]), B([$(DATASET_TO_KEEP)]), r, svd_reg_seq); "$(V5_GENERIC_CMD2)
+	$(MATCMD)$(V5_GENERIC_CMD1)"deptoload={$(foreach dep,$(V56_GENERIC_DEP),'$(dep)',)}; dsettokeep=[$(DATASET_TO_KEEP)]; S1={}; B1={}; for i=1:length(deptoload) load(deptoload{i}); S1=[S1 S(dsettokeep)]; B1=[B1 B(dsettokeep)]; end; svd_reg_seq=str2num(options{2})*ones(size(S1)); [G, S_tilde, sort_idx]=ste_rgcca(S1, B1, r, svd_reg_seq); "$(V5_GENERIC_CMD2)
 else
-	$(MATCMD)$(V5_GENERIC_CMD1)" [G, S_tilde, sort_idx]=se_gcca(S([$(DATASET_TO_KEEP)]), B([$(DATASET_TO_KEEP)]), r, str2num(options{3}), svd_reg_seq); "$(V5_GENERIC_CMD2)
+	exit 1 && $(MATCMD)$(V5_GENERIC_CMD1)" [G, S_tilde, sort_idx]=se_gcca(S([$(DATASET_TO_KEEP)]), B([$(DATASET_TO_KEEP)]), r, str2num(options{3}), svd_reg_seq); "$(V5_GENERIC_CMD2)
 endif
-
-$(STORE2)/v4_stgcca_run_sans_mu_%_logCount.mat: $(STORE2)/v4_gcca_input_svd_already_done_500_logCount.mat
-	$(STE_GCCA_SANS_MU_CMD)
-$(STORE2)/v3_stgcca_run_sans_mu_%_logCount.mat: $(STORE2)/v3_gcca_input_svd_already_done_500_logCount.mat
-	$(STE_GCCA_SANS_MU_CMD)
-$(STORE2)/v3_gcca_run_sans_mu_%_logCount.mat: $(STORE2)/v3_gcca_input_svd_already_done_500_logCount.mat
-	$(GCCA_RUN_SANS_MU_CMD)
-$(STORE2)/v2_gcca_run_sans_mu_%_logCount.mat: $(STORE2)/v2_gcca_input_svd_already_done_500_logCount.mat
-	$(GCCA_RUN_SANS_MU_CMD)
-$(STORE2)/gcca_run_sans_mu_%_logCount.mat: $(STORE2)/gcca_input_svd_already_done_500_logCount.mat
-	$(GCCA_RUN_SANS_MU_CMD)
-$(STORE2)/gcca_run_sans_mu_%_Count.mat: $(STORE2)/gcca_input_svd_already_done_500_Count.mat
-	$(GCCA_RUN_SANS_MU_CMD)
 
 # SOURCE: A small test file to practice doing se_gcca.
 test_gcca_run: res/tmp_bitext_svd.mat
 	$(MATCMD)"load $<; S={s}; B={b}; [G, S_tilde]=se_gcca(S, B, 10, 2, [1e-8]); U_tilde=S'; exit;"
 
-
-# TARGET: A single mat file containing S, B
-# cell. Currently only three targets exist 
-# gcca_input_svd_already_done_2.mat
-# gcca_input_svd_already_done_500_Count.mat
-# gcca_input_svd_already_done_500_logCount.mat
-# Also note that v2 differs from the unversioned one only wrt to
-# whether it uses the monolingual cooccurence statistics or not. 
-# In the most basica sense I just need to get as input the singular
-# vectors of a view after that my code takes the GCCA. (which is in
-# se_gcca.m) 
-# SOURCE: GCCA_INPUT_SVD_ALREADY_DONE_MAT_DEP referes to
-# $(STORE2)/bitext_svd_fr/cs_500.mat (500 means the dimensionality of
-# the SVD result) 
-# Then all those are put into a single cell called S and B
-# It calls on the the following files.
-# bitext_svd_ar_500_Count.mat                    bitext_svd_ar_500_logCount.mat
-# bitext_svd_cs_500_Count.mat                    bitext_svd_cs_500_logCount.mat
-# muc is mean uncentered. so if we have muc then mean uncentered svd is used.
+######################################################################
+## CELL PREPARATION CODE
+# TARGET: A single mat file containing S, B cell
+# SOURCE: muc is mean uncentered. so if we have muc then mean uncentered svd is used
 GCCA_INPUT_SVD_ALREADY_DONE_MAT_DEP = $(foreach lang,$(BIG_LANG),$(STORE2)/bitext_svd_$(lang)_%.mat)
 GCCA_INPUT_TODO = $(patsubst %,load %; B=[B b]; S=[S s]; whos;,$+)
 GCCA_INPUT_SVD_ALREADY_DONE_CMD = $(MATCMD)"tic; S={}; B={}; $(GCCA_INPUT_TODO) save('$@', 'S', 'B', '-v7.3'); toc; exit;"
 V5_SVD_DEP = $(GCCA_INPUT_SVD_ALREADY_DONE_MAT_DEP) $(STORE2)/monotext_svd_en_%.mat $(STORE2)/bvgn_svd_embedding_%.mat
-MONOMULTIWINDOW_SVD_DEP = $(V5_SVD_DEP) $(STORE2)/monotext10_svd_en_%.mat $(STORE2)/monotext12_svd_en_%.mat $(STORE2)/monotext14_svd_en_%.mat $(STORE2)/monotext15_svd_en_%.mat 
+MONOMULTIWINDOW_SVD_DEP = $(V5_SVD_DEP) $(STORE2)/monotext1_svd_en_%.mat $(STORE2)/monotext2_svd_en_%.mat $(STORE2)/monotext4_svd_en_%.mat $(STORE2)/monotext6_svd_en_%.mat $(STORE2)/monotext8_svd_en_%.mat $(STORE2)/monotext10_svd_en_%.mat $(STORE2)/monotext12_svd_en_%.mat $(STORE2)/monotext14_svd_en_%.mat $(STORE2)/monotext15_svd_en_%.mat
+V5_MONOMULTI_CMD = if [ ! -e tmptouchfile_$(@F) ] ; then echo $(@F) && qsub -hold_jid $(call join-with,$(COMMA),$(+F)) -cwd submit_grid_stub.sh tmptouchfile_$(@F) && while [ ! -f tmptouchfile_$(@F) ] ; do sleep 300 ;done &&  $(GCCA_INPUT_SVD_ALREADY_DONE_CMD) ; else echo $(@F) && $(GCCA_INPUT_SVD_ALREADY_DONE_CMD) ; fi
 $(STORE2)/monomultiwindow_cell_input_%.mat: $(subst $(STORE2)/,$(STORE2)/v5_indisvd_,$(MONOMULTIWINDOW_SVD_DEP))
-ifeq ($(wildcard tmptouchfile_$(@F)),"")
-	echo $(@F) && qsub -hold_jid $(call join-with,$(COMMA),$(+F)) -cwd submit_grid_stub.sh tmptouchfile_$(@F) && while [ ! -f tmptouchfile_$(@F) ] ; do sleep 300 ;done &&  $(GCCA_INPUT_SVD_ALREADY_DONE_CMD)
-else
-	echo $(@F) && $(GCCA_INPUT_SVD_ALREADY_DONE_CMD)
-endif
+	$(V5_MONOMULTI_CMD)
 
 $(STORE2)/v5_cell_input_%.mat: $(subst $(STORE2)/,$(STORE2)/v5_indisvd_,$(V5_SVD_DEP))
-ifeq ($(wildcard tmptouchfile_$(@F)),"")
-	echo $(@F) && qsub -hold_jid $(call join-with,$(COMMA),$(+F)) -cwd submit_grid_stub.sh tmptouchfile_$(@F) && while [ ! -f tmptouchfile_$(@F) ] ; do sleep 300 ;done &&  $(GCCA_INPUT_SVD_ALREADY_DONE_CMD)
-else
-	echo $(@F) && $(GCCA_INPUT_SVD_ALREADY_DONE_CMD)
-endif
+	$(V5_MONOMULTI_CMD)
 
 tmptouchfile_%:
 	touch $@
-$(STORE2)/v4_gcca_input_svd_already_done_%.mat: $(subst _svd_,_mean_centered_svd_,$(V3_SVD_DEP))
-	$(GCCA_INPUT_SVD_ALREADY_DONE_CMD)
-#TARGET: v3_gcca_input_svd_already_done_500_logCount.mat. This
-#       contains data from mikolov's embeddings as well as data from
-#       bitext and bitext-monolingual-part-window3 source
-V3_SVD_DEP = $(GCCA_INPUT_SVD_ALREADY_DONE_MAT_DEP) $(STORE2)/monotext_svd_en_%-truncatele20.mat $(STORE2)/bvgn_svd_embedding_500_Count.mat
-$(STORE2)/v3_gcca_input_svd_already_done_%.mat: $(V3_SVD_DEP)
-	$(GCCA_INPUT_SVD_ALREADY_DONE_CMD)
-$(STORE2)/v2_gcca_input_svd_already_done_%.mat: $(GCCA_INPUT_SVD_ALREADY_DONE_MAT_DEP) $(STORE2)/monotext_svd_en_%-truncatele20.mat 
-	$(GCCA_INPUT_SVD_ALREADY_DONE_CMD)
-$(STORE2)/gcca_input_svd_already_done_%.mat: $(GCCA_INPUT_SVD_ALREADY_DONE_MAT_DEP)
-	$(GCCA_INPUT_SVD_ALREADY_DONE_CMD)
 
-########################################
-### SVD RUNNING CODE (OVER RAW DATA)
-#######################################
+######################################################################
+## SVD RUNNING CODE (OVER RAW DATA)
 $(STORE2)/v5_indisvd_%.mat:
 	qsub -N $(@F) -p -1 -V -j y -l mem_free=25G -r yes -pe smp 10 -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl
 $(STORE2)/v5_indisvd_%.impl:
 	$(MATCMD)"optstr='$*'; options=strsplit(optstr, '_'); dtype=options{1}; lang=options{3}; mc_muc=options{4}; preprocess_option=options{5}; svd_size=str2num(options{6}); outfile='$(word 1,$(subst ., ,$@)).mat'; outdirname='$(@D)'; lif=larger_indisvd_filename(outdirname, outfile, optstr, options{6}); if isempty(lif) [b,s]=v5_indisvd(dtype, lang, mc_muc, preprocess_option, svd_size, '$(STORE2)'); else load(lif); s=s(1:svd_size); b=b(:,1:svd_size); end; save(outfile, 's', 'b'); exit;"
 
-###################################################
-########### THESE PORTIONS ARE DEPRECATED 
-TAKE_SVD_CMD_PART1 = $(MATCMD)"options=strsplit('$*', '_'); lang=options{1}; svd_size=str2num(options{2}); preprocess_option=options{3}; tic; load(['$(STORE2)/"
-TAKE_SVD_CMD_PART2 = "_',lang,'.mat']); if ~exist('align_mat'); align_mat=bvgn_embedding; end; disp(size(align_mat)); [align_mat, mu1, mu2]=preprocess_align_mat(align_mat,preprocess_option); disp(size(align_mat)); disp('preprocessing complete'); [b, s]=svds(align_mat, svd_size); s=transpose(diag(s)); clear('align_mat', 'lang', 'preprocess_option', 'options', 'svd_size'); whos; toc; save('$@', 's', 'b', 'mu1', 'mu2'); exit;"
-TAKE_MEAN_CENTERED_SVD_CMD = "_',lang,'.mat']); if ~exist('align_mat'); align_mat=bvgn_embedding; end; disp(size(align_mat)); [align_mat, mu1, mu2]=preprocess_align_mat(align_mat,preprocess_option); disp(size(align_mat)); disp('preprocessing complete'); [b, s, a]=svds(align_mat, svd_size); [b, s, a]=rank_one_svd_update(b, s, a, -1*ones(size(align_mat, 1), 1), mu1', 0); s=diag(s); save('$@', 's', 'b', 'mu1', 'mu2'); exit;"
-$(STORE2)/bitext_mean_centered_svd_%.mat:  $(BIG_ALIGN_MAT)
-	$(TAKE_SVD_CMD_PART1)"align"$(TAKE_MEAN_CENTERED_SVD_CMD)
-$(STORE2)/monotext_mean_centered_svd_%.mat: $(STORE2)/cooccur_en.mat
-	$(TAKE_SVD_CMD_PART1)"cooccur"$(TAKE_MEAN_CENTERED_SVD_CMD)
-$(STORE2)/bvgn_mean_centered_svd_%.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat 
-	$(TAKE_SVD_CMD_PART1)"big_vocabcount_en_intersect_gn"$(TAKE_MEAN_CENTERED_SVD_CMD)
-# TARGET: Results of taking their SVD stored in individual files like
-# bitext_svd_es_500_logCount.mat
-# Note that monotext svd is doing exactly the same thing but over the
-# monolingual cooccurence statistics.
-# However we also need to truncate the matrix because of computational considerations.
-# So we would create monotext_svd_en_500_logCount-truncatele20.mat
-# SOURCE: 1. The mat file with google embeddings.
-#         2. 6 mat files with sparse array denoting alignments to different languages
-$(STORE2)/bitext_svd_%.mat:  $(BIG_ALIGN_MAT)
-	$(TAKE_SVD_CMD_PART1)"align"$(TAKE_SVD_CMD_PART2)
-$(STORE2)/monotext_svd_%.mat : $(STORE2)/cooccur_en.mat
-	$(TAKE_SVD_CMD_PART1)"cooccur"$(TAKE_SVD_CMD_PART2)
-# TARGET: This creates a file that contains the SVD of the bvgn embeddings.
-# 	 We call $STORE2/bvgn_svd_embedding_500_Count
-$(STORE2)/bvgn_svd_%.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat 
-	$(TAKE_SVD_CMD_PART1)"big_vocabcount_en_intersect_gn"$(TAKE_SVD_CMD_PART2)
-############## ABOVE CODE IS DEPRECATED
+######################################################################
+## INPUT PREPARATION CODE 
+# Currently all the data files are as follows.
+# $STORE2/fnppdb_cooccurence_xl.mat
+# $STORE2/morphology_cooccurence_inflection.mat
+# $STORE2/polyglotwiki_cooccurence_1 to 15.mat
+# $STORE2/agigastandep_cooccurence_$(STANDEP_LIST).mat
+# $STORE2/mikolov_cooccurence_intersect.mat
+# $STORE2/bitext_cooccurence_$(BIG_LANG).mat
+VOCABWITHCOUNT_500K_FILE := $(STORE)/polyglot_wikitxt/en/full.txt.vc5.500K
+VOCAB_500K_FILE := $(VOCABWITHCOUNT_500K_FILE)_word
+H5_TO_MAT_MAKER = $(shell echo "align_mat=spconvert(h5read('$1.h5', '/cooccurence_data')); save('$1', 'align_mat', '-v7.3');")
+# TARGET: Basically converts the data in h5 to a 7.3 mat file.
+# This is the only good interop method between python and mat
+# file that I could find which is
+# not an ascii text (too big and prone to corruption)
+# I want this rule to fail if the dependency does not exist
+# instead of trying to make the dependency. Since this is only
+# to fix failed jobs anyway where I am making the targets manually.
+h5_to_mat_maker_%: # % 
+	$(MATCMD)"$(call H5_TO_MAT_MAKER,$*)"
+make_all_cooccurences: ## $(STORE2)/freebase_cooccurence_%.mat
+	$(MAKE) run_agigastandep_mat_on_grid   morphogrid fnppdbgrid polygrid 
+#########################################
+#### FRAMENET/PPDB COOCCURENCE EXTRACTOR
+fnppdbgrid:
+	$(QSUBMAKE) run_fnppdb_on_grid
+run_fnppdb_on_grid:
+	for db in l xl ; do $(MAKE)  $(STORE2)/fnppdb_cooccurence_"$db".mat ; done
+# This also creates $(STORE2)/wordnet_cooccurence_%.mat
+# That is a bit misleading since there is no l or xl in wordnet.
+$(STORE2)/fnppdb_cooccurence_%.mat: $(VOCAB_500K_FILE) /home/prastog3/projects/paraphrase_framenet/fn15-frameindexLU-% 
+	python src/create_fnppdb_cooccurence.py $+ $@
 
-# SOURCE: All of the vocabulary files.
-# TARGET: A sparse matrix of english co-occurence counts.
-# This took 1hour 16 minutes for the first half. and 30 minutes for second
-## Make the sparse cooccurence matrix of english. using the full
-# vocabulary. In fact dont even need to store in memory just write to
-# file all the time. I would once again have to use  sort -n | uniq -c
-# trick because the data is gonna be large and I would be doing append
-# only
-# src/create_cooccurence_matrix takes
-# 1. Size of vocabulary file
-# 2. Name of vocabulary file
-# 3. The input file name
-# 4. The number of sentences in input file
-# 5. The window size
-# 6. The number of threads that would run.
-# 7. the name of filename to append data to.
-# I create #thread number of files and append to them separately instead of worrying about concurrency.
-# id_word id_contextword 1 signed_distance (- if on left and + if right)
-# 13994 131134 -1
-# 13994 2623 1
-# 2623 13994 0
-# 641 8 6
-# 8 641 5
-# time python src/print_cooccurence_rows.py 131133 /export/a14/prastog3/big_vocabcount_en_intersect_gn_embedding_word /export/a14/prastog3/only_english_from_ppdb_input 63789996 1 63789900 3189499 tmptmp 2>> /dev/null
-# A=fread(fopen('tmp_cooccur_en_1.mat_0'), 'int32'); A=reshape(A, 3, length(A)/3); A=A'; A(:,3)=1./abs(A(:,3));
-# This process takes 30G of memory only. (at max it took 29G)
-run_cooccurence_on_grid_%: 
-	qsub -V -j y -l mem_free=30G -l h_vmem=40G -l hostname=a15 -r yes -cwd submit_grid_stub.sh $(STORE2)/cooccur_en_$*.mat
-# When things went bad because of the last file i manually fized by this code.
-# load /export/a15/prastog3/cooccur_en_15.mat
-# dimarr=[size(align_mat) 0]; window_size=15; input_file={'/export/a15/prastog3/tmpfine_6000000ah'};i=1;
-# A=fread(fopen(input_file{i}), [3, Inf], '*int32'); A=A'; A(A(:,3)>window_size | A(:,3)<-window_size,:)=[];   A=double(A);
-# A(end+1,:)=A(1,:);
-# A(1,:)=dimarr;
-# A(2:end,3) = 1./abs(A(2:end, 3));
-# align_mat=align_mat+spconvert(A);save('/export/a15/prastog3/cooccur_en_15.mat', 'align_mat', '-v7.3');
-SENTENCE_COUNT := 63789996
-INCREMENT := 500000
-VOCAB := 131133
-max = if [ $1 -ge $2 ] ; then echo $1; else echo $2; fi
-$(STORE2)/cooccur_en_%.mat: # MYDEP should be "$(shell seq -f '$(STORE)/tmpslice_cooccur_en_$(shell $(call max,$*,15))_%0.f' 0 $(INCREMENT) $(SENTENCE_COUNT))"
-	$(MAKE) TARGET=$@ VOCAB=$(VOCAB) WINDOW_SIZE=$* SENTENCE_COUNT=$(SENTENCE_COUNT) INCREMENT=$(INCREMENT) MIN_LENGTH_SENTENCE=3 MYDEP="$(wildcard $(STORE)/tmpfine_*)" cooccur_en_parallel_generic ;
+######################################
+#### MORPHOLOGY COOCCURENCE EXTRACTOR
+morphogrid:
+	$(QSUBMAKE) $(STORE2)/morphology_cooccurence_inflection.mat
 
-cooccur_en_parallel_generic: $(MYDEP)
-	echo "$+" > tmpfilelist_$(WINDOW_SIZE) && $(MATCMD)" align_mat=cooccur_en_parallel_generic(NaN, $(WINDOW_SIZE), strsplit(fileread('tmpfilelist_$(WINDOW_SIZE)'), ' '), NaN); save('$(TARGET)', 'align_mat', '-v7.3'); exit;"
+$(STORE2)/morphology_cooccurence_inflection.mat: $(VOCAB_500K_FILE) $(STORE)/catvar21.txt
+	PYTHONPATH=$$PYTHONPATH:~/projects/rephit python src/create_morphological_cooccurence.py $+ $@ 2> $@.log && matlab -r "load $@; align_mat=align_mat(:,sum(align_mat)>1); save('$@', 'align_mat');"
 
-$(STORE)/tmpslice_cooccur_en_%: $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word $(STORE2)/only_english_from_ppdb_input
-	pypy src/print_cooccurence_rows.py $(VOCAB) $< $(word 2,$+) $(SENTENCE_COUNT) $(WINDOW_SIZE)   $(word 2,$(subst _, ,$*)) $$INCREMENT $@ $(MIN_LENGTH_SENTENCE)
+#################################
+#### WIKIPEDIA POLYGLOT EXTRACTOR
+# The actual final command ran was the following
+polygrid: # your job 8494220
+	qsub -V -j y -l mem_free=50G -l hostname=a15 -r yes -cwd submit_grid_stub.sh run_polyglot_on_grid
+run_polyglot_on_grid: 
+	for i in {1..15}; do echo $$i; done | xargs -I % -P 3 $(MAKE) $(STORE2)/polyglotwiki_cooccurence_%.mat
+# TARGET: A target looks like $(STORE2)/polyglotwiki_cooccurence_15. 
+#         The number after the last underscore is the window size. 
+# SOURCE: The first source is the vocabulary file and the second is
+#         the actual text
+$(STORE2)/polyglotwiki_cooccurence_%.mat: $(VOCAB_500K_FILE) $(STORE)/polyglot_wikitxt/en/full.txt
+	$(MAKE) VOCAB=$< TEXT=$(word 2,$+) WINDOW_SIZE=$* TARGET=$@ polyglotwiki_cooccurence_generic
+BOS_TO_MAINTAIN := 15
+MIN_LENGTH_SENTENCE := 3
+polyglotwiki_cooccurence_generic: # the full text file has 75241648 lines 
+	time python src/count_cooccurence.py $(VOCAB) $(TEXT) $(WINDOW_SIZE) $(TARGET).h5 $(BOS_TO_MAINTAIN) $(MIN_LENGTH_SENTENCE) && $(MATCMD)"$(call H5_TO_MAT_MAKER,$(TARGET))"
 
-$(STORE2)/cooccur_en.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word $(BIG_INPUT)
-	pypy src/create_sparse_cooccurmat.py $* $+ 1> tmp_cooccur 2> log/cooccur_en_$*.mat && \
-	split -l5000000 tmp_cooccur _tmp && \
-        for file in _tmp* ; do sort $FILE -o $FILE & done && \
-        wait && \
-        sort -m _tmp* | uniq -c > tmp_cooccur_en && \
-	rm _tmp* && \
-	python src/create_cooccur_en_mat.py tmp_cooccur_en ($$(wc -l $$STORE2/big_vocabcount_en_intersect_gn_embedding_word)) tmp_cooccur_en_spconvert_style 0 $* \
-	matlab -r "[a,b,c]=textread('tmp_cooccur_en_spconvert_style', '%d %d %d'); align_mat=spconvert([a,b,c]); save('$@', 'align_mat'); exit;"
+##############################
+### AGIGA PROCESSING CODE
+AGIGADIR := /export/corpora5/LDC/LDC2012T21
+AGIGATOOLDIR := $(AGIGADIR)/tools/agiga_1.0
+STANDEP_LIST_PART1 := pobj
+STANDEP_LIST_PART2 := nsubj,amod,advmod,rcmod,dobj,prep_of,prep_in,prep_to,prep_on,prep_for,prep_with,prep_from,prep_at,prep_by,prep_as,prep_between,xsubj,agent,conj_and,conj_but
+STANDEP_LIST := $(STANDEP_LIST_PART1),$(STANDEP_LIST_PART2)
+STANDEP_LIST_PREPROCOPT := +nsubj.pass,-pobj,$(STANDEP_LIST_PART2)
+# TARGET: This creates 21 mat files. One per relation type by gatherings counts from all the files.
+# SOURCE: All the files in the $STORE2/agigastandep directory and the 21 relation types.
+#         and a mapping of those relations to indices
+run_agigastandep_mat_on_grid: # The jobs are 8591191-211
+	for r in $(subst $(COMMA), ,$(STANDEP_LIST)); do qsub -V -j y -l mem_free=30G -l hostname=a14  -cwd submit_grid_stub.sh $(STORE2)/agigastandep_cooccurence_"$$r".mat; done
+$(STORE2)/agigastandep_cooccurence_%.mat:  $(VOCAB_500K_FILE) # $(STORE2)/agigastandep
+	time python src/agigastandep_cooccurence_h5.py $* $(STANDEP_LIST) $(STORE2)/agigastandep $<  $@.h5 && $(MATCMD)"$(call H5_TO_MAT_MAKER,$@)"
+# TARGET: This just cleans up on a botched attempt.
+clean_agigastandep:
+	rm -rf $(STORE2)/agigastandep && mkdir $(STORE2)/agigastandep
+# TARGET: This runs $(AGIGA)/standep on the grid.
+# check that $STORE2/agigastandep has 1007 files once this finishes
+run_agigastandep_directory_on_grid: # your job 8494207
+	qsub -V -j y -l mem_free=30G -l hostname=a14  -cwd submit_grid_stub.sh $(STORE2)/agigastandep
+# TARGET: This creates a directory which contains the dependency
+# cooccurence counts for the list of relations specified in STANDEP_LIST
+# and this uses the child _xargs target.
+# SOURCE: It takes the vocabulary file and the Agiga data directory 
+# $(STORE2)/agigastandep: $(VOCAB_500K_FILE) $(AGIGADIR)/data/xml
+# 	find $(word 2,$+) -name [clnwx]*.xml.gz | xargs -I % -P 2 $(MAKE) AGIGATOOLDIR=$(AGIGATOOLDIR) INPUT_FILE=% STANDEP_LIST=$(STANDEP_LIST) STANDEP_LIST_PREPROCOPT=$(STANDEP_LIST_PREPROCOPT) OUTPUT_DIR=$@ VOCAB_FILE=$< agigastandep_xargs
+agigastandep_xargs:
+	time java -cp "$(AGIGATOOLDIR)/build/agiga-1.0.jar:$(AGIGATOOLDIR)/lib/*" edu.jhu.agiga.AgigaPrinter stanford-deps $(INPUT_FILE) | pypy src/agigastandep_cooccurence_preproc.py $(VOCAB_FILE) $(STANDEP_LIST_PREPROCOPT) $(STANDEP_LIST)  $(OUTPUT_DIR)/$(notdir $(INPUT_FILE))
 
-$(STORE2)/true_cooccur_en_%.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding_2column $(STORE2)/only_english_from_ppdb_input
-	~/tools/glove/cooccur -verbose 2 -symmetric 1 -window-size $* -vocab-file $(word 1,$+) -memory 8.0 -overflow-file tmp_overflow < corpus.txt > $@.bin && ./res/convertvec bin2txt $@.bin  $@.txt && 
-
-$(STORE2)/only_english_from_ppdb_input: $(BIG_INPUT)
-	cat $+ | awk -F'|' '{print $$4}' > $@ 
-
-# TARGET: Mat file which contains the google embeddings.
-# bvgn means big vocab google news
-$(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat: $(STORE2)/big_vocabcount_en_intersect_gn_embedding
-	$(MATCMD)"bvgn_embedding=dlmread('$<', '', 0, 1); bvgn_count=bvgn_embedding(:,1);bvgn_embedding=bvgn_embedding(:,2:size(bvgn_embedding,2)); save('$@', 'bvgn_embedding','bvgn_count');"
-
-
-## 1. Check that the sparse matrix has the correct values. Manually check the result.  (Check using a smaller data file.) DONE
-## For processing the french matrix I had to do the following. because of size
-# numpy.asarray(idx_en_list).tofile("tmp_idx_en_list", sep="\n"); numpy.asarray(idx_fr_list).tofile("tmp_idx_fr_list", sep="\n")
-## paste tmp_idx_en_list tmp_idx_fr_list |  sort -n | uniq -c > tmp_idx_cnt_en_fr
-## arr=dlmread('tmp_idx_cnt_en_fr', '', 0, 0); align_mat=sparse(1+arr(:,2), 1+arr(:,3), arr(:,1)); save('/export/a14/prastog3/align_fr.mat', 'align_mat');
-## The minimum of tmp_idx_en_list is 0
-## The maximum of tmp_idx_en_list is 131132 (0 indexed since total are 131133)
-## The minimum of tmp_idx_fr_list is 0
-## The maximum of tmp_idx_fr_list is 2243100 (total are 2243101 so 0 indexed)
-
-gridrun_align_mat:
-	for targ in $(BIG_LANG); do $(QSUBMAKE) $(STORE2)/align_"$$targ".mat ; done 
-
-# TARGET: A mat file with three variables 'emb' 'word' 'id'
-# SOURCE: This takes 3 files as input.
-# 	  1. A word file which provides the word to index mapping that must be followed while converting 
-$(STORE2)/glove.%B.300d.mat: $(STORE2)/glove.%B.300d.txt_word $(STORE2)/glove.%B.300d.txt
-	$(MATCMD)"tic; word=textread('$(word 1,$+)', '%s'); emb=dlmread('$(word 2,$+)', '', 0, 1); id='glove$*'; save('$@', 'emb', 'id', 'word', '-v7.3'); toc; exit;"
-
-res/word_sim/simlex_simplified.txt: 
-	awk '{if( NR > 1){print $$1, $$2, $$4}}' res/word_sim/SimLex-999.txt  > $@
-# TARGET: The simplified outputs
-# SOURCE: These are rare word and contextual word similarity datasets which need to simplified
-res/word_sim/rw_simplified.txt: res/word_sim/rw.txt
-	awk '{print $$1, $$2, $$3}' $+ > $@
-
-res/word_sim/scws_simplified.txt: res/word_sim/scws.txt
-	awk -F $$'\t' '{print $$2, $$4, $$8}' $+ > $@
+###########################################
+## BITEXT PROCESSING CODE
+gridrun_align_mat: # 8591368 to 72
+	for targ in $(BIG_LANG); do $(QSUBMAKE) $(STORE2)/bitext_cooccurence_"$$targ".mat ; done 
 
 # TARGET: sparse matrix encoding the alignment as a mat file
 # SOURCE: 1. The vocabulary of the foreign language along with counts.
 #	2. The embeddings for english words present in google and bitext
 # 	3. The simplified file with alignments.
 # Note that the word file is auto generated from the rule on top
-$(STORE2)/align_%.mat: $(STORE2)/big_vocabcount_% $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word $(STORE2)/ppdb-input-simplified-%
+$(STORE2)/bitext_cooccurence_%.mat: $(STORE2)/big_vocabcount_% $(VOCABWITHCOUNT_500K_FILE) $(STORE2)/ppdb-input-simplified-%
 	time python src/create_sparse_alignmat.py $+ $@ 2> log/$(@F)
 
+###########################################
+## MIKOLOV PROCESSING CODE
+# TARGET: Mat file which contains the google embeddings.
 # TARGET : intersect big_vocabcount_en and google embedding
 # 	Its a file with first column as the word,
 #	second column is count in the source files.
 #	third column onwards we have the embeddings.
 # SOURCE : The google embedding and english big vocab
-$(STORE2)/big_vocabcount_en_intersect_gn_embedding: $(STORE)/gn300.txt $(STORE2)/big_vocabcount_en
-	python src/overlap_between_google_and_big_vocabcount.py $+ $@
+$(STORE2)/mikolov_cooccurence_intersect.mat: $(STORE)/gn300.txt $(VOCABWITHCOUNT_500K_FILE)
+	time python src/overlap_between_google_and_big_vocabcount.py $+ $@
+
+############################################
+## GLOVE PROCESSING CODE
+# TARGET: A mat file with three variables 'emb' 'word' 'id'
+# SOURCE: This takes 3 files as input.
+# 	  1. A word file which provides the word to index mapping that must be followed while converting 
+$(STORE2)/glove.%B.300d.mat: $(STORE2)/glove.%B.300d.txt_word $(STORE2)/glove.%B.300d.txt
+	$(MATCMD)"tic; word=textread('$(word 1,$+)', '%s'); emb=dlmread('$(word 2,$+)', '', 0, 1); id='glove$*'; save('$@', 'emb', 'id', 'word', '-v7.3'); toc; exit;"
+
+##################################
+## FREEBASE COCCURENCE EXTRACTOR
+# $(STORE2)/freebase_cooccurence_%.mat: # This data is being prepared in the COE grid.
+# 	scp prastogi@external.hltcoe.jhu.edu:~/freebase_cooccurence_$*.mat $@
+
+###############################
+#### FLICKR PREPARATION 
+# # qsub -V -j y -l mem_free=25G -r yes  -cwd submit_grid_stub.sh $STORE/flickr30k_PHOW_features.mat
+# # Your job 8421424
+# $(STORE2)/flickr30k_cooccurence_%.mat:
+# FLICKR30KDIR := /export/a15/prastog3/flickr30k/flickr30k-images
+# $(STORE)/flickr30k_PHOW_features.mat: $(FLICKR30KDIR)
+# 	$(MATCMD)"input_dir='$<'; outputFile='$@'; [hists, image_path]=flickr30k_feature_extractor(input_dir, outputFile); save(outputFile, 'hists', 'image_path'); exit;"
+# res/test_set.vocabulary: res/
+
+###########################################
+##### BITEXTENGLISH PROCESSING CODE
+SENTENCE_COUNT := 63789996
+INCREMENT := 500000
+VOCAB := 131133
+max = if [ $1 -ge $2 ] ; then echo $1; else echo $2; fi
+
+
+##########################################
+## SIMPLIFIED FILE CREATION CODE
+res/word_sim/simlex_simplified.txt: 
+	awk '{if( NR > 1){print $$1, $$2, $$4}}' res/word_sim/SimLex-999.txt  > $@
+# TARGET: The simplified outputs
+# SOURCE: These are rare word and contextual word similarity datasets which need to simplified
+res/word_sim/rw_simplified.txt: res/word_sim/rw.txt
+	awk '{print $$1, $$2, $$3}' $+ > $@
+res/word_sim/scws_simplified.txt: res/word_sim/scws.txt
+	awk -F $$'\t' '{print $$2, $$4, $$8}' $+ > $@
+
+###############################
+##### VOCABULARY CREATION CODE
+VOCAB_POLYGLOT_CMD = head -n $*000 $< > $@
+$(STORE)/polyglot_wikitxt/en/full.txt.vc10.%K: $(STORE)/polyglot_wikitxt/en/full.txt.vc10.1M
+	$(VOCAB_POLYGLOT_CMD)
+$(STORE)/polyglot_wikitxt/en/full.txt.vc5.%K: $(STORE)/polyglot_wikitxt/en/full.txt.vc5.1M
+	$(VOCAB_POLYGLOT_CMD)
+$(STORE)/polyglot_wikitxt/en/full.txt.vc%.1M: $(STORE)/polyglot_wikitxt/en/full.txt.vocabcount%.lower
+	 head -n 1000000 $<  > $@
+$(STORE)/polyglot_wikitxt/en/full.txt.vocabcount%.lower: $(STORE)/polyglot_wikitxt/en/full.txt
+	time $(TOOLDIR)/count/vocab_count -min-count $* -verbose 0 -lowercase 1 -replacerandomnumber 1 < $(@D)/full.txt  > $@
+
 
 # TARGET : A vocabulary of english created from the 6 files.
 #          with counts of how many times the words occurred
