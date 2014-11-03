@@ -1,3 +1,9 @@
+""" This takes a vocabulary file and a frameIndexLU file. and then marks the frames as contexts for the words listed under the same frame. so for example there should be an entry for (renounced, Abandonment)
+0	2031	Abandonment	renounced.v
+0	2031	Abandonment	forsaken.n
+grep -n renounced $VOCAB_500K_FILE = 18778
+so the entry should be (18778, 1)
+"""
 import sys
 import numpy as np
 from scipy import sparse, io

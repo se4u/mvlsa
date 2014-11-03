@@ -14,8 +14,8 @@ echo_qstatarg_%:
 echo_qsubpemake:
 	echo $(QSUBPEMAKE)
 # A literal space.
-space :=
-space +=
+SPACE :=
+SPACE +=
 COMMA := ,
 # Joins elements of the list in arg 2 with the given separator.
 # 1. Element separator.
@@ -43,7 +43,7 @@ GLOVEDIR := /home/prastog3/tools/glove
 TOOLDIR := /home/prastog3/tools
 WORD2VECDIR := $(TOOLDIR)/word2vec/trunk
 RESPATH := /home/prastog3/projects/mvppdb/res
-BIG_LANG := ar cs de es fr zh 
+BIG_LANG := ar cs de es fr zh
 BIG_INPUT := $(addprefix $(STORE2)/ppdb-input-simplified-,$(BIG_LANG))
 BIG_INPUT_WORD := $(addsuffix _word,$(BIG_INPUT))
 BIG_ALIGN_MAT := $(patsubst %,$(STORE2)/align_%.mat,$(BIG_LANG))
@@ -245,10 +245,10 @@ ONLY_FANGLE_CAP: # 8003506  8003507  8003508  8003509  8003510  8003512  8003513
 # gcca, then perform test upon it.
 # SOURCE: big_vocabcount_en_intersect_gn_embedding which is the gn embeddings intersected with big_vocab that was made from 6 bitext files.
 #         300_7000_1e-8_logCount are basically Hyper parameters that were used while creating the GCCA embeddings.
-EXTRINSIC_TEST_CMD = "word=textread('$(word 1,$+)', '%s'); load('$(word 2,$+)'); load('$(word 3,$+)'); if size(G, 1) < size(G, 2); G=G'; end; sort_idx=sort_idx'; word=word(sort_idx); bvgn_count=bvgn_count(sort_idx); bvgn_embedding=bvgn_embedding(sort_idx,:); domikolov=1; do_only_G=0; bitext_true_extrinsic_test(G, bvgn_embedding, $(MYOPT), word, domikolov, do_only_G); exit;"
-EXTRINSIC_TEST_DEP1 = $(STORE2)/big_vocabcount_en_intersect_gn_embedding_word $(STORE2)/big_vocabcount_en_intersect_gn_embedding.mat
+EXTRINSIC_TEST_CMD = "word=textread('$(word 1,$+)', '%s'); load('$(word 2,$+)'); if size(G, 1) < size(G, 2); G=G'; end; word=word(sort_idx); domikolov=1; do_only_G=1; dim_after_cca=$(DIM_AFTER_CCA); bvgn_emb=nan; bitext_true_extrinsic_test(G, bvgn_emb, dim_after_cca, word, domikolov, do_only_G); exit;"
+EXTRINSIC_TEST_DEP1 = $(VOCAB_500K_FILE) 
 log/fullgcca_extrinsic_test_%: 
-	$(MAKE) TARGET=$@ MYOPT=$(word 2,$(subst ., ,$*)) MYDEP="$(EXTRINSIC_TEST_DEP1) $(STORE2)/$(word 1,$(subst ., ,$*)).mat" gcca_extrinsic_test_generic
+	$(MAKE) TARGET=$@ DIM_AFTER_CCA=$(word 2,$(subst ., ,$*)) MYDEP="$(EXTRINSIC_TEST_DEP1) $(STORE2)/$(word 1,$(subst ., ,$*)).mat" gcca_extrinsic_test_generic
 gcca_extrinsic_test_generic: $(MYDEP)
 	$(MATCMDENV)$(EXTRINSIC_TEST_CMD) | tee $(TARGET)
 ###### OTHER TEST  
@@ -297,75 +297,71 @@ $(STORE2)/glove_vocab_file: $(STORE2)/only_english_from_ppdb_input
 	$(GLOVEDIR)/vocab_count -min-count 100 -verbose 2 < $< > $@
 $(STORE2)/word2vec_embedding_file: $(STORE2)/only_english_from_ppdb_input
 	$(WORD2VECDIR)/word2vec -train $< -size 300 -window 10 -hs 0 -negative 15 -threads 20 -min-count 100 -output $@ -dumpcv $@_context
+
+
+# TODO
+# 1. TODO: CHECK THAT THE CODE IS GIVING THE RIGHT OUTPUT. CHECK EVERY STEP OF THE WAY !!! Also
+# Check the evaluation Code
+# 
+# 2. Running the job make -j 100 $STORE2/v5_embedding_mc_CountPow025-trunccol50000_100~E,300_1e-5.mat
+#    This totally takes 714 minutes, in real.
+#    but I can run 10 jobs at a time, so with the worst possible
+#    performance it would take 3 hours to take svd of all the data
+#    sources. 
+# 3. I am now running the "qsub -V -j y -l mem_free=50G -r no -pe smp
+# 40 -cwd submit_grid_stub.sh
+# $STORE2/v5_embedding_mc_CountPow025-trunccol50000_100~E,300_1e-5.mat"
+# (you job 8691397)
+#    40 slots and 50G memory. I want to see how fast it is. and also
+# what the results are ? (The results are abysmal) Your job 8708737
+# It only took 14m (or it was sped up ten times)
+# 4. make -j 50
+# $STORE2/v5_embedding_mc_CountPow025-truncatele200_100~E,300_1e-5.mat
+# (This runs jobs from 159 to 202 (8691))
+# (Also this job would have some of the things failing. but dont worry
+# that's just because of the stupid criteria which wants all columns
+# to have numbers > 200 some of the views are too sparse for that.) so
+# just remove the failing views before running the jobs. 
+# 5. One of the things I can do is make an option to sum up all the
+# matrices before taking SVD for say the monotext counts. but is it
+# needed ?  
+# 6. Also I want to replicate the performance achieved by previous
+# settings. To do that would be tough because of the fact that I am
+# not
+# 7. make sure that sort_idx is used to sort the word list.
 #######################################
 ## GCCA Running Code
-# TARGET: A Typical run would 300_1000_1e-8 (300 is the number of
-# principal vectors, 1000 is the batch size, (higher is better))
-# Or v3_stgcca_run_sans_mu_300_1e-8_logCount.mat
-# Or $STORE2/v4_stgcca_run_sans_mu_300_1e-8_logCount.mat
-# SOURCE : A mat file containing S, B, Mu1, Mu2 which contain the
-# arabic, chinese, english bitext data 
-GCCA_OR_ST_EXTRACTOR = $(word 1,$(subst $(COMMA), ,$(word 2,$(subst ~, ,$*))))
+# Acceptable codes are fn, mo, po, ag, mi, bi
+# TARGET: The typical targets are
+# $STORE2/v5_embedding_mc_CountPow025-trunccol200000_100~@fn,300_1e-5.mat
+# $STORE2/v5_embedding_mc_CountPow025-truncatele200_100~@fn,300_1e-5.mat
+# $STORE2/v5_embedding_mc_CountPow025-trunccol200000_100~E@mi,300_1e-5.mat
+# $STORE2/v5_embedding_mc_CountPow025^CountPow075-trunccol200000_100~@fn,300_1e-5.mat
+# SOURCE : mat files containing svd of the individual views.
 GCCA_OPT_EXTRACTOR = $(word 2,$(subst $(COMMA), ,$(word 2,$(subst ~, ,$*))))
 V5_PREPROC_OPT_EXTRACTOR = $(word 1,$(subst -, ,$(word 2,$(subst _, ,$*))))
-MONOMULTIWINDOW_DEP_OPT_EXTRACTOR = $(word 3,$(subst $(COMMA), ,$(word 2,$(subst ~, ,$*))))
-V56_EMBEDDING_CMD1 = TARGET=$@ V5_GCCA_OPT=$(GCCA_OPT_EXTRACTOR) GCCA_OR_ST=$(GCCA_OR_ST_EXTRACTOR) V56_GENERIC_DEP=
-V56_EMBEDDING_CMD2 = DATASET_TO_KEEP=`python src/calculate_index_of_dataset_to_keep.py $(GCCA_OR_ST_EXTRACTOR)` v5_generic 
 $(STORE2)/v5_embedding_%.mat:
-	if [ "$(MONOMULTIWINDOW_DEP_OPT_EXTRACTOR)" == "monomultiwindow" ] ; then \
-	   if [[ $(V5_PREPROC_OPT_EXTRACTOR) == *^* ]]; then \
-	       $(MAKE) $(V56_EMBEDDING_CMD1)"$(foreach ppopt,$(subst ^, ,$(V5_PREPROC_OPT_EXTRACTOR)),$(subst $(V5_PREPROC_OPT_EXTRACTOR),$(ppopt),$(STORE2)/monomultiwindow_cell_input_$(word 1,$(subst ~, ,$*)).mat))" $(V56_EMBEDDING_CMD2) ; \
-	   else \
-	       $(MAKE) $(V56_EMBEDDING_CMD1)"$(STORE2)/monomultiwindow_cell_input_$(word 1,$(subst ~, ,$*)).mat" $(V56_EMBEDDING_CMD2) ; \
-	   fi; \
-	elif [ "$(MONOMULTIWINDOW_DEP_OPT_EXTRACTOR)" == "" ] ; then \
-	    if [[ $(V5_PREPROC_OPT_EXTRACTOR) == *^* ]]; then \
-	       echo $* && exit 1; \
-	    else \
-	       $(MAKE) $(V56_EMBEDDING_CMD1)"$(STORE2)/v5_cell_input_$(word 1,$(subst ~, ,$*)).mat" $(V56_EMBEDDING_CMD2) ; \
-	    fi; \
-	else \
-	    echo $* && exit 1 ; \
-	fi;
-
-V5_GENERIC_CMD1 = "options=strsplit('$(V5_GCCA_OPT)', '_'); r=str2num(options{1}); "
-V5_GENERIC_CMD2 = "tic; save('$(TARGET)', 'G', 'S_tilde', 'sort_idx'); toc; exit; "
+	$(MAKE) TARGET=$@ DEP_FILE_NAME=tmpv5dep_$* GCCA_OPT=$(GCCA_OPT_EXTRACTOR) V56_GENERIC_DEP="`python src/calculate_dependency.py $* $(STANDEP_LIST) $(subst $(SPACE),$(COMMA),$(BIG_LANG)) $(STORE2)`" v5_generic  ;
+# save(outfile, 's', 'b', 'ajtj_size', 'kj_diag', 'r', 'ajtj')
 v5_generic: $(V56_GENERIC_DEP)
-ifeq ($(findstring stgcca,$(GCCA_OR_ST)),stgcca)
-	$(MATCMD)$(V5_GENERIC_CMD1)"deptoload={$(foreach dep,$(V56_GENERIC_DEP),'$(dep)',)}; dsettokeep=[$(DATASET_TO_KEEP)]; S1={}; B1={}; for i=1:length(deptoload) load(deptoload{i}); S1=[S1 S(dsettokeep)]; B1=[B1 B(dsettokeep)]; end; svd_reg_seq=str2num(options{2})*ones(size(S1)); [G, S_tilde, sort_idx]=ste_rgcca(S1, B1, r, svd_reg_seq); "$(V5_GENERIC_CMD2)
-else
-	exit 1 && $(MATCMD)$(V5_GENERIC_CMD1)" [G, S_tilde, sort_idx]=se_gcca(S([$(DATASET_TO_KEEP)]), B([$(DATASET_TO_KEEP)]), r, str2num(options{3}), svd_reg_seq); "$(V5_GENERIC_CMD2)
-endif
-
-# SOURCE: A small test file to practice doing se_gcca.
-test_gcca_run: res/tmp_bitext_svd.mat
-	$(MATCMD)"load $<; S={s}; B={b}; [G, S_tilde]=se_gcca(S, B, 10, 2, [1e-8]); U_tilde=S'; exit;"
-
-######################################################################
-## CELL PREPARATION CODE
-# TARGET: A single mat file containing S, B cell
-# SOURCE: muc is mean uncentered. so if we have muc then mean uncentered svd is used
-GCCA_INPUT_SVD_ALREADY_DONE_MAT_DEP = $(foreach lang,$(BIG_LANG),$(STORE2)/bitext_svd_$(lang)_%.mat)
-GCCA_INPUT_TODO = $(patsubst %,load %; B=[B b]; S=[S s]; whos;,$+)
-GCCA_INPUT_SVD_ALREADY_DONE_CMD = $(MATCMD)"tic; S={}; B={}; $(GCCA_INPUT_TODO) save('$@', 'S', 'B', '-v7.3'); toc; exit;"
-V5_SVD_DEP = $(GCCA_INPUT_SVD_ALREADY_DONE_MAT_DEP) $(STORE2)/monotext_svd_en_%.mat $(STORE2)/bvgn_svd_embedding_%.mat
-MONOMULTIWINDOW_SVD_DEP = $(V5_SVD_DEP) $(STORE2)/monotext1_svd_en_%.mat $(STORE2)/monotext2_svd_en_%.mat $(STORE2)/monotext4_svd_en_%.mat $(STORE2)/monotext6_svd_en_%.mat $(STORE2)/monotext8_svd_en_%.mat $(STORE2)/monotext10_svd_en_%.mat $(STORE2)/monotext12_svd_en_%.mat $(STORE2)/monotext14_svd_en_%.mat $(STORE2)/monotext15_svd_en_%.mat
-V5_MONOMULTI_CMD = if [ ! -e tmptouchfile_$(@F) ] ; then echo $(@F) && qsub -hold_jid $(call join-with,$(COMMA),$(+F)) -cwd submit_grid_stub.sh tmptouchfile_$(@F) && while [ ! -f tmptouchfile_$(@F) ] ; do sleep 300 ;done &&  $(GCCA_INPUT_SVD_ALREADY_DONE_CMD) ; else echo $(@F) && $(GCCA_INPUT_SVD_ALREADY_DONE_CMD) ; fi
-$(STORE2)/monomultiwindow_cell_input_%.mat: $(subst $(STORE2)/,$(STORE2)/v5_indisvd_,$(MONOMULTIWINDOW_SVD_DEP))
-	$(V5_MONOMULTI_CMD)
-
-$(STORE2)/v5_cell_input_%.mat: $(subst $(STORE2)/,$(STORE2)/v5_indisvd_,$(V5_SVD_DEP))
-	$(V5_MONOMULTI_CMD)
-
-tmptouchfile_%:
-	touch $@
+	echo $(V56_GENERIC_DEP) > $(DEP_FILE_NAME) && $(MATCMD)"options=strsplit('$(GCCA_OPT)', '_'); r=str2num(options{1}); deptoload=textscan(fopen('$(DEP_FILE_NAME)'), '%s'); deptoload=deptoload{1}; [G, S_tilde, sort_idx]=v5_generic(r, deptoload); save('$(TARGET)', 'G', 'S_tilde', 'sort_idx'); exit;"
 
 ######################################################################
 ## SVD RUNNING CODE (OVER RAW DATA)
+# TARGET: If you call the impl then you run on the machine, otherwise
+#    you qsub the job. This is done because I want to depend on the mat
+#    files by name and qsub the dependency by default. I put a wait loop
+#    on these jobs so that their parents dont start running till the qsub
+#    jobs are complete. 
+# SOURCE: It mainly depends on f2load which is options{1}
+#    Some massaging is done in the v5_indisvd code takes the svd
+#    according to the options and then ajtj are calculated.
 $(STORE2)/v5_indisvd_%.mat:
-	qsub -N $(@F) -p -1 -V -j y -l mem_free=25G -r yes -pe smp 10 -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl
+	qsub -N tmp_$* -p -1 -V -j y -l mem_free=25G -r yes -pe smp 10 -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl ; while [[ $$? == 0 ]] ; do sleep 30; echo here; qstat -j tmp_$*; done
+
+# TARGET: v5_indisvd_fnppdb_cooccurence_xl~mc~CountPow025-truncatele200~100~1e-5.mat
 $(STORE2)/v5_indisvd_%.impl:
-	$(MATCMD)"optstr='$*'; options=strsplit(optstr, '_'); dtype=options{1}; lang=options{3}; mc_muc=options{4}; preprocess_option=options{5}; svd_size=str2num(options{6}); outfile='$(word 1,$(subst ., ,$@)).mat'; outdirname='$(@D)'; lif=larger_indisvd_filename(outdirname, outfile, optstr, options{6}); if isempty(lif) [b,s]=v5_indisvd(dtype, lang, mc_muc, preprocess_option, svd_size, '$(STORE2)'); else load(lif); s=s(1:svd_size); b=b(:,1:svd_size); end; save(outfile, 's', 'b'); exit;"
+	$(MATCMD)"options=strsplit('$*', '~'); f2load=['$(STORE2)/' options{1} '.mat']; load(f2load); assert(exist('align_mat')==1); mc_muc=options{2}; if strcmp(f2load, '$(STORE2)/mikolov_cooccurence_intersect.mat') preprocess_option='Count'; else preprocess_option=options{3}; end; svd_size=str2num(options{4}); r=str2num(options{5}); outfile='$(word 1,$(subst ., ,$@)).mat'; [ajtj, kj_diag, aj, sj]=v5_indisvd_level2(align_mat, mc_muc, preprocess_option, svd_size, r, outfile); save(outfile, 'ajtj', 'kj_diag', 'aj', 'sj', 'r'); exit;"
 
 ######################################################################
 ## INPUT PREPARATION CODE 
@@ -376,6 +372,31 @@ $(STORE2)/v5_indisvd_%.impl:
 # $STORE2/agigastandep_cooccurence_$(STANDEP_LIST).mat
 # $STORE2/mikolov_cooccurence_intersect.mat
 # $STORE2/bitext_cooccurence_$(BIG_LANG).mat
+# In order to check that the data files are correct, I did the following
+# 1. I loaded the fnppdb_cooccurence_xl.mat file and checked that it
+#    contained an entry for 
+#    there should be an entry for (renounced, Abandonment)
+#    0	2031	Abandonment	renounced.v
+#    0	2031	Abandonment	forsaken.n
+#    grep -n renounced $VOCAB_500K_FILE = 18778
+#    so the entry should be align_mat(18778, 600)==1 and the other
+#    entry is align_mat(44449, 600)==1 
+# 2. I loaded the morphology_cooccurence_inflection file and checked
+#    that spayed, spaying were matched to love 
+#    Basically I checked that spayed and spaying map to spay
+#    158962:spayed, 176925:spaying and align_mat(176925,:) align_mat(158962,:)
+# 3. I loaded the polyglotwiki_cooccurence_1.mat and basically checked
+#    that the unigram counts of the rows line up with he information in
+#    VOCABWITHCOUNT_500K_FILE
+# 4. I had already checked agiga earlier. But I still loaded
+#    agigastandep_cooccurence_prep_in.mat and then checked that the row
+#    and column made sense.
+# 5. bitext_cooccurence_en.mat
+#    All of this basically tells me that there are some columns
+#    completely zero. Also there can be a large number of rows 
+#    completely zero. For example in bitext_ar there are   4815880 zero
+#    rows and in bitext_cs there are 4941260 zero rows. (Like all of
+#    them.)
 VOCABWITHCOUNT_500K_FILE := $(STORE)/polyglot_wikitxt/en/full.txt.vc5.500K
 VOCAB_500K_FILE := $(VOCABWITHCOUNT_500K_FILE)_word
 H5_TO_MAT_MAKER = $(shell echo "align_mat=spconvert(h5read('$1.h5', '/cooccurence_data')); save('$1', 'align_mat', '-v7.3');")

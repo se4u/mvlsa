@@ -8,5 +8,5 @@ tex/mvppdb.aux
 tex/mvppdb.log
 tex/mvppdb.pdf
 submit_grid_stub.sh.[oep]*
-v5_indisvd*
+v5_indisvd_dir/*
 tmp*

@@ -1,7 +1,7 @@
 % The possible inputs are
 % logCount, CountPow075, logCountPow075, Freq, logFreq, FreqPow075
 % truncatele20 can be apeended to any of them.
-function [arr, mu1, mu2]=preprocess_align_mat(arr, opt)
+function [arr, mu1, mu2, nonmissing_rows]=preprocess_align_mat(arr, opt)
 get_log =@(x) spfun(@log, x);
 get_log1p =@(x) spfun(@log1p, x);
 get_pow=@(x, p) x.^p;
@@ -12,17 +12,22 @@ num_opt=length(opt_delimiter_idx)+1;
 assert(num_opt <= 2);
 disp(['Now opt is ', opt]);
 if num_opt == 2
-    assert(size(arr, 1) < size(arr, 2));
     % Basically we remove all columns with less sum than the limit
     % prescribed in opt's second part
     opt2 = opt(opt_delimiter_idx+1:end);
     opt = opt(1:opt_delimiter_idx-1);
     disp(opt2);
-    assert(strcmp(opt2(1:length('truncatele')), 'truncatele'));
-    trunc_lim=str2num(opt2(length('truncatele')+1:end));
-    disp(['trunc_lim is ', num2str(trunc_lim)]);
-    aa=sum(arr);
-    arr(:,find(aa < trunc_lim))=[];
+    if strcmp(opt2(1:length('truncatele')), 'truncatele')
+        trunc_lim=str2num(opt2(length('truncatele')+1:end));
+        disp(['trunc_lim is ', num2str(trunc_lim)]);
+        aa=sum(arr);
+        arr(:,find(aa < trunc_lim))=[];
+    elseif strcmp(opt2(1:length('trunccol')), 'trunccol')
+        max_col=str2num(opt2(length('trunccol')+1:end));
+        disp(['Max col = ', num2str(max_col)]);
+        [~, sort_order]=sort(sum(arr), 'descend');
+        arr=arr(:, sort_order(1:min(max_col, size(arr, 2))));
+    end
 end
     
 disp(['Now opt is ', opt]);
@@ -56,5 +61,9 @@ else
         error(['Unknown opt: ' opt]);
     end
 end
-mu1=mean(arr, 1);
-mu2=mean(arr, 2);
+% Calculate mean while discarding rows that are completely zero.
+assert(nnz(arr)>1);
+nonmissing_rows=(sum(arr,2)~=0);
+mu1=mean(arr(nonmissing_rows, :), 1);
+mu2=mean(arr(nonmissing_rows, :), 2);
+assert(any(isnan(mu1))~=1);

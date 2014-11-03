@@ -5,6 +5,7 @@ import numpy as np
 mm=morphology.Morphological_Analyzer()
 # INFLECTION_TYPE := past participle continuous plural superlative comparative
 # fn means filename
+print sys.argv
 vocab_fn=sys.argv[1]
 catvar_fn=sys.argv[2]
 output_fn=sys.argv[3]
@@ -20,6 +21,7 @@ for word in vocab:
         if mma[1]!="":
             try:
                 S[vocab[word], vocab[mma[0]]]+=1
+                print >> sys.stderr, "Word: %s, Lemma: %s, LemmaIdx: %d"%(word, mma[0], vocab[mma[0]])
             except:
                 print >> sys.stderr, "Lemma %s not in vocab"%mma[0]
                 unknown_lemma_counter+=1
