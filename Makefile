@@ -13,6 +13,8 @@ echo_qstatarg_%:
 	qstat -j $* | grep arg
 echo_qsubpemake:
 	echo $(QSUBPEMAKE)
+sleeper:
+	sleep 60
 # A literal space.
 SPACE :=
 SPACE +=
@@ -22,11 +24,10 @@ COMMA := ,
 # 2. The list.
 join-with = $(subst $(space),$1,$(strip $2))
 
-
 ## VARIABLES
 # LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 addpath('src/kdtree');
 QSUB1 := qsub
-QSUB2 := -V -j y -l mem_free=30G -r yes #-verify
+QSUB2 := -V -j y -l mem_free=30G,ram_free=30G,h_vmem=30G -r yes #-verify
 QSUBCMD := $(QSUB1) $(QSUB2) 
 QSUBP1CMD := $(QSUB1) -p -1 $(QSUB2)
 CWD_SUBMIT := -cwd submit_grid_stub.sh 
@@ -34,7 +35,8 @@ QSUBMAKE := $(QSUBCMD) $(CWD_SUBMIT)
 QSUBP1MAKE := $(QSUBP1CMD) $(CWD_SUBMIT)
 QSUBPEMAKE := $(QSUBCMD) -pe smp 10 $(CWD_SUBMIT)
 QSUBP1PEMAKE := $(QSUBP1CMD) -pe smp 10 $(CWD_SUBMIT)
-# QSUBPEMAKE := echo
+QSUBPEMAKEHOLD = qsub -N $1 -V -hold_jid $2 -l mem_free=$3,ram_free=$3,h_vmem=$3 -r yes -pe smp $4 -cwd submit_grid_stub.sh
+
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
 STORE := /export/a15/prastog3
@@ -52,6 +54,13 @@ PREPROCESS_OPT := Count logCount logCount-truncatele20 Count-truncatele20 logFre
 MATCMD := time matlab -nojvm -nodisplay -r "warning('off', 'MATLAB:maxNumCompThreads:Deprecated'); warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); maxNumCompThreads(10); "
 MATCMDENV := $(MATCMD)"setenv('TOEFL_QUESTION_FILENAME', '$(RESPATH)/word_sim/toefl.qst'); setenv('TOEFL_ANSWER_FILENAME', '$(RESPATH)/word_sim/toefl.ans'); setenv('SCWS_FILENAME', '$(RESPATH)/word_sim/scws_simplified.txt'); setenv('RW_FILENAME', '$(RESPATH)/word_sim/rw_simplified.txt'); setenv('MEN_FILENAME', '$(RESPATH)/word_sim/MEN.txt'); setenv('EN_MC_30_FILENAME', '$(RESPATH)/word_sim/EN-MC-30.txt'); setenv('EN_MTURK_287_FILENAME', '$(RESPATH)/word_sim/EN-MTurk-287.txt'); setenv('EN_RG_65_FILENAME', '$(RESPATH)/word_sim/EN-RG-65.txt'); setenv('EN_TOM_ICLR13_SEM_FILENAME', '$(RESPATH)/word_sim/EN-TOM-ICLR13-SEM.txt'); setenv('EN_TOM_ICLR13_SYN_FILENAME', '$(RESPATH)/word_sim/EN-TOM-ICLR13-SYN.txt'); setenv('EN_WS_353_REL_FILENAME', '$(RESPATH)/word_sim/EN-WS-353-REL.txt'); setenv('EN_WS_353_SIM_FILENAME', '$(RESPATH)/word_sim/EN-WS-353-SIM.txt'); setenv('EN_WS_353_ALL_FILENAME', '$(RESPATH)/word_sim/EN-WS-353-ALL.txt'); setenv('WORDNET_TEST_FILENAME', '$(RESPATH)/wordnet.test'); setenv('PPDB_PARAPHRASE_RATING_FILENAME', '$(RESPATH)/ppdb_paraphrase_rating'); setenv('SIMLEX_FILENAME', '$(RESPATH)/word_sim/simlex_simplified.txt'); "
 
+# TODO
+# 1. Compile the results of the jobs in FANGLE. (Write up your paper !! on monday !!)
+# 2. Write code to move experiment to COE grid. (Done, Run stuff on that grid using the THINGS_TO_MAKE_TARGET)
+# 3. Add code to compute the projection operator and a dictionary to create the feature vector at test time.
+# 4. Add Code to compute projections of OOV on the fly.
+# 3. Add Microsoft sentence completion test.
+# 5. Write code to discriminatively train the embeddings
 ######################################################################
 ## PAPER MAKING CODE
 table_absbest: 
@@ -90,174 +99,72 @@ table_multiviewcontri:
 	for pc in stgccanoenbvgnmonotext1 stgccanoenbvgnmonotext1@monotext2 stgccanoenbvgnmonotext1@monotext2@monotext4 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8@monotext10 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8@monotext10@monotext12 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8@monotext10@monotext12@monotext14 stgccano@en@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14 stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14
 
 table_multiviewcontri2:
-	for pc in stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es@fr@zh stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es@fr stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar ; do echo pc=$$pc && make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele200_100~"$$pc",300_1e-5,monomultiwindow.300; done
-######################################################################
-##  TABULATION CODE
-# TARGET: Either MEGATAB_Spearman or MEGATAB_Pearson
-MEGATAB_%:
-	make tabulate_$*_bvgnFull_extrinsic_test && \
-	make tabulate_$*_bitext_extrinsic_test_300_7000_1e-8_logCount.300 && \
-	make tabulate_$*_monotext_extrinsic_test_v2_gcca_run_sans_mu_300_7000_1e-8_logCount && \
-	make tabulate_$*_fullgcca_extrinsic_test_v3_gcca_run_sans_mu_300_1000_1e-8_logCount && \
-	make tabulate_$*_other_extrinsic_test_glove.42B.300d && \
-	make tabulate_$*_other_extrinsic_test_glove.6B.300d 
-
-TABCMD = cat $$F | sed "s%original embedding%O%g" | sed "s%The EN_TOM_ICLR13_S\([EY]\)\([MN]\) dataset score over \([0-9A-Za-z_-]*\) \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The EN_TOM_ICLR13_S\1\2 $$corrtype score over \3 (\5 out of \4) is \7%g" | sed "s%The TOEFL score over \([0-9A-Za-z_-]*\) with bare \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The TOEFL $$corrtype score over \1 (\3 out of \2) is \5%g" | sed "s%The $$corrtype Corr over \([0-9A-Za-z_-]*\) is%The JURI $$corrtype correlation over \1 (0 out of 0) is%g" | grep -E "The .* $$corrtype"  | 
-TAB_SPEARMAN = export F=log/$* && export corrtype=Spearman &&
-TAB_PEARSON = export F=log/$* && export corrtype=Pearson && 
-TABCMD1 = grep "over G" | awk '{printf "%s\n", $$NF}'
-TABCMDA = awk '{printf "%s %s out of %s \t %s \t %s\n", $$2, $$7, $$10, $$6, $$NF}' | python src/tabulation_script.py
-TABCMDB = $(TABCMD) $(TABCMDA)
-tab_Spearman_%: log/%
-	$(TAB_SPEARMAN) $(TABCMD) $(TABCMD1)
-tab_Pearson_%: log/%
-	$(TAB_PEARSON) $(TABCMD) $(TABCMD1)
-tabulate_Spearman_%: log/%
-	$(TAB_SPEARMAN) $(TABCMD) $(TABCMDA) $*
-tabulate_Pearson_%: log/%
-	$(TAB_PEARSON) $(TABCMD) $(TABCMDA) $*
-
-##################################
-#### GRID RUN CODE
-##################################
-MEGA_BIG_LOOP:
-	for reg in 5 6 7 8 9; do \
-	  for b in 1000 2000 3000; do\
-	    $(QSUBPEMAKE) log/fullgcca_extrinsic_test_v3_gcca_run_sans_mu_300_"$$b"_1e-"$$reg"_logCount; \
-	  done ; \
-	  $(QSUBPEMAKE) log/fullgcca_extrinsic_test_v3_stgcca_run_sans_mu_300_1e-"$$reg"_logCount; \
+	for pc in \
+	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es@fr@zh \
+	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es@fr \
+	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es \
+	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de \
+	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs \
+	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar ;\
+	do echo pc=$$pc && \
+	     make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele200_100~"$$pc",300_1e-5,monomultiwindow.300; \
 	done
-V4_MEGA_LOOP:
-	for i in 5 6 7 8 9; do $(QSUBPEMAKE) log/fullgcca_extrinsic_test_v4_stgcca_run_sans_mu_300_1e-"$$i"_logCount ; done
 
-# TARGET: this creates things like
-#       /export/a14/prastog3/gcca_run_sans_mu_300_7000_1e-8_logCount.mat 
-#       /export/a14/prastog3/gcca_run_sans_mu_300_7000_1e-8_Count.mat
-# SOURCE: this uses things like
-#       /export/a14/prastog3/gcca_run_sans_mu_300_7000_1e-8_Count.mat 
-# This takes roughly 8 hours for 6 files.
-# I can experiment with 300_10000 (and higher) or 500_1000 (or higher)
-v%_submit_gcca_run_sans_mu_to_grid:  
-	    $(QSUBPEMAKE) $(STORE2)/v$*_gcca_run_sans_mu_300_7000_1e-8_logCount
-submit_gcca_run_sans_mu_to_grid: 
-	for transform in Count logCount; \
-	    do $(QSUBPEMAKE) $(STORE2)/gcca_run_sans_mu_300_7000_1e-8_"$$transform" ; done
+####################
+###### OTHER TEST
+# [ww, ff]=textread('/export/a15/prastog3/polyglot_wikitxt/en/full.txt.vc5.500K', '%s %d');
+# >> [(1:45)' ff(arrayfun(@(i) max(find(K>=i)) , 1:45)) ff(arrayfun(@(i) min(find(K>=i)) , 1:45))]
+#            1          24   105160955
+#            2          24   105160955
+#            3          24   105160955
+#            4          24   105160955
+#            5          24   105160955
+#            6          24   105160955
+#            7          24   105160955
+#            8          24   105160955
+#            9          24   105160955
+#           10          24   105160955
+#           11          24   105160955
+#           12          24   105160955
+#           13          24   105160955
+#           14          24   105160955
+#           15          24   105160955
+#           16          24   105160955
+#           17          24   105160955
+#           18          24   105160955
+#           19          24   105160955
+#           20          24   105160955
+#           21          24   105160955
+#           22          24   105160955
+#           23          24   105160955
+#           24          24   105160955
+#           25          24   105160955
+#           26          24   105160955
+#           27          24   105160955
+#           28          24   105160955
+#           29          24   105160955
+#           30          24   105160955
+#           31          24   105160955
+#           32          24   105160955
+#           33          24   105160955
+#           34          24   105160955
+#           35          24   105160955
+#           36          24   105160955
+#           37          24   105160955
+#           38          24   105160955
+#           39          24   105160955
+#           40          24   105160955
+#           41          25   105160955
+#           42          31   105160955
+#           43          34   105160955
+#           44          34   105160955
+#           45          95    17609401
 
-# TARGET: A way to submit bitext_svd_%.mat jobs to the grid
-submit_bitextsvd_to_grid_%:
-	for lang in $(BIG_LANG); do for preproc in $(PREPROCESS_OPT); do $(QSUBPEMAKE) $(STORE2)/bitext_svd_"$$lang"_$*_"$$preproc".mat; done; done
-# This example should make the final result of running this target clear
-# qsub -V -j y -l mem_free=5G -r yes  -pe smp 25 -cwd submit_grid_stub.sh /export/a14/prastog3/monotext_svd_en_5_logCount-truncatele60.mat
-# This job takes two hours for making trunc=20 file.
-submit_monotextsvd_to_grid:
-	for trunc in 60 40 20; do $(QSUBPEMAKE) $(STORE2)/monotext_svd_en_500_logCount-truncatele"$$trunc".mat; done
-
-
-# TARGET: Mean centered SVD mat files
-MEAN_CENTERED_SVD_LOOP:
-	$(QSUBPEMAKE) /export/a14/prastog3/bitext_mean_centered_svd_ar_500_logCount.mat && \
-	$(QSUBPEMAKE) /export/a14/prastog3/bitext_mean_centered_svd_cs_500_logCount.mat && \
-	$(QSUBPEMAKE) /export/a14/prastog3/bitext_mean_centered_svd_de_500_logCount.mat && \
-	$(QSUBPEMAKE) /export/a14/prastog3/bitext_mean_centered_svd_es_500_logCount.mat && \
-	$(QSUBPEMAKE) /export/a14/prastog3/bitext_mean_centered_svd_fr_500_logCount.mat && \
-	$(QSUBPEMAKE) /export/a14/prastog3/bitext_mean_centered_svd_zh_500_logCount.mat && \
-	$(QSUBPEMAKE) /export/a14/prastog3/monotext_mean_centered_svd_en_500_logCount-truncatele20.mat &&\
-	$(QSUBPEMAKE) /export/a14/prastog3/monotext_mean_centered_svd_en_500_logCount-truncatele60.mat && \
-	$(QSUBPEMAKE) /export/a14/prastog3/bvgn_mean_centered_svd_embedding_500_Count.mat
-
-NEWFANGLED_CAP:
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_logCount-truncatele20_300~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_logCount-truncatele20_800~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_logCount-truncatele20_1000~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_logCount-truncatele20_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_logCount-truncatele40_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_logCount-truncatele60_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_logCount-truncatele80_500~stgcca,300_1e-8.300
-TOFANGLE_CAP:
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_Count-truncatele20_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_CountPow075-truncatele20_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_CountPow050-truncatele20_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_CountPow025-truncatele20_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_logCountPow075-truncatele20_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_Freq-truncatele20_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_FreqPow012-truncatele20_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_FreqPow025-truncatele20_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_FreqPow025-truncatele200_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_FreqPow050-truncatele200_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_FreqPow075-truncatele20_500~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_muc_logFreq-truncatele20_500~stgcca,300_1e-8.300
-
-MC_FANGLE_CAP: # 7975796  7975797  7975798
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_logCount-truncatele600_50~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_logCount-truncatele400_50~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_logCount-truncatele600_100~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_logCount-truncatele400_100~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_logCount-truncatele200_100~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_logFreq-truncatele600_50~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_logFreq-truncatele400_50~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_logFreq-truncatele600_100~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_logFreq-truncatele400_100~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_logFreq-truncatele200_100~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele600_50~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_log1pFreq-truncatele200_100~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele200_100~stgcca,300_1e-8.300 && \
-	$(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_mc_FreqPow050-truncatele200_100~stgcca,300_1e-8.300
-
-NO_FANGLE_CAP:
-	for d2rm in stgccanoar stgccanocs stgccanode stgccanoes stgccanofr stgccanozh stgccanoen stgccanobvgn; do \
-	  for meanchoice in mc muc; do \
-	     $(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_"$$meanchoice"_logCount-truncatele200_100~"$$d2rm",300_1e-8.300 ; \
-	done; done
-
-COMPARE_FANGLE_CAP:
-	do for meanchoice in mc muc; do for preproc in logCount logFreq log1pFreq FreqPow025 FreqPow050; do\
-	  $(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_"$$meanchoice"_"$$preproc"-truncatele200_100~stgccanoenbvgn,300_1e-8.300 ; \
-	done; done
-ONLY_FANGLE_CAP: # 8003506  8003507  8003508  8003509  8003510  8003512  8003513  8003517  8003518  8003519 
-	for meanchoice in mc muc; do for preproc in logCount logFreq log1pFreq FreqPow025 FreqPow050; do\
-	  $(QSUBPEMAKE) log/fullgcca_extrinsic_test_v5_embedding_"$$meanchoice"_"$$preproc"-truncatele200_100~stgccaonlyen,100_1e-8.100 ; \
-	done; done
-###############
-## EVAL CODE
-###############
-# TARGET: log/bitext_extrinsic_test_300_7000_1e-8_logCount.150 log/bitext_extrinsic_test_300_7000_1e-8_Count.150
-# This is basically doing CCA with resulting 150 dimensions over the original gn embeddings and the GCCA embeddings.
-# The results are basically how well these embeddings work to predict the human similarity judgements.
-# And there are 4 types of embeddings
-# original embeddings : the bvgn embeddings
-# G : the basic GCCA embeddings
-# U : The bvgn embeddings projected after doing CCA between bvgn and G
-# V : The G embeddings projected after doing CCA between bvgn and G
-# This target is pretty quick to make.
-# log/fullgcca_extrinsic_test_v3_gcca_run_sans_mu_300_1000_1e-8_logCount.300
-# log/fullgcca_extrinsic_test_v3_stgcca_run_sans_mu_300_1e-8_logCount.300
-# log/fullgcca_extrinsic_test_v4_stgcca_run_sans_mu_300_1e-8_logCount.300 # Your job 7869124
-# make -n log/fullgcca_extrinsic_test_v5_embedding_mc_logCount-truncatele2000_1000~gcca,300_1e-8_1000.300
-# make -n log/fullgcca_extrinsic_test_v5_embedding_mc_logCount-truncatele2000_1000~stgcca,300_1e-8.300
-# mc : mean center, muc : mean uncentered
-# logCount-truncatele2000 : truncate all less than 20
-# 1000 : the original svd size
-# gcca : Original gcca code, stgcca : the spacetime efficient gcca code
-# 300_1e-8_1000 : the gcca parameters(gcca embedding size, reg_size, batch column size), 300_1e-8 : the stgcca parameters
-# 300 the final gcca embeddings which would be used for evaluataion.
-# SOURCE : This job runs from start to stop. I have to set up the data
-# file, then take SVD, then store it into a single cell, then take
-# gcca, then perform test upon it.
-# SOURCE: big_vocabcount_en_intersect_gn_embedding which is the gn embeddings intersected with big_vocab that was made from 6 bitext files.
-#         300_7000_1e-8_logCount are basically Hyper parameters that were used while creating the GCCA embeddings.
-EXTRINSIC_TEST_CMD = "word=textread('$(word 1,$+)', '%s'); load('$(word 2,$+)'); if size(G, 1) < size(G, 2); G=G'; end; word=word(sort_idx); domikolov=1; do_only_G=1; dim_after_cca=$(DIM_AFTER_CCA); bvgn_emb=nan; bitext_true_extrinsic_test(G, bvgn_emb, dim_after_cca, word, domikolov, do_only_G); exit;"
-EXTRINSIC_TEST_DEP1 = $(VOCAB_500K_FILE) 
-log/fullgcca_extrinsic_test_%: 
-	$(MAKE) TARGET=$@ DIM_AFTER_CCA=$(word 2,$(subst ., ,$*)) MYDEP="$(EXTRINSIC_TEST_DEP1) $(STORE2)/$(word 1,$(subst ., ,$*)).mat" gcca_extrinsic_test_generic
-gcca_extrinsic_test_generic: $(MYDEP)
-	$(MATCMDENV)$(EXTRINSIC_TEST_CMD) | tee $(TARGET)
-###### OTHER TEST  
 # TARGET: a log file with all the test results.
 # SOURCE: $(STORE2)/glove.6B.300d.mat (glove.42B etc.)
 log/other_extrinsic_test_%:  $(STORE2)/%.mat
 	$(MATCMDENV)"tic; load('$(word 1,$+)'); emb=normalize_embedding(emb); conduct_extrinsic_test_impl(emb, id, word); fprintf(1, 'Total time taken %d\n', toc); exit;" | tee $@
 
-####### MIKOLOV TEST
 # Target: Basically this tests my word pruned version of the mikolov
 # embeddings. I wanted to check whether my version of mikolov
 # embeddings was flawed because they were not reaching the desired
@@ -286,7 +193,7 @@ log/eval_bvgn_using_word2vec_code_for_analogy_task: # Your job 7696236 (8 hours)
 	$(WORD2VECDIR)/compute-accuracy /export/a15/prastog3/GoogleNews-vectors-negative300.bin < /home/prastog3/projects/mvppdb/res/word_sim/EN-TOM-ICLR13-SEM.txt > $@ && $(WORD2VECDIR)/compute-accuracy /export/a15/prastog3/GoogleNews-vectors-negative300.bin < /home/prastog3/projects/mvppdb/res/word_sim/EN-TOM-ICLR13-SEM.txt >> $@
 
 run_glove_and_word2vec : Your job 7972791 7972792
-	qsub -V -j y -l mem_free=40G -r yes  -pe smp 10 -cwd submit_grid_stub.sh $(STORE2)/glove_embedding_file && qsub -V -j y -l mem_free=20G -r yes -pe smp 20 -cwd submit_grid_stub.sh $(STORE2)/word2vec_embedding_file
+	qsub -V -j y -l mem_free=40G,ram_free=40G,h_vmem=40G -r yes  -pe smp 10 -cwd submit_grid_stub.sh $(STORE2)/glove_embedding_file && qsub -V -j y -l mem_free=20G,ram_free=20G,h_vmem=20G -r yes -pe smp 20 -cwd submit_grid_stub.sh $(STORE2)/word2vec_embedding_file
 $(STORE2)/glove_embedding_file: $(STORE2)/glove_cooccurence_shuf_file $(STORE2)/glove_vocab_file
 	$(GLOVEDIR)/glove -save-file $@ -threads 10 -input-file $< -x-max 100 -iter 15 -vector-size 300 -binary 2 -vocab-file $(word 2,$+) -verbose 2 -model 0
 $(STORE2)/glove_cooccurence_shuf_file: $(STORE2)/glove_cooccurence_file
@@ -297,57 +204,156 @@ $(STORE2)/glove_vocab_file: $(STORE2)/only_english_from_ppdb_input
 	$(GLOVEDIR)/vocab_count -min-count 100 -verbose 2 < $< > $@
 $(STORE2)/word2vec_embedding_file: $(STORE2)/only_english_from_ppdb_input
 	$(WORD2VECDIR)/word2vec -train $< -size 300 -window 10 -hs 0 -negative 15 -threads 20 -min-count 100 -output $@ -dumpcv $@_context
+##############################
+#### PAPER FANGING CODE
+# The log files that I want to create
+# log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi@mo,300_1e-5_25.300.1.1 (SUBMITTED)
+# log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_25.300.1.1 (SUBMITTED)
+# The jobs are 91363{82-84} 9136{448,466,467}
+DATASET_FANG: #@fn#for dset in @mo@fn @mo@fn@bi  @mo@fn@ag  @mo@fn@ag@bi  @ag@bi@po  @bi@po  @ag@po  @po ; do make $STORE2/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$dset",300_1e-5_25.mat ; done
+	for dset in @mo@fn \
+		    @mo@fn@bi \
+		    @mo@fn@ag \
+		    @mo@fn@ag@bi \
+		    @ag@bi@po \
+		    @bi@po \
+		    @ag@po \
+		    @po ; do \
+		make log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_25.300.1.1; done
+VIEW_THRESHOLD_FANG: # for thresh in 21 23 27 29 ; do make -n $STORE2/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$thresh".mat; done
+	for thresh in 21 23 27 29 ; do \
+	    make -n log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$thresh".300.1.1; done
+# EMBSIZE_FANG: # for embsize in {1..5} ; do make  $STORE2/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,"$embsize"00_1e-5_25.mat; done
+# 	for embsize in 100 200 300 400 500 ; do 
+# 	    make -n log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,"$$embsize"_1e-5_25.300.1.1; done
+BIG_FANG: # for m in 500; do make $STORE2/v5_embedding_mc_CountPow025-trunccol100000_"$m"~E@mi,300_1e-5_25.mat; done
+	for m in 500; do make log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done
 
+##############################
+####  TABULATION CODE
+TABCMD = cat $$F | sed "s%original embedding%O%g" | sed "s%The EN_TOM_ICLR13_S\([EY]\)\([MN]\) dataset score over \([0-9A-Za-z_-]*\) \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The EN_TOM_ICLR13_S\1\2 $$corrtype score over \3 (\5 out of \4) is \7%g" | sed "s%The TOEFL score over \([0-9A-Za-z_-]*\) with bare \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The TOEFL $$corrtype score over \1 (\3 out of \2) is \5%g" | sed "s%The $$corrtype Corr over \([0-9A-Za-z_-]*\) is%The JURI $$corrtype correlation over \1 (0 out of 0) is%g" | grep -E "The .* $$corrtype"  | 
+TAB_SPEARMAN = export F=log/$* && export corrtype=Spearman &&
+TAB_PEARSON = export F=log/$* && export corrtype=Pearson && 
+TABCMD1 = grep "over G" | awk '{printf "%s\n", $$NF}'
+TABCMDA = awk '{printf "%s %s out of %s \t %s \t %s\n", $$2, $$7, $$10, $$6, $$NF}' | python src/tabulation_script.py
+# TARGET: Call tab_Spearman when you want results only over G
+tab_Spearman_%: #log/%
+	$(TAB_SPEARMAN) $(TABCMD) $(TABCMD1)
+tab_Pearson_%: #log/%
+	$(TAB_PEARSON) $(TABCMD) $(TABCMD1)
+# TARGET: Call tabulate when you want results over 
+tabulate_Spearman_%: #log/%
+	$(TAB_SPEARMAN) $(TABCMD) $(TABCMDA) $*
+tabulate_Pearson_%: #log/%
+	$(TAB_PEARSON) $(TABCMD) $(TABCMDA) $*
 
-# TODO
-# 1. TODO: CHECK THAT THE CODE IS GIVING THE RIGHT OUTPUT. CHECK EVERY STEP OF THE WAY !!! Also
-# Check the evaluation Code
-# 
-# 2. Running the job make -j 100 $STORE2/v5_embedding_mc_CountPow025-trunccol50000_100~E,300_1e-5.mat
-#    This totally takes 714 minutes, in real.
-#    but I can run 10 jobs at a time, so with the worst possible
-#    performance it would take 3 hours to take svd of all the data
-#    sources. 
-# 3. I am now running the "qsub -V -j y -l mem_free=50G -r no -pe smp
-# 40 -cwd submit_grid_stub.sh
-# $STORE2/v5_embedding_mc_CountPow025-trunccol50000_100~E,300_1e-5.mat"
-# (you job 8691397)
-#    40 slots and 50G memory. I want to see how fast it is. and also
-# what the results are ? (The results are abysmal) Your job 8708737
-# It only took 14m (or it was sped up ten times)
-# 4. make -j 50
-# $STORE2/v5_embedding_mc_CountPow025-truncatele200_100~E,300_1e-5.mat
-# (This runs jobs from 159 to 202 (8691))
-# (Also this job would have some of the things failing. but dont worry
-# that's just because of the stupid criteria which wants all columns
-# to have numbers > 200 some of the views are too sparse for that.) so
-# just remove the failing views before running the jobs. 
-# 5. One of the things I can do is make an option to sum up all the
-# matrices before taking SVD for say the monotext counts. but is it
-# needed ?  
-# 6. Also I want to replicate the performance achieved by previous
-# settings. To do that would be tough because of the fact that I am
-# not
-# 7. make sure that sort_idx is used to sort the word list.
+#########################
+#### EVAL CODE
+# TARGET: log/fullgcca_extrinsic_test_%.300.0.1
+# Possibilities for % are 
+# mc_CountPow025-trunccol200000_100~@fn,300_1e-5_25
+# mc_CountPow025-truncatele200_100~@fn,300_1e-5_25
+# mc_CountPow025^CountPow075-trunccol200000_100~@fn,300_1e-5_25
+# mc_CountPow025-trunccol200000_100~E@mi,300_1e-5_25
+# mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_25
+# mc_CountPow025-trunccol50000_100~E@mi,300_1e-5_25
+# And the parts delimited by the periods are
+# 1. The main options given to GCCA
+# 2. DIM_AFTER_CCA
+# 3. Whether to test over mikolov's analogy
+# 4. Whether to DO_ONLY_G
+# SOURCE: $STORE2/v5_embedding_%.mat
+GET_LOG_OPT = $(word $1,$(subst ., ,$*))
+V5_EMB_JOBNAME_MAKER = tmp_embqsub_$(subst $(COMMA),,$(subst @,_at_,$*))
+log/fullgcca_extrinsic_test_%:
+	$(MAKE) JOB_NAME=$(subst $(COMMA),,$(subst @,_at_,tmp_$(@F))) \
+		JID_HOLD=$(subst v5_embedding_,,$(word 1,$(subst ., ,$(V5_EMB_JOBNAME_MAKER)))) \
+		MEMORY=5G \
+		PE=10 \
+		TARGET=$@ \
+		MYDEP=$(STORE2)/$(call GET_LOG_OPT,1).mat \
+		DIM_AFTER_CCA=$(call GET_LOG_OPT,2) \
+		DOMIKOLOV=$(call GET_LOG_OPT,3) \
+		DO_ONLY_G=$(call GET_LOG_OPT,4) \
+	gcca_extrinsic_test_gen1
+
+gcca_extrinsic_test_gen1: $(MYDEP)
+	$(call QSUBPEMAKEHOLD,$(JOB_NAME),$(JID_HOLD),$(MEMORY),$(PE)) \
+		TARGET=$(TARGET) \
+		MYDEP=$(MYDEP) \
+		DIM_AFTER_CCA=$(DIM_AFTER_CCA) \
+		DOMIKOLOV=$(DOMIKOLOV) \
+		DO_ONLY_G=$(DO_ONLY_G) \
+	gcca_extrinsic_test_generic && sleep 10
+
+gcca_extrinsic_test_generic:  
+	$(MATCMDENV)"word=textread('$(VOCAB_500K_FILE)', '%s'); load('$(MYDEP)'); if size(G, 1) < size(G, 2); G=G'; end; word=word(sort_idx); bvgn_emb=nan; bitext_true_extrinsic_test(G, bvgn_emb, $(DIM_AFTER_CCA), word, $(DOMIKOLOV), $(DO_ONLY_G)); exit;" | tee $(TARGET)
+
 #######################################
 ## GCCA Running Code
-# Acceptable codes are fn, mo, po, ag, mi, bi
 # TARGET: The typical targets are
-# $STORE2/v5_embedding_mc_CountPow025-trunccol200000_100~@fn,300_1e-5.mat
-# $STORE2/v5_embedding_mc_CountPow025-truncatele200_100~@fn,300_1e-5.mat
-# $STORE2/v5_embedding_mc_CountPow025-trunccol200000_100~E@mi,300_1e-5.mat
-# $STORE2/v5_embedding_mc_CountPow025^CountPow075-trunccol200000_100~@fn,300_1e-5.mat
+# $STORE2/v5_embedding_mc_CountPow025-trunccol200000_100~@fn,300_1e-5_25.mat
+# $STORE2/v5_embedding_mc_CountPow025-truncatele200_100~@fn,300_1e-5_25.mat
+# $STORE2/v5_embedding_mc_CountPow025^CountPow075-trunccol200000_100~@fn,300_1e-5_25.mat
+# $STORE2/v5_embedding_mc_CountPow025-trunccol200000_100~E@mi,300_1e-5_25.mat
+# $STORE2/v5_embedding_mc_CountPow025-trunccol100000_300~E,300_1e-5_25.mat (Note : I should always remove mikolov by default)
+# $STORE2/v5_embedding_mc_CountPow025-trunccol50000_100~E,300_1e-5_25.mat
+# $STORE2/v5_embedding_mc_CountPow025-truncatele200_100~E@mi,300_1e-5_25.mat
+# The filename is constructed  by joing 3 parts
+# 1. The options given to the underlying SVD (the dataset name is determined in separate script)
+# 	a. mc or muc
+# 	b. preprocessing (CountPow025^CountPow075-trunccol200000)
+# 	c. number of svd dime
+# 	d. regularization
+# 2. A small descriptor of the datasets that we want to include
+# 	We specify whether we want to keep a file or to exclude it by the global flag E
+# 	Then delimited by @ we specify datasets by their codes
+# 	Acceptable codes are
+#	  fn : Framenet/PPDB
+#	  mo : Morphology
+#	  po : Polyglot Wiki
+#	  ag : Agiga
+#	  mi : Mikolov
+#	  bi : Bitext
+# 3. GCCA_OPT (300_1e-5_25)
+#	a. The first is the dimension of the embedding
+#	b. The second is regularization
+#	c. The third is the number of datasets in which a word must appear before it will be allowed.
 # SOURCE : mat files containing svd of the individual views.
+# This rule basically launches the SVD of the individual files then
+# registers another job which hold_jid on dependencies which I have
+# named properly. This is the way to depend on makefile dependencies
+# that we have qsubbed 
 GCCA_OPT_EXTRACTOR = $(word 2,$(subst $(COMMA), ,$(word 2,$(subst ~, ,$*))))
 V5_PREPROC_OPT_EXTRACTOR = $(word 1,$(subst -, ,$(word 2,$(subst _, ,$*))))
 $(STORE2)/v5_embedding_%.mat:
-	$(MAKE) TARGET=$@ DEP_FILE_NAME=tmpv5dep_$* GCCA_OPT=$(GCCA_OPT_EXTRACTOR) V56_GENERIC_DEP="`python src/calculate_dependency.py $* $(STANDEP_LIST) $(subst $(SPACE),$(COMMA),$(BIG_LANG)) $(STORE2)`" v5_generic  ;
-# save(outfile, 's', 'b', 'ajtj_size', 'kj_diag', 'r', 'ajtj')
+	$(MAKE) TARGET=$@ \
+		DEP_FILE_NAME=tmpv5dep_$* \
+		JOB_NAME=$(V5_EMB_JOBNAME_MAKER) \
+		GCCA_OPT=$(GCCA_OPT_EXTRACTOR) \
+		V56_GENERIC_DEP="`python src/calculate_dependency.py $* $(STANDEP_LIST) $(subst $(SPACE),$(COMMA),$(BIG_LANG)) $(STORE2)`" \
+		HOLD_JID="`python src/calculate_dependency.py $* $(STANDEP_LIST) $(subst $(SPACE),$(COMMA),$(BIG_LANG)) $(STORE2)  | sed s%$(STORE2)/v5_indisvd%tmp%g | sed 's%.mat %,%g' | rev | cut -c 2- | rev `" v5_generic_qsub 
+
+v5_generic_qsub: $(V56_GENERIC_DEP)
+	echo $(V56_GENERIC_DEP) > $(DEP_FILE_NAME) && \
+	   $(call QSUBPEMAKEHOLD,$(JOB_NAME),$(HOLD_JID),40G,5) \
+		TARGET=$(TARGET) \
+		DEP_FILE_NAME=$(DEP_FILE_NAME) \
+		GCCA_OPT=$(GCCA_OPT) \
+	    v5_generic # && sleep 10
+
 v5_generic: $(V56_GENERIC_DEP)
-	echo $(V56_GENERIC_DEP) > $(DEP_FILE_NAME) && $(MATCMD)"options=strsplit('$(GCCA_OPT)', '_'); r=str2num(options{1}); deptoload=textscan(fopen('$(DEP_FILE_NAME)'), '%s'); deptoload=deptoload{1}; [G, S_tilde, sort_idx]=v5_generic(r, deptoload); save('$(TARGET)', 'G', 'S_tilde', 'sort_idx'); exit;"
+	 $(MATCMD)"options=strsplit('$(GCCA_OPT)', '_'); embedding_size=str2num(options{1}); reg_unused_=options{2}; min_view_to_accept_word=str2num(options{3}); deptoload=textscan(fopen('$(DEP_FILE_NAME)'), '%s'); deptoload=deptoload{1}; [G, S_tilde, sort_idx]=v5_generic(embedding_size, deptoload, min_view_to_accept_word); save('$(TARGET)', 'G', 'S_tilde', 'sort_idx'); exit;"
 
 ######################################################################
 ## SVD RUNNING CODE (OVER RAW DATA)
+# TARGET: v5_indisvd_fnppdb_cooccurence_xl~mc~CountPow025-truncatele200~100~1e-5.mat
+# The options are ddelimited by ~ and the options are
+# 1. The name of file to load
+# 2. mc or muc
+# 3. The preprocessing options (CountPow050-trunccol100000)
+# 4. The number of left SVD vectors (100 or 300)
+# 5. The regularization value (1e-5)
 # TARGET: If you call the impl then you run on the machine, otherwise
 #    you qsub the job. This is done because I want to depend on the mat
 #    files by name and qsub the dependency by default. I put a wait loop
@@ -357,9 +363,8 @@ v5_generic: $(V56_GENERIC_DEP)
 #    Some massaging is done in the v5_indisvd code takes the svd
 #    according to the options and then ajtj are calculated.
 $(STORE2)/v5_indisvd_%.mat:
-	qsub -N tmp_$* -p -1 -V -j y -l mem_free=25G -r yes -pe smp 10 -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl ; while [[ $$? == 0 ]] ; do sleep 30; echo here; qstat -j tmp_$*; done
+	qsub -N tmp_$* -p -1 -V -j y -l mem_free=25G,ram_free=25G,h_vmem=25G -r yes -pe smp 10 -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl &&  sleep 3
 
-# TARGET: v5_indisvd_fnppdb_cooccurence_xl~mc~CountPow025-truncatele200~100~1e-5.mat
 $(STORE2)/v5_indisvd_%.impl:
 	$(MATCMD)"options=strsplit('$*', '~'); f2load=['$(STORE2)/' options{1} '.mat']; load(f2load); assert(exist('align_mat')==1); mc_muc=options{2}; if strcmp(f2load, '$(STORE2)/mikolov_cooccurence_intersect.mat') preprocess_option='Count'; else preprocess_option=options{3}; end; svd_size=str2num(options{4}); r=str2num(options{5}); outfile='$(word 1,$(subst ., ,$@)).mat'; [ajtj, kj_diag, aj, sj]=v5_indisvd_level2(align_mat, mc_muc, preprocess_option, svd_size, r, outfile); save(outfile, 'ajtj', 'kj_diag', 'aj', 'sj', 'r'); exit;"
 
@@ -410,7 +415,20 @@ H5_TO_MAT_MAKER = $(shell echo "align_mat=spconvert(h5read('$1.h5', '/cooccurenc
 h5_to_mat_maker_%: # % 
 	$(MATCMD)"$(call H5_TO_MAT_MAKER,$*)"
 make_all_cooccurences: ## $(STORE2)/freebase_cooccurence_%.mat
-	$(MAKE) run_agigastandep_mat_on_grid   morphogrid fnppdbgrid polygrid 
+	$(MAKE) run_agigastandep_mat_on_grid   morphogrid fnppdbgrid polygrid
+COE_LOCATION = prastogi@external.hltcoe.jhu.edu:/export/projects/prastogi/store2/
+copy_all_cooccurences_to_coe:
+	for file in \
+		fnppdb_cooccurence_l.mat fnppdb_cooccurence_xl.mat  \
+		morphology_cooccurence_inflection.mat \
+		; do \
+		echo scp $(STORE2)/$$file $(COE_LOCATION) ; done \
+	for i in {1..15}; do echo $$i ; done | xargs -I % -P 3   scp $(STORE2)/polyglotwiki_cooccurence_%.mat $(COE_LOCATION) \
+	for r in $(subst $(COMMA), ,$(STANDEP_LIST)); do echo $$r ; done | xargs -I % -P 3   scp $(STORE2)/agigastandep_cooccurence_%.mat $(COE_LOCATION) \
+	for b in $(BIG_LANG); do echo $$b ; done | xargs -I % -P 3 scp $(STORE2)/bitext_cooccurence_%.mat $(COE_LOCATION) \
+	scp $(VOCAB_500K_FILE) $(COE_LOCATION) \
+	scp -r src prastogi@external.hltcoe.jhu.edu:/home/hltcoe/prastogi/mvppdb/ \
+	for e in /word_sim/toefl.qst /word_sim/toefl.ans /word_sim/scws_simplified.txt /word_sim/rw_simplified.txt /word_sim/MEN.txt /word_sim/EN-MC-30.txt /word_sim/EN-MTurk-287.txt /word_sim/EN-RG-65.txt /word_sim/EN-TOM-ICLR13-SEM.txt /word_sim/EN-TOM-ICLR13-SYN.txt /word_sim/EN-WS-353-REL.txt /word_sim/EN-WS-353-SIM.txt /word_sim/EN-WS-353-ALL.txt /wordnet.test /ppdb_paraphrase_rating /word_sim/simlex_simplified.txt  ; do echo scp prastog3@login.clsp.jhu.edu:~/projects/mvppdb/res"$e" res/ ; done
 #########################################
 #### FRAMENET/PPDB COOCCURENCE EXTRACTOR
 fnppdbgrid:
@@ -434,7 +452,7 @@ $(STORE2)/morphology_cooccurence_inflection.mat: $(VOCAB_500K_FILE) $(STORE)/cat
 #### WIKIPEDIA POLYGLOT EXTRACTOR
 # The actual final command ran was the following
 polygrid: # your job 8494220
-	qsub -V -j y -l mem_free=50G -l hostname=a15 -r yes -cwd submit_grid_stub.sh run_polyglot_on_grid
+	qsub -V -j y -l mem_free=50G,ram_free=50G,h_vmem=50G -l hostname=a15 -r yes -cwd submit_grid_stub.sh run_polyglot_on_grid
 run_polyglot_on_grid: 
 	for i in {1..15}; do echo $$i; done | xargs -I % -P 3 $(MAKE) $(STORE2)/polyglotwiki_cooccurence_%.mat
 # TARGET: A target looks like $(STORE2)/polyglotwiki_cooccurence_15. 
@@ -460,7 +478,7 @@ STANDEP_LIST_PREPROCOPT := +nsubj.pass,-pobj,$(STANDEP_LIST_PART2)
 # SOURCE: All the files in the $STORE2/agigastandep directory and the 21 relation types.
 #         and a mapping of those relations to indices
 run_agigastandep_mat_on_grid: # The jobs are 8591191-211
-	for r in $(subst $(COMMA), ,$(STANDEP_LIST)); do qsub -V -j y -l mem_free=30G -l hostname=a14  -cwd submit_grid_stub.sh $(STORE2)/agigastandep_cooccurence_"$$r".mat; done
+	for r in $(subst $(COMMA), ,$(STANDEP_LIST)); do qsub -V -j y -l mem_free=30G,ram_free=30G,h_vmem=30G -l hostname=a14  -cwd submit_grid_stub.sh $(STORE2)/agigastandep_cooccurence_"$$r".mat; done
 $(STORE2)/agigastandep_cooccurence_%.mat:  $(VOCAB_500K_FILE) # $(STORE2)/agigastandep
 	time python src/agigastandep_cooccurence_h5.py $* $(STANDEP_LIST) $(STORE2)/agigastandep $<  $@.h5 && $(MATCMD)"$(call H5_TO_MAT_MAKER,$@)"
 # TARGET: This just cleans up on a botched attempt.
@@ -469,7 +487,7 @@ clean_agigastandep:
 # TARGET: This runs $(AGIGA)/standep on the grid.
 # check that $STORE2/agigastandep has 1007 files once this finishes
 run_agigastandep_directory_on_grid: # your job 8494207
-	qsub -V -j y -l mem_free=30G -l hostname=a14  -cwd submit_grid_stub.sh $(STORE2)/agigastandep
+	qsub -V -j y -l mem_free=30G,ram_free=30G,h_vmem=30G -l hostname=a14  -cwd submit_grid_stub.sh $(STORE2)/agigastandep
 # TARGET: This creates a directory which contains the dependency
 # cooccurence counts for the list of relations specified in STANDEP_LIST
 # and this uses the child _xargs target.
@@ -518,7 +536,7 @@ $(STORE2)/glove.%B.300d.mat: $(STORE2)/glove.%B.300d.txt_word $(STORE2)/glove.%B
 
 ###############################
 #### FLICKR PREPARATION 
-# # qsub -V -j y -l mem_free=25G -r yes  -cwd submit_grid_stub.sh $STORE/flickr30k_PHOW_features.mat
+# # qsub -V -j y -l mem_free=25G,ram_free=25G,h_vmem=25G -r yes  -cwd submit_grid_stub.sh $STORE/flickr30k_PHOW_features.mat
 # # Your job 8421424
 # $(STORE2)/flickr30k_cooccurence_%.mat:
 # FLICKR30KDIR := /export/a15/prastog3/flickr30k/flickr30k-images
