@@ -1,35 +1,24 @@
-% The possible inputs are
-% logCount, CountPow075, logCountPow075, Freq, logFreq, FreqPow075
-% truncatele20 can be apeended to any of them.
-function [arr, mu1, mu2, nonmissing_rows]=preprocess_align_mat(arr, opt)
+function [arr, mu1, mu2, nonmissing_rows, column_picked_logical]=...
+    preprocess_align_mat(arr, opt)
+% USAGE:
+% opt = logCount, CountPow075, logCountPow075, Freq, logFreq, FreqPow075
+%       truncatele<int> or trunccol<int> can be appended to any of
+%       them.
+% First We pick the columns, store their indices in the
+% column_picked_logical variable then process the rest of the file.
+
+%% Helpful Lambdas
 get_log =@(x) spfun(@log, x);
 get_log1p =@(x) spfun(@log1p, x);
 get_pow=@(x, p) x.^p;
 get_freq=@(x) diag(sum(x,2).^-1)*x;
-
-opt_delimiter_idx=find(opt=='-');
-num_opt=length(opt_delimiter_idx)+1;
-assert(num_opt <= 2);
-disp(['Now opt is ', opt]);
-if num_opt == 2
-    % Basically we remove all columns with less sum than the limit
-    % prescribed in opt's second part
-    opt2 = opt(opt_delimiter_idx+1:end);
-    opt = opt(1:opt_delimiter_idx-1);
-    disp(opt2);
-    if strcmp(opt2(1:length('truncatele')), 'truncatele')
-        trunc_lim=str2num(opt2(length('truncatele')+1:end));
-        disp(['trunc_lim is ', num2str(trunc_lim)]);
-        aa=sum(arr);
-        arr(:,find(aa < trunc_lim))=[];
-    elseif strcmp(opt2(1:length('trunccol')), 'trunccol')
-        max_col=str2num(opt2(length('trunccol')+1:end));
-        disp(['Max col = ', num2str(max_col)]);
-        [~, sort_order]=sort(sum(arr), 'descend');
-        arr=arr(:, sort_order(1:min(max_col, size(arr, 2))));
-    end
-end
-    
+%% Parse Options
+%% If the Options had truncatele or trunccol appended to them
+[opt, column_picked_logical]=process_opt_and_get_column_logical(opt, ...
+                                                  arr);
+arr=arr(:, column_picked_logical);
+%% Now that the columns to process have been fixed we would
+%% do non-linear element-wise preprocessing.
 disp(['Now opt is ', opt]);
 powloc=strfind(opt, 'Pow');
 if ~isempty(powloc)
@@ -67,3 +56,5 @@ nonmissing_rows=(sum(arr,2)~=0);
 mu1=mean(arr(nonmissing_rows, :), 1);
 mu2=mean(arr(nonmissing_rows, :), 2);
 assert(any(isnan(mu1))~=1);
+end
+

@@ -58,7 +58,9 @@ for dataset={ 'SCWS', 'RW', 'MEN', 'EN_MC_30', 'EN_MTURK_287', 'EN_RG_65', ...
     fprintf(1, 'The %s dataset over %s took %f minutes\n', dataset{1}, ...
             id, toc/60);
 end
-% 6. Find score on TOM_ICLR13_SEM and TOM_ICLR_SYN dataset
+%% 7. Find Score on Microsofot Sentence Completion test
+
+%% 8. Find score on TOM_ICLR13_SEM and TOM_ICLR_SYN dataset
 if domikolov
     for dataset = {'EN_TOM_ICLR13_SYN', 'EN_TOM_ICLR13_SEM'}
     tic;
@@ -75,7 +77,7 @@ if domikolov
             id, toc/60);
     end
 end
-% 7. Use wordnet test
+% 9. Use wordnet test
 tic;
 golden_paraphrase_map=create_golden_paraphrase_map(...
     getenv('WORDNET_TEST_FILENAME'),word);
@@ -93,3 +95,4 @@ for i=1:length(cosine_sim)
             ppdb_paraphrase_rating(i,3));
 end
 disp('finished printing the true ratings');
+end

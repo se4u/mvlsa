@@ -44,7 +44,7 @@ STORE2 := /export/a14/prastog3
 GLOVEDIR := /home/prastog3/tools/glove
 TOOLDIR := /home/prastog3/tools
 WORD2VECDIR := $(TOOLDIR)/word2vec/trunk
-RESPATH := /home/prastog3/projects/mvppdb/res
+RESPATH := /home/prastog3/projects/mvppdb/res/word_sim
 BIG_LANG := ar cs de es fr zh
 BIG_INPUT := $(addprefix $(STORE2)/ppdb-input-simplified-,$(BIG_LANG))
 BIG_INPUT_WORD := $(addsuffix _word,$(BIG_INPUT))
@@ -52,14 +52,14 @@ BIG_ALIGN_MAT := $(patsubst %,$(STORE2)/align_%.mat,$(BIG_LANG))
 SVD_DIM := 500
 PREPROCESS_OPT := Count logCount logCount-truncatele20 Count-truncatele20 logFreq Freq Freq-truncatele20 logFreq-truncatele20 logFreqPow075 FreqPow075 logFreqPow075-truncatele20 FreqPow075-truncatele20
 MATCMD := time matlab -nojvm -nodisplay -r "warning('off', 'MATLAB:maxNumCompThreads:Deprecated'); warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); maxNumCompThreads(10); "
-MATCMDENV := $(MATCMD)"setenv('TOEFL_QUESTION_FILENAME', '$(RESPATH)/word_sim/toefl.qst'); setenv('TOEFL_ANSWER_FILENAME', '$(RESPATH)/word_sim/toefl.ans'); setenv('SCWS_FILENAME', '$(RESPATH)/word_sim/scws_simplified.txt'); setenv('RW_FILENAME', '$(RESPATH)/word_sim/rw_simplified.txt'); setenv('MEN_FILENAME', '$(RESPATH)/word_sim/MEN.txt'); setenv('EN_MC_30_FILENAME', '$(RESPATH)/word_sim/EN-MC-30.txt'); setenv('EN_MTURK_287_FILENAME', '$(RESPATH)/word_sim/EN-MTurk-287.txt'); setenv('EN_RG_65_FILENAME', '$(RESPATH)/word_sim/EN-RG-65.txt'); setenv('EN_TOM_ICLR13_SEM_FILENAME', '$(RESPATH)/word_sim/EN-TOM-ICLR13-SEM.txt'); setenv('EN_TOM_ICLR13_SYN_FILENAME', '$(RESPATH)/word_sim/EN-TOM-ICLR13-SYN.txt'); setenv('EN_WS_353_REL_FILENAME', '$(RESPATH)/word_sim/EN-WS-353-REL.txt'); setenv('EN_WS_353_SIM_FILENAME', '$(RESPATH)/word_sim/EN-WS-353-SIM.txt'); setenv('EN_WS_353_ALL_FILENAME', '$(RESPATH)/word_sim/EN-WS-353-ALL.txt'); setenv('WORDNET_TEST_FILENAME', '$(RESPATH)/wordnet.test'); setenv('PPDB_PARAPHRASE_RATING_FILENAME', '$(RESPATH)/ppdb_paraphrase_rating'); setenv('SIMLEX_FILENAME', '$(RESPATH)/word_sim/simlex_simplified.txt'); "
+MATCMDENV := $(MATCMD)"setenv('TOEFL_QUESTION_FILENAME', '$(RESPATH)/toefl.qst'); setenv('TOEFL_ANSWER_FILENAME', '$(RESPATH)/toefl.ans'); setenv('SCWS_FILENAME', '$(RESPATH)/scws_simplified.txt'); setenv('RW_FILENAME', '$(RESPATH)/rw_simplified.txt'); setenv('MEN_FILENAME', '$(RESPATH)/MEN.txt'); setenv('EN_MC_30_FILENAME', '$(RESPATH)/EN-MC-30.txt'); setenv('EN_MTURK_287_FILENAME', '$(RESPATH)/EN-MTurk-287.txt'); setenv('EN_RG_65_FILENAME', '$(RESPATH)/EN-RG-65.txt'); setenv('EN_TOM_ICLR13_SEM_FILENAME', '$(RESPATH)/EN-TOM-ICLR13-SEM.txt'); setenv('EN_TOM_ICLR13_SYN_FILENAME', '$(RESPATH)/EN-TOM-ICLR13-SYN.txt'); setenv('EN_WS_353_REL_FILENAME', '$(RESPATH)/EN-WS-353-REL.txt'); setenv('EN_WS_353_SIM_FILENAME', '$(RESPATH)/EN-WS-353-SIM.txt'); setenv('EN_WS_353_ALL_FILENAME', '$(RESPATH)/EN-WS-353-ALL.txt'); setenv('WORDNET_TEST_FILENAME', '$(RESPATH)/wordnet.test'); setenv('PPDB_PARAPHRASE_RATING_FILENAME', '$(RESPATH)/ppdb_paraphrase_rating'); setenv('SIMLEX_FILENAME', '$(RESPATH)/simlex_simplified.txt'); setenv('MSR_QUESTIONS', '$(RESPATH)/MSR_Sentence_Completion_Challenge_V1/Data/Holmes.machine_format.questions.txt'); setenv('MSR_ANSWERS', '$(RESPATH)/MSR_Sentence_Completion_Challenge_V1/Data/Holmes.machine_format.answers.txt'); "
 
 # TODO
-# 1. Compile the results of the jobs in FANGLE. (Write up your paper !! on monday !!)
-# 2. Write code to move experiment to COE grid. (Done, Run stuff on that grid using the THINGS_TO_MAKE_TARGET)
-# 3. Add code to compute the projection operator and a dictionary to create the feature vector at test time.
-# 4. Add Code to compute projections of OOV on the fly.
-# 3. Add Microsoft sentence completion test.
+# 1.[-] Compile the results of the jobs in FANGLE. (Write up your paper !! on monday !!)
+# 2.[X] Backup the important files onto COE 
+# 3.[-] Add code to compute the projection operator and a dictionary to create the feature vector at test time.
+# 4.[-] Add Code to compute projections of OOV on the fly.
+# 3.[-] Add Microsoft sentence completion test.
 # 5. Write code to discriminatively train the embeddings
 ######################################################################
 ## PAPER MAKING CODE
@@ -112,54 +112,6 @@ table_multiviewcontri2:
 
 ####################
 ###### OTHER TEST
-# [ww, ff]=textread('/export/a15/prastog3/polyglot_wikitxt/en/full.txt.vc5.500K', '%s %d');
-# >> [(1:45)' ff(arrayfun(@(i) max(find(K>=i)) , 1:45)) ff(arrayfun(@(i) min(find(K>=i)) , 1:45))]
-#            1          24   105160955
-#            2          24   105160955
-#            3          24   105160955
-#            4          24   105160955
-#            5          24   105160955
-#            6          24   105160955
-#            7          24   105160955
-#            8          24   105160955
-#            9          24   105160955
-#           10          24   105160955
-#           11          24   105160955
-#           12          24   105160955
-#           13          24   105160955
-#           14          24   105160955
-#           15          24   105160955
-#           16          24   105160955
-#           17          24   105160955
-#           18          24   105160955
-#           19          24   105160955
-#           20          24   105160955
-#           21          24   105160955
-#           22          24   105160955
-#           23          24   105160955
-#           24          24   105160955
-#           25          24   105160955
-#           26          24   105160955
-#           27          24   105160955
-#           28          24   105160955
-#           29          24   105160955
-#           30          24   105160955
-#           31          24   105160955
-#           32          24   105160955
-#           33          24   105160955
-#           34          24   105160955
-#           35          24   105160955
-#           36          24   105160955
-#           37          24   105160955
-#           38          24   105160955
-#           39          24   105160955
-#           40          24   105160955
-#           41          25   105160955
-#           42          31   105160955
-#           43          34   105160955
-#           44          34   105160955
-#           45          95    17609401
-
 # TARGET: a log file with all the test results.
 # SOURCE: $(STORE2)/glove.6B.300d.mat (glove.42B etc.)
 log/other_extrinsic_test_%:  $(STORE2)/%.mat
@@ -204,37 +156,13 @@ $(STORE2)/glove_vocab_file: $(STORE2)/only_english_from_ppdb_input
 	$(GLOVEDIR)/vocab_count -min-count 100 -verbose 2 < $< > $@
 $(STORE2)/word2vec_embedding_file: $(STORE2)/only_english_from_ppdb_input
 	$(WORD2VECDIR)/word2vec -train $< -size 300 -window 10 -hs 0 -negative 15 -threads 20 -min-count 100 -output $@ -dumpcv $@_context
-##############################
-#### PAPER FANGING CODE
-# The log files that I want to create
-# log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi@mo,300_1e-5_25.300.1.1 (SUBMITTED)
-# log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_25.300.1.1 (SUBMITTED)
-# The jobs are 91363{82-84} 9136{448,466,467}
-DATASET_FANG: #@fn#for dset in @mo@fn @mo@fn@bi  @mo@fn@ag  @mo@fn@ag@bi  @ag@bi@po  @bi@po  @ag@po  @po ; do make $STORE2/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$dset",300_1e-5_25.mat ; done
-	for dset in @mo@fn \
-		    @mo@fn@bi \
-		    @mo@fn@ag \
-		    @mo@fn@ag@bi \
-		    @ag@bi@po \
-		    @bi@po \
-		    @ag@po \
-		    @po ; do \
-		make log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_25.300.1.1; done
-VIEW_THRESHOLD_FANG: # for thresh in 21 23 27 29 ; do make -n $STORE2/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$thresh".mat; done
-	for thresh in 21 23 27 29 ; do \
-	    make -n log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$thresh".300.1.1; done
-# EMBSIZE_FANG: # for embsize in {1..5} ; do make  $STORE2/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,"$embsize"00_1e-5_25.mat; done
-# 	for embsize in 100 200 300 400 500 ; do 
-# 	    make -n log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,"$$embsize"_1e-5_25.300.1.1; done
-BIG_FANG: # for m in 500; do make $STORE2/v5_embedding_mc_CountPow025-trunccol100000_"$m"~E@mi,300_1e-5_25.mat; done
-	for m in 500; do make log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done
 
 ##############################
 ####  TABULATION CODE
 TABCMD = cat $$F | sed "s%original embedding%O%g" | sed "s%The EN_TOM_ICLR13_S\([EY]\)\([MN]\) dataset score over \([0-9A-Za-z_-]*\) \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The EN_TOM_ICLR13_S\1\2 $$corrtype score over \3 (\5 out of \4) is \7%g" | sed "s%The TOEFL score over \([0-9A-Za-z_-]*\) with bare \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The TOEFL $$corrtype score over \1 (\3 out of \2) is \5%g" | sed "s%The $$corrtype Corr over \([0-9A-Za-z_-]*\) is%The JURI $$corrtype correlation over \1 (0 out of 0) is%g" | grep -E "The .* $$corrtype"  | 
 TAB_SPEARMAN = export F=log/$* && export corrtype=Spearman &&
 TAB_PEARSON = export F=log/$* && export corrtype=Pearson && 
-TABCMD1 = grep "over G" | awk '{printf "%s\n", $$NF}'
+TABCMD1 = grep "over G" #| awk '{printf "%s\n", $$NF}'
 TABCMDA = awk '{printf "%s %s out of %s \t %s \t %s\n", $$2, $$7, $$10, $$6, $$NF}' | python src/tabulation_script.py
 # TARGET: Call tab_Spearman when you want results only over G
 tab_Spearman_%: #log/%
@@ -246,6 +174,37 @@ tabulate_Spearman_%: #log/%
 	$(TAB_SPEARMAN) $(TABCMD) $(TABCMDA) $*
 tabulate_Pearson_%: #log/%
 	$(TAB_PEARSON) $(TABCMD) $(TABCMDA) $*
+
+##############################
+#### PAPER FANGING CODE
+# TARGET: TABBING_IT_n (OR) TABBING_IT_s
+# n is for checking
+# s is for doing
+TABBING_IT_%:
+	for m in 500; do \
+	    echo $$m; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done ;\
+	for dset in "" @mo @fn @mo@fn @mo@fn@bi @po ; do \
+	   echo $$dset; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_25.300.1.1; done ;\
+	for dset in @mo@fn@ag @mo@fn@ag@bi  @bi@po @ag@po ; do \
+	   echo $$dset; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_100000.300.1.1; done; \
+	for thresh in 21 23 25 27 29 ; do \
+	    echo $$thresh; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$thresh".300.1.1; done; 
+
+DATASET_FANG: 
+	for dset in @mo@fn @mo@fn@bi @po ; do \
+	   make $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_25.mat; done
+# @ag@bi@po can't be done because the method becomes unstable
+DATASET2_FANG: 
+	for dset in @mo@fn@ag @mo@fn@ag@bi  @bi@po @ag@po ; do \
+	   make -n $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_100000.mat; done
+VIEW_THRESHOLD_FANG: 
+	for thresh in 21 23 25 27 29 ; do \
+	    make -n $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$thresh"; done
+# Note that there are 114,428 words in the vocabulary here.
+# Also note that the mat file target was
+# $STORE2/v5_embedding_mc_CountPow025-trunccol100000_"500"~E@mi,300_1e-5_25.mat
+BIG_FANG: 
+	for m in 500; do make $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done
 
 #########################
 #### EVAL CODE
@@ -269,7 +228,7 @@ log/fullgcca_extrinsic_test_%:
 	$(MAKE) JOB_NAME=$(subst $(COMMA),,$(subst @,_at_,tmp_$(@F))) \
 		JID_HOLD=$(subst v5_embedding_,,$(word 1,$(subst ., ,$(V5_EMB_JOBNAME_MAKER)))) \
 		MEMORY=5G \
-		PE=10 \
+		PE=2 \
 		TARGET=$@ \
 		MYDEP=$(STORE2)/$(call GET_LOG_OPT,1).mat \
 		DIM_AFTER_CCA=$(call GET_LOG_OPT,2) \
@@ -284,22 +243,34 @@ gcca_extrinsic_test_gen1: $(MYDEP)
 		DIM_AFTER_CCA=$(DIM_AFTER_CCA) \
 		DOMIKOLOV=$(DOMIKOLOV) \
 		DO_ONLY_G=$(DO_ONLY_G) \
-	gcca_extrinsic_test_generic && sleep 10
+	gcca_extrinsic_test_generic #&& sleep 10
 
 gcca_extrinsic_test_generic:  
 	$(MATCMDENV)"word=textread('$(VOCAB_500K_FILE)', '%s'); load('$(MYDEP)'); if size(G, 1) < size(G, 2); G=G'; end; word=word(sort_idx); bvgn_emb=nan; bitext_true_extrinsic_test(G, bvgn_emb, $(DIM_AFTER_CCA), word, $(DOMIKOLOV), $(DO_ONLY_G)); exit;" | tee $(TARGET)
 
+MSRMATCMD = time matlab -nodisplay -r "addpath('src'); setenv('MSR_QUESTIONS', '$(RESPATH)/MSR_Sentence_Completion_Challenge_V1/Data/Holmes.machine_format.questions.txt'); setenv('MSR_ANSWERS', '$(RESPATH)/MSR_Sentence_Completion_Challenge_V1/Data/Holmes.machine_format.answers.txt');"
+# % can be mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_25
+gcca_msr_test_%: $(STORE2)/v5_embedding_%.mat
+	$(MSRMATCMD)"big_word_list=textread('$(VOCAB_500K_FILE)', '%s'); embedding_file='$<'; load(embedding_file, 'G', 'sort_idx'); msrd=get_msr_data(); G=normalize_embedding(G); big_word_map=containers.Map(big_word_list, 1:length(big_word_list)); small_word_map=containers.Map(big_word_list(sort_idx), 1:sum(sort_idx)); UJ={}; CPL={}; for k=1:15 pj_mat_file=matfile(['$(STORE2)/projection_polyglotwiki_cooccurence_' num2str(k) '.' embedding_file(length('$(STORE2)/v5_embedding_')+1:end)]); UJ{k}=sparse(pj_mat_file.uj); CPL{k}=pj_mat_file.column_picked_logical; end; gcca_msr_test(big_word_list, big_word_map, small_word_map, G, sort_idx, msrd, UJ, CPL); exit;" | tee $@
+# TARGET:
+# for m in 300 500; do for h in {1..15}; do make \
+# $STORE2/projection_polyglotwiki_cooccurence_"$h".mc_CountPow025-trunccol100000_"$m"~E@mi,300_1e-5_25.mat; done; done
+# bj*inv(sj'*sj+rI)*bj'*bj*sj'*aj'*G
+# Experiment with this at 7:45 AM.
+$(STORE2)/projection_%.mat:
+	$(MATCMD)"options=strsplit('$*','.'); load(['$(STORE2)/v5_embedding_' options{2} '.mat'], 'G', 'sort_idx');  tmp=strsplit(options{2}, '~'); poly_view=['$(STORE2)/v5_indisvd_' options{1} '~' strrep(tmp{1}, '_', '~') '~1e-5.mat']; load(poly_view, 'aj', 'sj', 'bj', 'r', 'column_picked_logical'); sj=sparse_diag_mat(sj); sj=inv(sj*sj+r*speye(size(sj,2)))*sj; aj=aj(sort_idx,:)'; uj = bj*(sj*(aj*G)); save('$@', 'uj', 'column_picked_logical'); exit;"
 #######################################
 ## GCCA Running Code
 # TARGET: The typical targets are
+# (Note : I should always remove mikolov by default)
 # $STORE2/v5_embedding_mc_CountPow025-trunccol200000_100~@fn,300_1e-5_25.mat
 # $STORE2/v5_embedding_mc_CountPow025-truncatele200_100~@fn,300_1e-5_25.mat
 # $STORE2/v5_embedding_mc_CountPow025^CountPow075-trunccol200000_100~@fn,300_1e-5_25.mat
 # $STORE2/v5_embedding_mc_CountPow025-trunccol200000_100~E@mi,300_1e-5_25.mat
-# $STORE2/v5_embedding_mc_CountPow025-trunccol100000_300~E,300_1e-5_25.mat (Note : I should always remove mikolov by default)
+# $STORE2/v5_embedding_mc_CountPow025-trunccol100000_300~E,300_1e-5_25.mat 
 # $STORE2/v5_embedding_mc_CountPow025-trunccol50000_100~E,300_1e-5_25.mat
 # $STORE2/v5_embedding_mc_CountPow025-truncatele200_100~E@mi,300_1e-5_25.mat
-# The filename is constructed  by joing 3 parts
+# The filename is constructed  by joing 3 parts 
 # 1. The options given to the underlying SVD (the dataset name is determined in separate script)
 # 	a. mc or muc
 # 	b. preprocessing (CountPow025^CountPow075-trunccol200000)
@@ -362,11 +333,16 @@ v5_generic: $(V56_GENERIC_DEP)
 # SOURCE: It mainly depends on f2load which is options{1}
 #    Some massaging is done in the v5_indisvd code takes the svd
 #    according to the options and then ajtj are calculated.
+# With 300 columns it only takes 5 slots and 15G memory
+V5_INDISVD_MEM := 25G
 $(STORE2)/v5_indisvd_%.mat:
-	qsub -N tmp_$* -p -1 -V -j y -l mem_free=25G,ram_free=25G,h_vmem=25G -r yes -pe smp 10 -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl &&  sleep 3
+	qsub -N tmp_$* -p -1 -V -j y -l mem_free=$(V5_INDISVD_MEM),ram_free=$(V5_INDISVD_MEM),h_vmem=$(V5_INDISVD_MEM) -r yes -pe smp 5 -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl #&&  sleep 3
 
+V5_INDISVD_CMD1 = "options=strsplit('$*', '~'); f2load=['$(STORE2)/' options{1} '.mat']; load(f2load); assert(exist('align_mat')==1); mc_muc=options{2}; if strcmp(f2load, '$(STORE2)/mikolov_cooccurence_intersect.mat') preprocess_option='Count'; else preprocess_option=options{3}; end; svd_size=str2num(options{4}); r=str2num(options{5}); outfile='$(word 1,$(subst ., ,$@)).mat';"
+$(STORE2)/v5_indisvd_%.append_column_picked:
+	$(MATCMD)$(V5_INDISVD_CMD1)"[~, column_picked_logical]=process_opt_and_get_column_logical(preprocess_option, align_mat); save(outfile, 'column_picked_logical', '-append'); exit;"
 $(STORE2)/v5_indisvd_%.impl:
-	$(MATCMD)"options=strsplit('$*', '~'); f2load=['$(STORE2)/' options{1} '.mat']; load(f2load); assert(exist('align_mat')==1); mc_muc=options{2}; if strcmp(f2load, '$(STORE2)/mikolov_cooccurence_intersect.mat') preprocess_option='Count'; else preprocess_option=options{3}; end; svd_size=str2num(options{4}); r=str2num(options{5}); outfile='$(word 1,$(subst ., ,$@)).mat'; [ajtj, kj_diag, aj, sj]=v5_indisvd_level2(align_mat, mc_muc, preprocess_option, svd_size, r, outfile); save(outfile, 'ajtj', 'kj_diag', 'aj', 'sj', 'r'); exit;"
+	$(MATCMD)$(V5_INDISVD_CMD1)"[ajtj, kj_diag, aj, sj, column_picked_logical, bj]=v5_indisvd_level2(align_mat, mc_muc, preprocess_option, svd_size, r, outfile); save(outfile, 'ajtj', 'kj_diag', 'aj', 'sj', 'r', 'column_picked_logical', 'bj'); exit;"
 
 ######################################################################
 ## INPUT PREPARATION CODE 

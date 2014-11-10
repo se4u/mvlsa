@@ -2,7 +2,9 @@ function [G, S_tilde, sort_idx]=v5_generic(r, deptoload, min_view_to_accept_word
 % r is the number of gcca components that we want.
 % deptoload is a cell that contains mat file names.
 % min_view_to_accept_word is a threshold over the number of views
-% that a particular word must appear in.
+% that a particular word must appear in. I am overloading
+% min_view_to_accept_word so that if its is greater than 50000
+% then it means that its the top vocabulary that I want to keep
 %% First Read dimensions of matrices to allocate space.
 tic;
 disp('First quickly read dimensions of big matrices by looping through files');
@@ -30,9 +32,22 @@ toc;
 % That reduces the number of rows that I use for GCCA to 73K. And
 % then I can perform GCCA.
 % K_acc means K_acceptable
-logical_acceptable_rows=(K>=min_view_to_accept_word);
+if min_view_to_accept_word < 100
+    logical_acceptable_rows=(K>=min_view_to_accept_word);
+elseif min_view_to_accept_word < 50000
+    disp(['Dont know what to do with min_view_to_accept_word = '
+          num2str(min_view_to_accept_word)]);
+    exit(1);
+else
+    for idx=1:length(deptoload)
+        if sum(K>=idx) < min_view_to_accept_word
+            break;
+        end
+    end
+    logical_acceptable_rows=(K>=(idx-1));
+end
+assert(sum(logical_acceptable_rows)>0);
 K=K(logical_acceptable_rows); 
-
 %% Now Start loading data
 tic;
 disp('Now start loading the data. This process is slow.\n');
