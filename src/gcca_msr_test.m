@@ -1,22 +1,10 @@
 function gcca_msr_test(big_word_list, big_word_map, small_word_map, ...
-                       G, sort_idx, msrd, UJ, CPL)
+                       G, sort_idx, msrd, UJ, CPL, chunk)
 % msrd{i,1} is the sentence
 % msrd{i,2} is the location of options
 % msrd{i,3} are the options
 % msrd{i,4} is the correct options index.
-
-try
-    distcomp.feature( 'LocalUseMpiexec', false );
-    num_pool=10;
-    ex_ppool=1040/num_pool;
-    matlabpool('OPEN', num_pool);
-catch
-    disp('Failure to parallelize on this machine');
-    exit(1);
-end
-
-parfor par_idx=1:num_pool
-for i = (par_idx-1)*ex_ppool+1:par_idx*ex_ppool
+for i = chunk(1):(chunk(1)+chunk(2))
     tic;
     sentence=msrd{i,1};
     opt_loc=msrd{i,2};
@@ -71,5 +59,3 @@ for i = (par_idx-1)*ex_ppool+1:par_idx*ex_ppool
             i, predicted_word,correct_word);
     toc;
 end
-end
-

@@ -26,8 +26,9 @@ join-with = $(subst $(space),$1,$(strip $2))
 
 ## VARIABLES
 # LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 addpath('src/kdtree');
+QSDM := 15G
 QSUB1 := qsub
-QSUB2 := -V -j y -l mem_free=30G,ram_free=30G,h_vmem=30G -r yes #-verify
+QSUB2 := -V -j y -l mem_free=$(QSDM),ram_free=$(QSDM),h_vmem=$(QSDM) -r yes #-verify
 QSUBCMD := $(QSUB1) $(QSUB2) 
 QSUBP1CMD := $(QSUB1) -p -1 $(QSUB2)
 CWD_SUBMIT := -cwd submit_grid_stub.sh 
@@ -56,13 +57,10 @@ MATCMDENV := $(MATCMD)"setenv('TOEFL_QUESTION_FILENAME', '$(RESPATH)/toefl.qst')
 
 # TODO
 # 1.[-] Compile the results of the jobs in FANGLE. (Write up your paper !! on monday !!)
-# 2.[X] Backup the important files onto COE 
-# 3.[-] Add code to compute the projection operator and a dictionary to create the feature vector at test time.
 # 4.[-] Add Code to compute projections of OOV on the fly.
-# 3.[-] Add Microsoft sentence completion test.
 # 5. Write code to discriminatively train the embeddings
 ######################################################################
-## PAPER MAKING CODE
+## PAPER MAKING CODE(OLD)
 table_absbest: 
 	make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-truncatele20_500~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300_1e-8,monomultiwindow.300
 
@@ -79,14 +77,13 @@ table_n_ext:
 	for n in CountPow012 FreqPow012; do make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_"$$n"-truncatele200_100~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300_1e-5,monomultiwindow.300 ; done
 
 table_nconcat: 
-	for n in CountPow025^CountPow050^logFreq^FreqPow025^FreqPow050^logCount^Count^Freq \
-	         CountPow025^CountPow050^logFreq^FreqPow025^FreqPow050^logCount^Count \
-	         CountPow025^CountPow050^logFreq^FreqPow025^FreqPow050^logCount \
-	         CountPow025^CountPow050^logFreq^FreqPow025^FreqPow050 \
-	         CountPow025^CountPow050^logFreq^FreqPow025 \
-	         CountPow025^CountPow050^logFreq \
-	         CountPow025^CountPow050 ; do \
-	            echo $$n ; make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_"$$n"-truncatele200_100~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300_1e-5,monomultiwindow.300; \
+	for n in ^logFreq^FreqPow025^FreqPow050^logCount^Count^Freq \
+	         ^logFreq^FreqPow025^FreqPow050^logCount^Count \
+	         ^logFreq^FreqPow025^FreqPow050^logCount \
+	         ^logFreq^FreqPow025^FreqPow050 \
+	         ^logFreq^FreqPow025 
+	         ^logFreq "" ; do \
+	            echo $$n ; make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025^CountPow050"$$n"-truncatele200_100~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300_1e-5,monomultiwindow.300; \
 	done
 
 table_mean:
@@ -99,19 +96,12 @@ table_multiviewcontri:
 	for pc in stgccanoenbvgnmonotext1 stgccanoenbvgnmonotext1@monotext2 stgccanoenbvgnmonotext1@monotext2@monotext4 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8@monotext10 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8@monotext10@monotext12 stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8@monotext10@monotext12@monotext14 stgccano@en@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14 stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14
 
 table_multiviewcontri2:
-	for pc in \
-	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es@fr@zh \
-	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es@fr \
-	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de@es \
-	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs@de \
-	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar@cs \
-	stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar ;\
-	do echo pc=$$pc && \
-	     make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele200_100~"$$pc",300_1e-5,monomultiwindow.300; \
-	done
+	for pc in @cs@de@es@fr@zh @cs@de@es@fr @cs@de@es @cs@de @cs "" ; do \
+	     echo pc=$$pc && \
+	     make -s tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_FreqPow025-truncatele200_100~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14@ar"$$pc",300_1e-5,monomultiwindow.300; done
 
 ####################
-###### OTHER TEST
+## OTHER TEST
 # TARGET: a log file with all the test results.
 # SOURCE: $(STORE2)/glove.6B.300d.mat (glove.42B etc.)
 log/other_extrinsic_test_%:  $(STORE2)/%.mat
@@ -158,11 +148,40 @@ $(STORE2)/word2vec_embedding_file: $(STORE2)/only_english_from_ppdb_input
 	$(WORD2VECDIR)/word2vec -train $< -size 300 -window 10 -hs 0 -negative 15 -threads 20 -min-count 100 -output $@ -dumpcv $@_context
 
 ##############################
-####  TABULATION CODE
+## PAPER FANGING CODE
+# TARGET: TABBING_IT_n (OR) TABBING_IT_s
+TABBING_IT_%:
+	for m in 500; do \
+	    echo $$m; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done ;\
+	for dset in "" @mo @fn @mo@fn @mo@fn@bi @po ; do \
+	   echo $$dset; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_25.300.1.1; done | pr -6; \
+	for dset in @mo@fn@ag @mo@fn@ag@bi  @bi@po @ag@po ; do \
+	   echo $$dset; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_100000.300.1.1; done | pr -4 ;\
+	for thresh in 21 23 25 27 29 ; do \
+	    echo $$thresh; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$thresh".300.1.1; done | pr -5 ;
+
+DATASET_FANG_%: 
+	for dset in @mo@fn @mo@fn@bi @po ; do \
+	   make -$* $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_25.mat; done
+
+DATASET2_FANG_%:  # @ag@bi@po can't be done, the method becomes unstable
+	for dset in @mo@fn@ag @mo@fn@ag@bi  @bi@po @ag@po ; do \
+	   make -$* $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_100000.mat; \
+	done
+VIEW_THRESHOLD_FANG_%: 
+	for thresh in 21 23 25 27 29 ; do \
+	    make -$* $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$thresh"; done
+
+BIG_FANG_%:  # Note that there are 114,428 words in the vocabulary here.
+	for m in 500; do \
+	    make -$* $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done
+
+##############################
+##  TABULATION CODE
 TABCMD = cat $$F | sed "s%original embedding%O%g" | sed "s%The EN_TOM_ICLR13_S\([EY]\)\([MN]\) dataset score over \([0-9A-Za-z_-]*\) \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The EN_TOM_ICLR13_S\1\2 $$corrtype score over \3 (\5 out of \4) is \7%g" | sed "s%The TOEFL score over \([0-9A-Za-z_-]*\) with bare \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The TOEFL $$corrtype score over \1 (\3 out of \2) is \5%g" | sed "s%The $$corrtype Corr over \([0-9A-Za-z_-]*\) is%The JURI $$corrtype correlation over \1 (0 out of 0) is%g" | grep -E "The .* $$corrtype"  | 
 TAB_SPEARMAN = export F=log/$* && export corrtype=Spearman &&
 TAB_PEARSON = export F=log/$* && export corrtype=Pearson && 
-TABCMD1 = grep "over G" #| awk '{printf "%s\n", $$NF}'
+TABCMD1 = grep "over G" | awk '{printf "%s\n", $$NF}'
 TABCMDA = awk '{printf "%s %s out of %s \t %s \t %s\n", $$2, $$7, $$10, $$6, $$NF}' | python src/tabulation_script.py
 # TARGET: Call tab_Spearman when you want results only over G
 tab_Spearman_%: #log/%
@@ -175,39 +194,8 @@ tabulate_Spearman_%: #log/%
 tabulate_Pearson_%: #log/%
 	$(TAB_PEARSON) $(TABCMD) $(TABCMDA) $*
 
-##############################
-#### PAPER FANGING CODE
-# TARGET: TABBING_IT_n (OR) TABBING_IT_s
-# n is for checking
-# s is for doing
-TABBING_IT_%:
-	for m in 500; do \
-	    echo $$m; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done ;\
-	for dset in "" @mo @fn @mo@fn @mo@fn@bi @po ; do \
-	   echo $$dset; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_25.300.1.1; done ;\
-	for dset in @mo@fn@ag @mo@fn@ag@bi  @bi@po @ag@po ; do \
-	   echo $$dset; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_100000.300.1.1; done; \
-	for thresh in 21 23 25 27 29 ; do \
-	    echo $$thresh; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$thresh".300.1.1; done; 
-
-DATASET_FANG: 
-	for dset in @mo@fn @mo@fn@bi @po ; do \
-	   make $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_25.mat; done
-# @ag@bi@po can't be done because the method becomes unstable
-DATASET2_FANG: 
-	for dset in @mo@fn@ag @mo@fn@ag@bi  @bi@po @ag@po ; do \
-	   make -n $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_100000.mat; done
-VIEW_THRESHOLD_FANG: 
-	for thresh in 21 23 25 27 29 ; do \
-	    make -n $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$thresh"; done
-# Note that there are 114,428 words in the vocabulary here.
-# Also note that the mat file target was
-# $STORE2/v5_embedding_mc_CountPow025-trunccol100000_"500"~E@mi,300_1e-5_25.mat
-BIG_FANG: 
-	for m in 500; do make $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done
-
 #########################
-#### EVAL CODE
+## FULLGCCA EVAL CODE
 # TARGET: log/fullgcca_extrinsic_test_%.300.0.1
 # Possibilities for % are 
 # mc_CountPow025-trunccol200000_100~@fn,300_1e-5_25
@@ -221,7 +209,6 @@ BIG_FANG:
 # 2. DIM_AFTER_CCA
 # 3. Whether to test over mikolov's analogy
 # 4. Whether to DO_ONLY_G
-# SOURCE: $STORE2/v5_embedding_%.mat
 GET_LOG_OPT = $(word $1,$(subst ., ,$*))
 V5_EMB_JOBNAME_MAKER = tmp_embqsub_$(subst $(COMMA),,$(subst @,_at_,$*))
 log/fullgcca_extrinsic_test_%:
@@ -247,13 +234,25 @@ gcca_extrinsic_test_gen1: $(MYDEP)
 
 gcca_extrinsic_test_generic:  
 	$(MATCMDENV)"word=textread('$(VOCAB_500K_FILE)', '%s'); load('$(MYDEP)'); if size(G, 1) < size(G, 2); G=G'; end; word=word(sort_idx); bvgn_emb=nan; bitext_true_extrinsic_test(G, bvgn_emb, $(DIM_AFTER_CCA), word, $(DOMIKOLOV), $(DO_ONLY_G)); exit;" | tee $(TARGET)
+########################################
+## MSR TESTING CODE
+check_msr_performance:
+	for f in log/gcca_msr_test_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_25.* ; do \
+		python src/count_correct_msr_predictions.py $$f ; done
+
+qsub_msr_test:
+	for st in {1..1040..104}; do \
+	    $(QSUBMAKE) START=$$st DELTA=103 log/gcca_msr_test_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_25; done  | awk 'BEGIN{s=0}{s+=$$2}END{print s/1040}'
 
 MSRMATCMD = time matlab -nodisplay -r "addpath('src'); setenv('MSR_QUESTIONS', '$(RESPATH)/MSR_Sentence_Completion_Challenge_V1/Data/Holmes.machine_format.questions.txt'); setenv('MSR_ANSWERS', '$(RESPATH)/MSR_Sentence_Completion_Challenge_V1/Data/Holmes.machine_format.answers.txt');"
 # % can be mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_25
-gcca_msr_test_%: $(STORE2)/v5_embedding_%.mat
-	$(MSRMATCMD)"big_word_list=textread('$(VOCAB_500K_FILE)', '%s'); embedding_file='$<'; load(embedding_file, 'G', 'sort_idx'); msrd=get_msr_data(); G=normalize_embedding(G); big_word_map=containers.Map(big_word_list, 1:length(big_word_list)); small_word_map=containers.Map(big_word_list(sort_idx), 1:sum(sort_idx)); UJ={}; CPL={}; for k=1:15 pj_mat_file=matfile(['$(STORE2)/projection_polyglotwiki_cooccurence_' num2str(k) '.' embedding_file(length('$(STORE2)/v5_embedding_')+1:end)]); UJ{k}=sparse(pj_mat_file.uj); CPL{k}=pj_mat_file.column_picked_logical; end; gcca_msr_test(big_word_list, big_word_map, small_word_map, G, sort_idx, msrd, UJ, CPL); exit;" | tee $@
+log/gcca_msr_test_%: $(STORE2)/v5_embedding_%.mat
+	$(MSRMATCMD)"big_word_list=textread('$(VOCAB_500K_FILE)', '%s'); embedding_file='$<'; load(embedding_file, 'G', 'sort_idx'); msrd=get_msr_data(); G=normalize_embedding(G); big_word_map=containers.Map(big_word_list, 1:length(big_word_list)); small_word_map=containers.Map(big_word_list(sort_idx), 1:sum(sort_idx)); UJ={}; CPL={}; for k=1:15 pj_mat_file=matfile(['$(STORE2)/projection_polyglotwiki_cooccurence_' num2str(k) '.' embedding_file(length('$(STORE2)/v5_embedding_')+1:end)]); UJ{k}=sparse(pj_mat_file.uj); CPL{k}=pj_mat_file.column_picked_logical; end; gcca_msr_test(big_word_list, big_word_map, small_word_map, G, sort_idx, msrd, UJ, CPL, [$(START) $(DELTA)]); exit;" | tee $@.$(START)
+
+########################################
+## PROJECTION CREATION CODE
 # TARGET:
-# for m in 300 500; do for h in {1..15}; do make \
+# for m in 300 500; do for h in {1..15}; do make 
 # $STORE2/projection_polyglotwiki_cooccurence_"$h".mc_CountPow025-trunccol100000_"$m"~E@mi,300_1e-5_25.mat; done; done
 # bj*inv(sj'*sj+rI)*bj'*bj*sj'*aj'*G
 # Experiment with this at 7:45 AM.
@@ -454,7 +453,7 @@ STANDEP_LIST_PREPROCOPT := +nsubj.pass,-pobj,$(STANDEP_LIST_PART2)
 # SOURCE: All the files in the $STORE2/agigastandep directory and the 21 relation types.
 #         and a mapping of those relations to indices
 run_agigastandep_mat_on_grid: # The jobs are 8591191-211
-	for r in $(subst $(COMMA), ,$(STANDEP_LIST)); do qsub -V -j y -l mem_free=30G,ram_free=30G,h_vmem=30G -l hostname=a14  -cwd submit_grid_stub.sh $(STORE2)/agigastandep_cooccurence_"$$r".mat; done
+	for r in $(subst $(COMMA), ,$(STANDEP_LIST)); do qsub -V -j y -l mem_free=$(QSDM),ram_free=$(QSDM),h_vmem=$(QSDM) -l hostname=a14  -cwd submit_grid_stub.sh $(STORE2)/agigastandep_cooccurence_"$$r".mat; done
 $(STORE2)/agigastandep_cooccurence_%.mat:  $(VOCAB_500K_FILE) # $(STORE2)/agigastandep
 	time python src/agigastandep_cooccurence_h5.py $* $(STANDEP_LIST) $(STORE2)/agigastandep $<  $@.h5 && $(MATCMD)"$(call H5_TO_MAT_MAKER,$@)"
 # TARGET: This just cleans up on a botched attempt.
@@ -463,7 +462,7 @@ clean_agigastandep:
 # TARGET: This runs $(AGIGA)/standep on the grid.
 # check that $STORE2/agigastandep has 1007 files once this finishes
 run_agigastandep_directory_on_grid: # your job 8494207
-	qsub -V -j y -l mem_free=30G,ram_free=30G,h_vmem=30G -l hostname=a14  -cwd submit_grid_stub.sh $(STORE2)/agigastandep
+	qsub -V -j y -l mem_free=$(QSDM),ram_free=$(QSDM),h_vmem=$(QSDM) -l hostname=a14  -cwd submit_grid_stub.sh $(STORE2)/agigastandep
 # TARGET: This creates a directory which contains the dependency
 # cooccurence counts for the list of relations specified in STANDEP_LIST
 # and this uses the child _xargs target.
@@ -661,63 +660,6 @@ data_eyeball_%:
 log/gridrun_log_tabulate: log/gridrun 
 	python src/gridrun_log_tabulate.py | tee $@
 
-# These are jobs with changing ppdb size and whether I am using unique
-# mapping or not. The basic purpose is to find out whether things work
-# better or not ?
-slapdash_14: 
-	make log/large_scale_cca_l_cosine_1_0_0_1_170_1_1 &&\
-	make log/large_scale_cca_l_cosine_1_0_170_0_0_1_1 &&\
-	make log/large_scale_cca_l_cosine_1_0_90_0_0_1_1 &&\
-	make log/large_scale_cca_l_cosine_1_1_0_0_0_1_1 &&\
-	make log/large_scale_cca_s_cosine_1_0_0_1_170_1_1 &&\
-	make log/large_scale_cca_s_cosine_1_0_170_0_0_1_1 &&\
-	make log/large_scale_cca_s_cosine_1_0_90_0_0_1_1 &&\
-	make log/large_scale_cca_s_cosine_1_1_0_0_0_1_1 && \
-	make log/large_scale_cca_l_cosine_1_0_0_1_170_1_0 &&\
-	make log/large_scale_cca_l_cosine_1_0_170_0_0_1_0 &&\
-	make log/large_scale_cca_l_cosine_1_0_90_0_0_1_0 &&\
-	make log/large_scale_cca_l_cosine_1_1_0_0_0_1_0 &&\
-	make log/large_scale_cca_s_cosine_1_0_0_1_170_1_0 &&\
-	make log/large_scale_cca_s_cosine_1_0_170_0_0_1_0 &&\
-	make log/large_scale_cca_s_cosine_1_0_90_0_0_1_0 &&\
-	make log/large_scale_cca_s_cosine_1_1_0_0_0_1_0
-
-slapdash:
-	make log/large_scale_cca_s_cosine_1_0_90_0_0_0_1 &&\
-	make log/large_scale_cca_s_cosine_1_0_170_0_0_0_1 &&\
-	make log/large_scale_cca_s_cosine_1_1_0_0_0_0_1 &&\
-	make log/large_scale_cca_s_cosine_1_0_0_1_170_0_1 &&\
-	make log/large_scale_cca_s_cosine_1_0_90_0_0_1_1 &&\
-	make log/large_scale_cca_s_cosine_1_0_170_0_0_1_1 &&\
-	make log/large_scale_cca_s_cosine_1_1_0_0_0_1_1 &&\
-	make log/large_scale_cca_s_cosine_1_0_0_1_170_1_1 &&\
-	make log/large_scale_cca_l_cosine_1_0_90_0_0_0_1 &&\
-	make log/large_scale_cca_l_cosine_1_0_170_0_0_0_1 &&\
-	make log/large_scale_cca_l_cosine_1_1_0_0_0_0_1 &&\
-	make log/large_scale_cca_l_cosine_1_0_0_1_170_0_1 &&\
-	make log/large_scale_cca_l_cosine_1_0_90_0_0_1_1 &&\
-	make log/large_scale_cca_l_cosine_1_0_170_0_0_1_1 &&\
-	make log/large_scale_cca_l_cosine_1_1_0_0_0_1_1 &&\
-	make log/large_scale_cca_l_cosine_1_0_0_1_170_1_1 
-
-log/gridrun:
-	for db in s ; do \
-	 for dist in cosine ; do \
-	  for knnK in 1  ; do \
-	   for uum in 0 1 ; do \
-            for doavgk in 1 ; do\
-	     for dim2keep in  90 170 ; do \
-                $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0_"$$uum"_"$$doavgk" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_"$$dim2keep"_0_0_"$$uum"_"$$doavgk" ;\
-             done;\
-	     $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_1_0_0_0_"$$uum"_"$$doavgk" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_1_0_0_0_"$$uum"_"$$doavgk" ; \
-	     for dim2append in 170 ; do \
-	        $(QSUBCMD) -N gridrun_"$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append"_"$$uum"_"$$doavgk" -cwd submit_grid_stub.sh "$$db"_"$$dist"_"$$knnK"_0_0_1_"$$dim2append"_"$$uum"_"$$doavgk" ;\
-	     done;\
-            done;\
-	   done;\
-	  done;\
-	 done;\
-	done 
 
 # TARGET : Now do CCA over embeddings. The second file contains the
 # mapping. Currently it has 660584 rows. There are 2 arrays each with
