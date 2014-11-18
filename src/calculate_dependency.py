@@ -22,6 +22,10 @@ def should_include(v, dep_excl_incl, vcode):
         return instring
 
 target=sys.argv[1]
+
+target=target.replace("trunccol100000_200", "trunccol100000_300")
+target=target.replace("trunccol100000_100", "trunccol100000_300")
+    
 standep_list=sys.argv[2].split(",")
 bitext_list=sys.argv[3].split(",")
 outdir_name=sys.argv[4]
@@ -36,6 +40,7 @@ ppopt, rest=target.split("~")
 dep_excl_incl, gcca_opt=rest.split(",")
 dim, r, view_threshold = gcca_opt.split("_")
 views=itertools.chain(fnppdb_view, morpho_view, wiki_view, standep_view,mikobvgn_view, bitext_view)
+
 
 for v, vcode in views:
     if should_include(v, dep_excl_incl, vcode):

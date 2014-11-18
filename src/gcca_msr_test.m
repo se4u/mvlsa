@@ -1,5 +1,5 @@
 function gcca_msr_test(big_word_list, big_word_map, small_word_map, ...
-                       G, sort_idx, msrd, UJ, CPL, chunk)
+                       G, sort_idx, msrd, UJ, CPL, chunk, MU1)
 % msrd{i,1} is the sentence
 % msrd{i,2} is the location of options
 % msrd{i,3} are the options
@@ -29,7 +29,7 @@ for i = chunk(1):(chunk(1)+chunk(2))
             dvk=turn_into_distrib_view(sentence, big_word_map, k);
             % This is the computational bottleneck.
             x = dvk(sort_idx,CPL{k});
-            x = x(imp_r,:)*UJ{k};
+            x = (x(imp_r,:)*UJ{k})-ones(length(imp_r),1)*(MU1{k}*UJ{k});
             gcca_obj=[gcca_obj norm(G2-x, 'fro')];
         end
         gcca_per_opt{opt_idx}=gcca_obj;

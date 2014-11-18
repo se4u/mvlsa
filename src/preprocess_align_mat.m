@@ -54,7 +54,7 @@ end
 assert(nnz(arr)>1);
 nonmissing_rows=(sum(arr,2)~=0);
 mu1=mean(arr(nonmissing_rows, :), 1);
-mu2=mean(arr(nonmissing_rows, :), 2);
+mu2=mean(arr, 2);
 assert(any(isnan(mu1))~=1);
 end
 

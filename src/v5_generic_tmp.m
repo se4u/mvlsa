@@ -1,6 +1,6 @@
-% THIS FUNCTION IS DEPRECATED REPLACE IT BY v5_generic_tmp and
-% rename in the makefile
-function [G, S_tilde, sort_idx]=v5_generic(r, deptoload, min_view_to_accept_word)
+function [G, S_tilde, sort_idx]=v5_generic_tmp(r, deptoload, ...
+                                           min_view_to_accept_word, ...
+                                           M) 
 % r is the number of gcca components that we want.
 % deptoload is a cell that contains mat file names.
 % min_view_to_accept_word is a threshold over the number of views
@@ -19,7 +19,7 @@ disp('First quickly read dimensions of big matrices by looping through files');
       load(deptoload{i}, 'kj_diag');
       kj_cell{i}=kj_diag;
       ajtj_row=ajtj_size(1);
-      ajtj_col=ajtj_col+ajtj_size(2);
+      ajtj_col=ajtj_col+min(ajtj_size(2), M);
       if isnan(K)
           K=zeros(ajtj_size(1), 1);
       end
@@ -41,12 +41,8 @@ elseif min_view_to_accept_word < 50000
           num2str(min_view_to_accept_word)]);
     exit(1);
 else
-    for idx=1:length(deptoload)
-        if sum(K>=idx) < min_view_to_accept_word
-            break;
-        end
-    end
-    logical_acceptable_rows=(K>=(idx-1));
+    logical_acceptable_rows=logical([ones(min_view_to_accept_word,1); ...
+                        zeros(length(K)-min_view_to_accept_word,1)]) & K~=0;
 end
 assert(sum(logical_acceptable_rows)>0);
 K=K(logical_acceptable_rows); 
@@ -57,7 +53,7 @@ disp('Now start loading the data. This process is slow.\n');
   start=1;
   for i=1:length(deptoload)
       load(deptoload{i}, 'ajtj');
-      ajtj=ajtj(logical_acceptable_rows,:);
+      ajtj=ajtj(logical_acceptable_rows,1:M);
       %% The following three statements must remain together.
       end_=start+size(ajtj, 2)-1; 
       M_tilde(:, start:end_) = ajtj;
@@ -69,6 +65,7 @@ assert(~any(any(isnan(M_tilde))));
 M_tilde=spdiags(K.^(-1/2), 0, length(K), length(K))*M_tilde;
 assert(nnz(M_tilde)>0);
 assert(~any(any(isnan(M_tilde))));
+assert(~any(any(isinf(M_tilde))));
 clear kj_cell;
 clear ajtj;
 disp('starting GCCA NOW');

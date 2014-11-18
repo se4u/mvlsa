@@ -16,13 +16,14 @@ n_attempt=0;
 n_correct=0;
 for qst_idx=1:n_total
     i=qst_idx*5-4;
-    qst_word=toefl_data{i};
+    qst_word=lower(toefl_data{i});
     ans_sim=[];
+    ans_word={};
     try
         qst_emb=get_emb(qst_word);
         for wi=1:4
-            ans_word=toefl_data{i+wi};
-            ans_sim(wi)=sum(qst_emb.*get_emb(ans_word));
+            ans_word{wi}=toefl_data{i+wi};
+            ans_sim(wi)=sum(qst_emb.*lower(get_emb(ans_word{wi})));
         end
         n_attempt=n_attempt+1;
     catch err
@@ -31,10 +32,11 @@ for qst_idx=1:n_total
     [~, predicted_ans]=max(ans_sim);
     corr_ans = toefl_ans(qst_idx);
     if predicted_ans==corr_ans
-        fprintf(1, '+ %d %s %d \n', qst_idx, qst_word,predicted_ans);
+        sign='+';
         n_correct=n_correct+1;
     else
-        fprintf(1, '- %d %s %d\n', qst_idx, qst_word,predicted_ans);
+        sign='-';
     end
+    fprintf(1, [sign ' %d, Q: %s, A: %s \n'], qst_idx, qst_word, ans_word{predicted_ans});
     disp(ans_sim);
 end
