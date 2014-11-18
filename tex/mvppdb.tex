@@ -11,9 +11,34 @@
 \usepackage{graphicx}
 \usepackage{tabularx}
 \usepackage{changepage}
+\usepackage{booktabs}
+\usepackage[table]{xcolor}
+\usepackage{color, colortbl}
 \newcommand{\cwindow}{1, 2, 4, 6, 8, 10, 12, 14, 15}
 \newcommand{\cwinlen}{9}
 \newcommand{\ctotalview}{16}
+\newcommand{\xline}[0]{\noindent\underline{\makebox[0.1cm][l]{}}}
+\newcommand{\specialcell}[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+\makeatletter
+
+\newcommand*{\@rowstyle}{}
+
+\newcommand*{\rowstyle}[1]{% sets the style of the next row
+  \gdef\@rowstyle{#1}%
+  \@rowstyle\ignorespaces%
+}
+
+\newcolumntype{=}{% resets the row style
+  >{\gdef\@rowstyle{}}%
+}
+
+\newcolumntype{+}{% adds the current row style to the next column
+  >{\@rowstyle}%
+}
+
+\definecolor{lightgray}{gray}{0.9}
+\definecolor{darkgray}{gray}{0.7}
+\definecolor{darkergray}{gray}{0.5}
 %\setlength\titlebox{5cm}
 
 % You can expand the titlebox if you need extra space
@@ -21,9 +46,8 @@
 % smaller than 5cm (the original size); we will check this
 % in the camera-ready version and ask you to change it back.
 
-
-\title{Multiview LSA : Using Regularized GCCA to create word
-  representations from multiple sources of cooccurence statistics}
+\title{Multiview LSA: Using GCCA to create word
+  representations from multiple sources of cooccurrence statistics}
 
 \author{Pushpendre Rastogi \\
   Johns Hopkins University \\
@@ -35,49 +59,50 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-  Dense, real valued, distributed representations of words have become an
-  important research topic recently. Many researchers have
-  successfully used such representations of words which place similar words close
-  to each other as features for tasks like pos tagging, NER and 
-  parsing and improved performance. In this paper we experiment with
-  the framework of Regularized Generalized CCA (RGCCA) to fuse multiple
-  sources of co-occurence statistics and even other representations to
-  learn vector representations of words which outperform the state of the art
-   methods.
-  The main aim of the paper is to present RGCCA as a
-  natural and interpretable way to fuse multiple sources of global
-  cooccurence statistics and to compare the performance of the new
-  representations with the state of the art.
+  Vector representations of words have become an
+  important research topic recently. In this paper we present the
+  results of our experiments with
+  the framework of Generalized CCA (GCCA) for extracting vector
+  representations from multiple sources of cooccurrence statistics and
+  even other representations. 
+  The main aim of the paper is to present the performance of GCCA as a
+  natural and interpretable way to fuse multiple sources of linguistic
+  data and to compare the performance of these representations with
+  the state of the art.
 \end{abstract}
 
 \section{Introduction}
-Vector space representations of words which assign
- real vectors to words have been shown to enhance performance for nlp
- tasks recently. These representations have been created using diverse
- frameworks from Spectral methods to Neural Networks, using various sources of
- cooccurence statistics, and they are commonly evaluated on tasks
- like word similarity prediction, word analogy prediction,
- NER and more downstream tasks like dependency parsing and
- constituency parsing.~\cite{dhillon2011multi,dhillon2012two,mikolov2013efficient,mikolov2013distributed,collobert2013word,zou2013bilingual,faruqui2014improving,pennington2014glove,bansal2014tailoring,levy2014dependency}.
+\cite{winograd1972understanding} wrote that: ``Two sentences are paraphrases if they
+produce the same representation in the internal formalism for
+meaning'', where this intuition was seen in decades of subsequent work.
+Recent efforts in linguistic vector space models have loosened the
+definition: units (sentences, phrases, words) are considered
+``paraphrastic'' if they produce nearly the same representation in a
+metric space.
+Vector space representations of words have been created using diverse
+ frameworks ranging from Spectral methods to Neural Networks, using various sources of
+ cooccurrence statistics, and they are commonly evaluated on tasks
+ like word similarity prediction, word analogy prediction and
+ analogous word
+ prediction~\cite{dhillon2011multi,dhillon2012two,mikolov2013efficient,mikolov2013distributed,collobert2013word,zou2013bilingual,faruqui2014improving,pennington2014glove,bansal2014tailoring,levy2014dependency,felix2014learning}.
 
-In this paper we approach the problem of learning word level representations as the
-problem of estimating latent factors/sufficient statistics that can explain the
-co-occurrence statistics that may arise from a number of different
-sources. For example cooccurence statistics can be extracted from
-word aligned parallel bitext corpora by defining the columns to be the
-foreign language words and the rows to be english language words and
-counting the number of times an english word was aligned to a
-particular foreign language word. Viewed this way every language pair between english
-and a foreign language becomes a source of cooccurence
-statistics. Similarly, even a single monolingual corpus can provide multiple sources of
-cooccurence statistics depending on the definition of the
-context. By increasing the window size from one to one hundred we can
-create a hundred sources of partially redundant cooccurence statistics. Another source of
-cooccurence statistics are structured databases like Roget Thesaurus,
-WordNet and FrameNet which can be used to create cooccurence
-statistics. Finally, we may want to fuse predefined vector
-representations released by other
-researchers\footnote{\url{lebret.ch/embeddings/200/words.txt}}
+In this paper we approach the problem of learning dense
+representations of words from multi-modal data as the
+problem of estimating latent factors/sufficient statistics that best
+explain the
+data that arises from a number of different
+sources. For example, we can define the rows to be English language words
+and the columns to be the foreign language words and
+count the number of times an English word aligns with a
+foreign language word in a word aligned bitext corpus. Similarly,
+a monolingual corpus provides multiple sources of 
+cooccurrence statistics depending on the definition of the
+context. By changing context of a word from the last word to 15th
+previous word we can
+create 15 different sources of non redundant cooccurrence
+statistics. We can even use structured databases like WordNet and
+FrameNet for this purpose. Finally, we may want to fuse predefined vector
+representations released by others\footnote{\url{lebret.ch/embeddings/200/words.txt}}
   \footnote{\url{nlp.stanford.edu/projects/glove}}
   \footnote{\url{code.google.com/p/word2vec}}
   \footnote{\url{metaoptimize.com/projects/wordreprs}}
@@ -87,101 +112,107 @@ researchers\footnote{\url{lebret.ch/embeddings/200/words.txt}}
   in the hope that the fused representations may be better
 than the components.
 
-RGCCA is a well-studied statistical method which
-can be used to solve this problem. \textbf{Raman: Those representations have
-guarantees of optimality under assumptions of normality however
-empirically they work well under other distributions as well.}
-RGCCA is appealing for this fusion because it
+GCCA is a linear statistical method which can solve the
+problem of compressing sparse cooccurrence statistics into dense representations.
+It is also has the appealing property that it
 learns affine invariant transformations which reduces the number of
-pre-processing options. For example, we don't have to choose 
+pre-processing options. In other words, we don't have to choose 
 between log(tf) and log(tf-idf) transformation since log(tf) is the
-same as log(tf-idf) upto an affine transformation. Also, since we can
+same as log(tf-idf) up to an affine transformation. Also, since we can
 fuse the statistics generated by using different window sizes we don't
 have to tune for the best window size.
-In Section~\ref{sec:gcca} we present RGCCA and a fast method to
-compute it approximately. 
-Then we present our experiments and results in
-Section~\ref{sec:experiments}.
-There are a number of techniques which could improve performance and
-which we leave as future work in Section~\ref{sec:futurework}. And we
-also give brief overview of the related work in Section~\ref{sec:previouswork}.
 
-\section{RGCCA}
+In Section~\ref{sec:gcca} we present GCCA and a fast method to
+compute it. Then we describe our Train and Test data in
+Section~\ref{sec:data} followed by Experiments and Results in
+Section~\ref{sec:exp} and conclude with Discussion and Future~Work.  
+
+\section{GCCA}
 \label{sec:gcca}
-\textbf{CCA} is a method to find optimal orthogonal subspaces of a given order such that once we
+Let us first mention Canonical Correlation analysis to motivate
+GCCA. CCA is a procedure for finding subspaces such that once we
 project two datasets X and Y to those subspaces then the correlation
-between the projections is maximized amongst corresponding
-directions. It can be proved that this happens if and only if the
-dimensions of the projections are orthogonal so the optimization can
-be done by constraining the projections to be orthogonal.
+between corresponding projections gets
+maximized\cite{hotelling1935the}.
+%% It can be proven that this happens
+%% if and only if the dimensions of the projections are orthogonal and the optimization can
+%% be done by constraining the projections to be
+%% orthogonal. 
 
-\textbf{GCCA} \cite{kettenring1971canonical,carroll1968generalization} is an
-extension of CCA to the case when we have data from more than two
-vector valued random variables. \textbf{Raman: Is there a paper
-  already which makes this connection explicit ? A paper that shows
-  that GCCA with two views is the same as CCA ?}
+\textbf{GCCA} is an extension of CCA to the case when we have aligned data from $J$
+vector valued random variables. See \cite{velden2011on} for a self
+contained proof that GCCA with two views gives the same solution as
+CCA. We would describe our notation and the GCCA technique now.
 
-Let $X_j \in \mathbb{R}^{N\times d_j}$ be the mean centered matrices
-containing cooccurence statistics from view 
-$j$ where the number of words in the vocabulary is $N$ and $d_j$ is
-the number of contexts. Therefore $N$ remains the same across views
-but  $d_j$ varies. Following the notation of \cite{hastie2009elements} we call $X^\top X$
-the scatter matrix and $X_j (X_j^\top X_j)^{-1}X_j^\top$ the
+Let $X_j \in \mathbb{R}^{N\times d_j} \; \forall j \in [1,\ldots,J]$
+be the \textit{mean centered matrix} containing cooccurrence statistics from view 
+$j$. Let the number of words in the vocabulary be $N$ and number of
+contexts (columns in $X_j$) be $d_j$. Note that $N$ remains the same across views
+but  $d_j$ varies. Following standard notation
+\cite{hastie2009elements} we call $X_j^\top X_j$
+the scatter matrix  and $X_j (X_j^\top X_j)^{-1}X_j^\top$ the
 projection matrix.
 
-There are different characterizations of GCCA and we follow the method
-of \cite{carroll1968generalization} who finds the
- group configuration matrix $G \in \mathbb{R}^{N\times r}$, which is
- also our distributed representation of a word, and linear transformation matrices
- $U_j$ to solve 
+There are different characterizations of GCCA, see
+\cite{kettenring1971canonical} for details, and we follow the method
+of \cite{carroll1968generalization} who finds 
+ a matrix $G \in \mathbb{R}^{N\times r}$ and matrices  $U_j \in
+ \mathbb{R}^{d_j \times r}$ that satisfy expression~\ref{eq:gcca}:
 \begin{equation}
   \label{eq:gcca}
 \begin{split}
-  \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} G - X_jU_j \end{Vmatrix}^2_F \\
+  \operatorname*{\arg\,\min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} G - X_jU_j \end{Vmatrix}^2_F \\
   \text{such that } & G^\top G = I
 \end{split}
 \end{equation}
-The solution for Equation~\ref{eq:gcca} is given by the following \cite{carroll1968generalization}.
+The matrix $G$ that satisfies expression~\ref{eq:gcca} would also be our
+distributed representation of the vocabulary.
+The optimal value of $G$ is as follows:
 
-\begin{eqnarray}
-P_j &=& X_j(X_j^\top X_j)^{-1}X_j^\top \\
-M &=& \sum_{j=1}^J P_j\\
-M G &=& G \Lambda\\
-U_j &=& \left(X_j^\top X_j\right)^{-1} X_j^\top G
-\end{eqnarray}
+\begin{align}
+P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top \label{eq:pp}\\
+M =& \sum_{j=1}^J P_j \label{eq:mm}\\
+M G =& G \Lambda\\
+U_j =& \left(X_j^\top X_j\right)^{-1} X_j^\top G
+\end{align}
 In words the above
-equations are saying that our word representations are the
-eigenvectors of the sum of projection matrices created from the
-views. This means that our embeddings have the nice property that each
-dimension is orthogonal to the others.
+expressions tell us that our word representations are the
+eigenvectors of the sum of projection matrices. Also note that we
+explicitly constrained the dimensions of  $G$ to be orthogonal to each other. Orthogonality in
+representations is a nice property that we will discuss later. Also note that
+the solution of expression~\ref{eq:gcca} maximizes the sum
+of squared correlations between the projections $X_jU_j$ and $G$ over
+all $j$, which is how Carroll
+motivated his method in the first place.
 
-\textbf{RGCCA} is done by  adding $r_jI$ to each
-scatter matrix $X_j^\top X_j$ before doing the inversion. Typically
-$r_j$ is chosen to be a small constant like 1e-8.
-\begin{eqnarray}
-  \widetilde{P}_{j} &=& X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top\\
-  M &=& \sum_{j=1}^J \widetilde{P}_{j} \\
-  MG &=& G\Lambda \\
-  U_j &=& (X_j^\top X_j+r_jI)^{-1} X_j^\top G
-\end{eqnarray}
-
-
-We can immediately see some computational problems with the above formulation.
- $P_j \in \mathbb{R}^{N \times N}$ is a dense matrix. Since eigenvalues of
+We can immediately see that we can not compute
+ $P_j \in \mathbb{R}^{N \times N}$ because of memory constraints. Since eigenvalues of
 projection matrices are either 0 or 1 that implies 
 that eigenvalues of sum of M must lie between 0 and J.
 This leads us to the problem of finding the eigenvectors of large 
-dense matrices which do not have a large difference between
-the highest and lowest eigenvalues. We now present an approximate method
-to compute RGCCA under a single reasonable assumption.
+projection matrices which have wide and gentle spectrum. Also the
+scatter matrices may be non-singular so the procedure may become
+ill-posed. We now present an approximate regularized method
+to compute GCCA under a single reasonable assumption. Parts of the
+following method were proposed to us by \cite{savostyanov}.
 
-\subsection{Approximate RGCCA}
-Let $$ A_{j} S_{j} B^\top_{j} \xleftarrow{SVD_{m}} X_j$$
-$SVD_m$ denotes a partial SVD where $S_j$ is a rectangular diagonal
+\textbf{Approximate Regularized GCCA}: GCCA is typically regularized by adding $r_jI$ to each
+scatter matrix $X_j^\top X_j$ before doing the inversion. Typically
+$r_j$ is a small constant like 1e-8. Equations~\ref{eq:pp}
+and \ref{eq:mm} change to
+\begin{align}
+  \widetilde{P}_{j} =& X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top \label{eq:6}\\
+  M =& \sum_{j=1}^J \widetilde{P}_{j} \label{eq:mmm}
+\end{align}
+
+We can side step the computational difficulties as follows.
+Let $SVD_m$ denotes a partial SVD where $S_j$ is a rectangular diagonal
 matrix that contains only the $m$ largest eigen values and $A_j, B_j$
-are square, orthonormal, unitary matrices. This is
-convenient for the following derivations and ensures correctness but in practice we only need to compute
-m columns of $A_j$. Then
+are square, orthonormal, unitary matrices. Defining $SVD_m$ like this
+ensures correctness but in practice we only need to compute $m$
+columns of $A_j$. Now take the SVD of $X_j$.
+$$A_{j} S_{j} B^\top_{j} \xleftarrow{SVD_{m}} X_j$$
+ Substitute the above in equation~\ref{eq:6} to get 
 $$\widetilde{P}_j = A_j S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j A_j^\top$$ 
 Define, $T_j \in \mathbb{R}^{m \times m}$ to be the diagonal matrix such that
 $T_jT_j^\top = S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j $ then
@@ -190,577 +221,623 @@ Define, $\tilde{M} = \left[ A_1T_1 \ldots A_JT_J \right] \in \mathbb{R}^{N
   \times mJ}$
 Then 
 $$M = \tilde{M} \tilde{M}^\top$$
-Do QR decomposition of $\tilde{M}$ to get
-$$M = QRR^\top Q$$
-Do eigen decomposition of $RR^\top \in \mathbb{R}^{mJ \times mJ}$
-to get
+Perform QR decomposition of $\tilde{M}$ to get
+$$M = Q R R^\top Q$$
+Do eigen decomposition of $R R^\top \in \mathbb{R}^{mJ \times mJ}$
+to get its eigen vectors $U$ and eigen values $S$.
 $$M = Q U S U^\top Q^\top$$
- which implies $G = QU$. This method was proposed to us by \cite{savostyanov}.
+ which implies $G = QU$. 
 
 \subsection{Computing SVD of mean centered $X_j$}
 \label{ssec:svdmc}
 Recall that we assumed $X_j$ to be mean centered matrices. Let $Z_j
 \in \mathbb{R}^{N \times d_j}$ be sparse matrices containing
-mean-unnormalized co-occurence counts. Let $f_j = n_j \circ t_j $ be our preprocessing
-function that we apply to $Z_j$. Then
-\begin{eqnarray}
-  Y_j &=& f_j (Z_j) \\
-  X_j &=& Y_j + 1 1^\top Y_j
-\end{eqnarray}
+mean-uncentered cooccurrence counts. Let $f_j = n_j \circ t_j $ be the preprocessing
+function that we apply to $Z_j$. 
+\begin{align}
+  Y_j =& f_j (Z_j) \\
+  X_j =& Y_j + 1 (1^\top Y_j)
+\end{align}
 In order to compute the SVD of mean centered matrices $X_j$ we first
 compute the partial SVD of uncentered 
-matrix $Y_j$ and then update it using the method of
-\cite{brand2006fast}.
-We will report results of creating representations from the mean
-unnormalized matrices $Y_j$ as well.
+matrix $Y_j$ and then update it. See \cite{brand2006fast} for details.
+We experimented with representations created from the
+uncentered matrices $Y_j$ and found that they performed as well as 
+the mean centered versions but we would not mention them further since
+it is computationally efficient to follow the principled approach. We
+note, however, that even the method of mean-centering the SVD also
+produces an approximation.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% DONE TILL HERE
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Experiments and Results}
-\label{sec:experiments}
-First we enumerate the guiding questions which drove our
-experiments then we list our training data, test data, preprocessing
-options, and input configurations.
-We wanted answers to the following questions through our experiments
-\begin{enumerate}
-\item What is the effect of hyper parameters including preprocessing
-  on performance ?
-\item How does our performance vary on different test sets and what is
-  the reason behind this ?
-\item What is the contribution of the novel sources of co-occurence
-  statistics that our approach can utilize to the final performance ?
-\item How does our performance compare with other state of the art
-  methods when they are trained on same training set ?
-\end{enumerate}
+\subsection{Handling missing rows across views}
+\label{ssec:missing}
+Recall that we assumed that rows of $X_j \forall j \in [0,\ldots , J]$ correspond to unique
+words in the vocabulary and that the rows correspond to each
+other. However, in real data it often happens that a word is not observed in a view(matrix) at
+all. For example a rare word may appear only once amongst the view or
+a view may be extremely sparse,
+that is the entire row is missing. A significant number of 
+missing rows can corrupt the representations since the rows
+in the left singular matrix become zero. The procedure described above
+can not recover from that and the representation for those words become a
+one hot vector.
 
-\textbf{Training Data}: We trained our embeddings using cooccurence
-statistics from a large bitext corpus that was made by
-concatenating Spanish, Czech, French and German portions of the
-Europarl v7 bitext corpus \cite{koehn2005europarl}, the $10^9$
-French-English corpus \cite{callisonburch2009findings}, The Czech,
-German, Spanish and French portions of the News Commentary
-\cite{koehn2007experiments}, the United Nations French and Spanish
-bitext corpora \cite{eisele2010multiun} and the Chinese and Arabic
-Newswire corpora used for the GALE machine translation
-project.\footnote{{http://projects.ldc.upenn.edu/gale/data/Catalog.html}}. We
-used the berkeley aligner to word align the parallel corpora and then
-created cooccurence matrices with rows as english words and columns as
-the foreign language word that the english word was aligned
-to. Finally we used a total of 6 different languages (French, German,
-Czech, Arabic, Spanish and Chinese). The amount of data varied from
-language to language as shown in Table~\ref{tab:dataperlang}. We also
-concatenated the English portions of the corpora to gather word-to-word cooccurence
-statistics with symmetric windows of half-size \cwindow{}. Following
-\cite{pennington2014glove} we give less weight to 
-the cooccurence event of words that occur far from each other and use
-a reciprocal weighting function. We also
-used a context defined as the left and right adjacent words to a word
-and gathered cooccurence counts for that. Note that this context is
-essentially a bigram and it has a lot more columns than the otherw
-which are unigrams and is more sparse as a result. 
+To counter this problem we adapted the method of
+\cite{van2006generalized} who modified the GCCA objective to counter the problem of missing
+rows. Specifically, the objective now becomes
+\begin{equation}
+  \label{eq:gcca2}
+\begin{split}
+  \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} K_j(G - X_jU_j) \end{Vmatrix}^2_F \\
+  \text{such that } & G^\top G = I
+\end{split}
+\end{equation}
+Here $[k_j]_{ii} = 1$  if row $i$ of view $j$ is observed otherwise $0$.
+Essentially $K_j$ is a diagonal row-selection matrix which ensures
+that we optimize our representations only on the observed rows. note that
+$X_j = K_jX_j$ since the rows that $K_j$ removes were already zero. Let, $K =
+\sum_j K_j$ then the optima
+of the objective can be computed by modifying Equation~\ref{eq:mmm} as:
+\begin{align}
+  M =& K^{-\frac{1}{2}}(\sum_{j=1}^J P_j)K^{-\frac{1}{2}}
+\end{align}
+Again if we regularize and approximate the GCCA solution, we get
+$G=QU$ where $Q, R$ come from the QR decomposition of
+$K^{-\frac{1}{2}}\tilde{M}$. Also, we mean center the matrices using
+only the observed rows.
 
+\section{Data}
+\label{sec:data}
+\textbf{Training Data}: We used the English portion of the \textit{Polyglot} wikipedia dataset
+released by \cite{al2013polyglot} to create 15 irredundant views of
+cooccurrence statistics where element $[z]_{ij}$ of view $Z_k$
+represents that number of times word $w_j$ occurred $k$ words behind
+$w_i$. We lowercased all the words and discarded all
+words which were longer than 5 characters and contained more than 3 non
+alphabetical symbols. This preserves things like year and single
+digits and removes noise. Then we selected the top 500K words to
+create our vocabulary for the rest of the paper.
+
+We also extracted cooccurrence
+statistics from a large bitext corpus that was made by combining a
+number of parallel corpora used in machine translation. See
+\cite{ganitkevitch2013ppdb} for details and
+Table~\ref{tab:dataperlang} for a summary.
+The Berkeley aligner was used for word alignment. Element
+$[z]_{ij}$ of the bitext matrix represents the number of times English
+word $w_i$ was aligned to the foreign word $w_j$.
+
+We also used the dependency relations in the \textit{Annotated Gigaword Corpus} to
+create 21 views\footnote{Following is the list of dependency relations
+  that we used:
+nsubj, amod, advmod, rcmod, dobj, prep\xline{}of, prep\xline{}in,
+prep\xline{}to, prep\xline{}on, prep\xline{}for, prep\xline{}with,
+prep\xline{}from, prep\xline{}at, prep\xline{}by, prep\xline{}as,
+prep\xline{}between, xsubj, agent, conj\xline{}and, conj\xline{}but, pobj} 
+where element $[z]_{ij}$ of view 
+$Z_{\textrm{dep}}$ represents the number of times word $w_j$ occurred as the
+governor of word $w_i$ with dependency relation $\textrm{dep}$. We
+selected these dependency relations since they seemed to be the
+particularly interesting which could capture different aspects of
+similarity.
+
+We combined the knowledge of paraphrases present in FrameNet and PPDB by
+using the dataset created by \cite{rastogi2014augmenting} to create a
+\textit{FrameNet} view. Element $[z]_{ij}$ of the \textit{FrameNet}
+view represents whether word $w_i$ was present in frame
+$f_j$. Similarly we combined the knowledge of morphology present in
+the \textit{CatVar} database released by \cite{habash2003catvar} and
+\textit{morpha, morphg} released by \cite{minnen2001applied}.
+The morphological views and the frame semantic views were especially
+sparse with densities of 0.0003\% and 0.03\%.
 
 \begin{table}[htbp]
   \centering
-  \begin{tabular}{ccc}
+  \rowcolors{1}{}{lightgray}
+  \begin{tabular}{lll}
     Language & Sentences & English Tokens \\
-    Arabic   & 8,860,048   & 190,796,525  \\
-    Czech    & 726,804     & 17,254,309   \\
-    German   & 1,870,847   & 44,640,847   \\
-    Spanish  & 11,097,173  & 241,454,907  \\
-    French   & 30,945,093  & 671,382,577  \\
-    Chinese  & 10,290,031  & 215,120,478  \\
-    Total    & 63,789,996  & 1,380,649,643  \\
+    \hline
+    Bitext-Arabic   & 8.8M   & 190M  \\
+    Bitext-Czech    & 7.3M   & 17M   \\
+    Bitext-German   & 1.8M   & 44M   \\
+    Bitext-Spanish  & 11.1M  & 241M  \\
+    Bitext-French   & 30.9M  & 671M  \\
+    Bitext-Chinese  & 10.3M  & 215M  \\
+    Monotext-En-Wiki& 75M    & 1.7B 
   \end{tabular}  
-  \caption{Data used to create GCCA embeddings.}
+  \caption{Data used to create GCCA representations.}
   \label{tab:dataperlang}
 \end{table}
 
-\textbf{Test Data}: We evaluated the representations on the
-following word similarity datasets all of which assign a rating to
-pairs of words about how close they are: 
-SCWS\_2003~\cite{Huang2012Improving}, RW\_2034~\cite{Luong2013morpho}, MEN\_3000~\cite{bruni2012distributional},
-MC\_30~\cite{miller1991contextual}, MTURK\_287~\cite{Radinsky2011word},,
-RG\_65~\cite{Rubenstein1965Contextual},
-WS\_353~\cite{finkelstein2001placing}, WS\_REL\_252 and WS\_SIM\_203 
-~\cite{agirre2009study} and SIMLEX\_999~\cite{hill2014simlex}. For the
-above test sets we report the Spearman correlation. 
-We also evaluated our representations on the word analogy task
-presented in TOMAS\_ICLR13\_SYN\_10675 and
-TOMAS\_ICLR13\_SEM\_8869~\cite{mikolov2013distributed} and report our
-accuracy.
-We also report accuracy results on TOEFL\_80~\cite{landauer1997solution}.
-For all test sets the numeric prefix represent the number of test
-pairs in the dataset.
-\textbf{BEN: Unfortunately, there is no accepted train-test split of the above datasets. In such a
-scenario it is reasonable to assume that researchers hill-climb on
-this set and we have done the same.}
 
-Also note that we used a relatively small vocabulary size of 131,133
-words therefore not all words in all the tests were present in our
-vocabulary. When we encountered a word-pair or an analogy pair or a
-TOEFL question set which contained an out of vocabulary word we simply
-skipped that pair and reported accuracy/spearman correlation on the
-remaining pairs. We present our recall values in table~\ref{tab:testrecall}.
+\textbf{Test Data}: We evaluated the representations on the
+word similarity datasets listed in Table~\ref{tab:testlist}. The first
+10 datasets in Table~\ref{tab:testlist} have varying sizes and were
+collected with different rubrics and collected with different
+scales and inter annotator agreements also vary but broadly they all
+contain human judgements about how similar two words are. Using the
+very coarse criteria of number of word pairs we decided to divide these test sets
+into two groups to reflect how reliable we consider the correlations
+with these test sets to be.\footnote{We decided to not omit the greyed
+sets from evaluation since many of these small datasets are still used for
+evaluation by other researchers.}
+The ``TOMAS-SYN'' and ``TOMAS-SEM'' datasets contain 4-tuples of
+analogous words and the task is to predict the 4rth word given any
+3. Unfortunately, there are no widely followed train-test splits of the above
+datasets, therefore, we could be accused of implicitly hill-climbing
+on this dataset while hyperparameter tuning. However we'll show that
+our method of choosing the best parameters and the consistent gains
+across dissimilar test sets lends credence to the robustness of our method.
+
 \begin{table}[htbp]
-  \centering
-  \begin{tabular}{ll}
-    Test Set   & Our Recall  \\
-    TOEFL\_80  & 78 \\
-    SCWS\_2003 & 1978 \\
-    RW\_2034   & 1808 \\
-    MEN\_3000  & 2946 \\
-    MC\_30     & 30 \\
-    MTURK\_287 & 275 \\
-    RG\_65     & 65 \\
-    WS\_353    & 350 \\
-    WS\_REL\_252 & 250 \\
-    WS\_SIM\_203 & 202 \\
-    SIMLEX\_999  & 999 \\
-    TOMAS\_ICLR\_SYN\_10675  & 10043 \\
-    TOMAS\_ICLR13\_SEM\_8869 & 3662 \\
-  \end{tabular}
-  \caption{Recall of our vocabulary on different test sets.}
-  \label{tab:testrecall}
+  \begin{adjustwidth}{0cm}{}
+  \resizebox{!}{0.2\textwidth}{
+    \rowcolors{1}{}{lightgray}
+  \begin{tabular}{lll}
+    Acronym & Size  & Reference \\
+    \hline
+    MEN       & 3000 & \cite{bruni2012distributional}  \\
+    RW        & 2034 & \cite{Luong2013morpho}  \\
+    SCWS      & 2003 & \cite{Huang2012Improving}  \\
+    SIMLEX    & 999 & \cite{hill2014simlex}  \\
+    WS        & 353 & \cite{finkelstein2001placing}  \\
+    MTURK     & 287 & \cite{Radinsky2011word}  \\
+    WS-REL    & 252  & \cite{agirre2009study}  \\
+    WS-SIM    & 203 & -Same-As-Above-  \\
+    RG        & 65 & \cite{Rubenstein1965Contextual}  \\
+    MC        & 30 & \cite{miller1991contextual}  \\
+    TOMAS-SYN &  10675 &\cite{mikolov2013distributed}  \\
+    TOMAS-SEM & 8869 & -Same-As-Above- \\
+    TOEFL     & 80 & \cite{landauer1997solution}
+  \end{tabular}}
+  \caption{List of test datasets used with their acronyms, and total
+    number of data points. The first 10 datasets contain human
+    judgements of annotations and we will report Spearman correlation
+    of  the human ratings with similarity between the word
+    representations which is a popular metric in the community.
+    TOMAS-SYN and TOMAS-SEM are open vocabulary tasks and we will report accuracies on
+  those tasks with the full vocabulary. Also note that for the RW
+  dataset our recall was 85\%.}
+  \label{tab:testlist}
+   \end{adjustwidth}
 \end{table}
 
-\textbf{Vocabulary Creation Procedure}: The vocab needs to be
-preprocessed with the following
-Convert all words with more than 3 non alphabetical symbols to NUM
-and which are more than 5 character long to be num. This preserves
-things like year and single digits which can be important. 
+\section{Experiments and Results}
+\label{sec:exp}
+Let us enumerate the central questions which guided this section. We
+wanted to answer the following questions:
+\begin{enumerate}
+\item What is the effect of hyper parameters on performance ?
+\item How does our performance vary on different test sets and what is
+  the reason behind this ?
+\item What is the contribution of the multiple sources of cooccurrence
+  statistics that our approach can utilize to performance ?
+\item How does our performance compare with other state of the art
+  methods ?
+\end{enumerate}
 
-\textbf{Hyper parameters and Pre-processing}: Hyper parameter
-optimization is the bane of machine learning. Even though a prime
-appeal of GCCA is its affine invariance which liberates us from the 
-burden of normalization it is still learning a linear transformation
-therefore we experiment with non linear preprocessing of the raw
-counts. \textbf{Raman: Additionally, since  we are performing Approximate RGCCA and
-we report results on mean unnormalized cooccurence statistics
-therefore our procedure does not remain affine invariant therefore
-using cooccurence frequency instead of counts and tf-idf can make a difference.}
-Pleasantly it turns out approximate RGCCA is quite predictable and
-insensitive to its hyper parameters.
 
-We identified the following hyper parameters and preprocessing
-options. 
-\begin{description}
-\item[$m$] The number of left singular vectors of the co-occurence
-  matrices is a hyper parameter. Note that even though we set m to be
-  the same across all datasets, this is not necessary in
-  general. Table~\ref{tab:m} shows the effect of varying the number of
-  initial dimensions that we extract.
-\item [$f_j$] In general $f_j$ can be any function that preserves the sparsity
-  of matrix $Z_j$. However, we modelled $f_j$ as the composition of two types of
-  preprocessing. $t_j$ which stands for truncation of columns models
-  the removal of those contexts which have column sum less than a
-  threshold. This function is completely parametrized by the
-  threshold. $n_j$ stands for nonlinear preprocessing that is usually
-  employed with LSA. we experimented by setting $n_j$ to be log, identity and
-  power of original counts and term frequencies. Table~\ref{tab:t} and
-  Table~\ref{tab:n} show the results of varying the truncation
-  threshold and the preprocessing function respectively.
-\item [Mean Normalization] In Subsection~\ref{ssec:svdmc} we
-  specified that we were using \cite{brand2006fast} to update SVD of
-  the $Y_j$ so that it became closer to SVD of $X_j$. Since the update
-  method is approximate (because of the fact that we dont compute the
-  full SVD of $X_j$) we experimented with removing this step entirely
-  and using the SVD of $Y_j$ itself. Table~\ref{tab:mean} compares the
-  results of mean normalization versus using the mean unnormalized
-  matrices themselves. Note that this in effect one type of
-  approximation with another type.
-\item [$r_j$] The regularization parameter ensures that all the
-  inverses exist at all points in our method and Table~\ref{tab:r} shows the
-  effect of varying $r$ from 1e-2 to 1e-10.
-\end{description}
+\textbf{Hyper parameters}: A prime
+appeal of GCCA is its affine invariance, however, it is still learning a linear
+transformation and therefore we experimented with non linear
+preprocessing of the raw counts. In the following paragraphs
+we would briefly describe the hyper parameters of our method and
+mention the variation in performance as we varied the 
+hyper-parameters in our method.
 
-\begin{table*}[htbp]
-  \centering
-  \begin{tabular}{cccccc}
-    m=50 & m=100 &  m=300 &  m=500 &  m=800 &  m=1000 \\
-0.555827 & 0.648926 & 0.711428 & 0.724909 & 0.732627 & 0.733112 \\
-0.712500 & 0.762500 & 0.850000 & 0.850000 & 0.850000 & 0.862500 \\
-0.544399 & 0.570095 & 0.622407 & 0.642227 & 0.646592 & 0.645691 \\
-0.245799 & 0.290344 & 0.347764 & 0.382991 & 0.421676 & 0.428494 \\
-0.423827 & 0.535231 & 0.658581 & 0.679029 & 0.689935 & 0.696914 \\
-0.402537 & 0.347575 & 0.539163 & 0.613040 & 0.670450 & 0.660436 \\
-0.531079 & 0.543425 & 0.589109 & 0.592226 & 0.586522 & 0.615109 \\
-0.368983 & 0.399231 & 0.587055 & 0.653736 & 0.650698 & 0.659680 \\
-0.387503 & 0.456188 & 0.600852 & 0.649570 & 0.672371 & 0.665699 \\
-0.353347 & 0.418960 & 0.581796 & 0.624353 & 0.641651 & 0.630626 \\
-0.483668 & 0.533453 & 0.674508 & 0.724754 & 0.741866 & 0.735849 \\
-0.295635 & 0.364080 & 0.462987 & 0.493386 & 0.508669 & 0.514100 \\
-0.148852 & 0.222576 & 0.480094 & 0.478314 & 0.461171 & 0.466885 \\
-0.020634 & 0.035179 & 0.102041 & 0.105423 & 0.103394 & 0.098320 \\
-  \end{tabular} 
-  \caption{Performance versus m. This uses mc\_FreqPow025-truncatele200\_"m"~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300\_1e-5,monomultiwindow.300}
-  \label{tab:m}
-\end{table*}
+$f_j$: we modeled $f_j$ as the composition of two
+  functions, ie $f_j = n_j \circ t_j$.
+  $n_j$ stands for nonlinear preprocessing that is usually
+  employed with LSA. We experimented by setting $n_j$ to be
+  logarithm of Count plus one, the Count itself and Fourth root of the counts and found
+  that GCCA was sensitive to the preprocessing method chosen. Table~\ref{tab:n} show
+  the results of the preprocessing function. We experimented with
+  powers of the counts (0.12, 0.5 and 0.75) specifically and found
+  that the fourth root performed the best. This sensitivity to
+  the procedure is a cause of concern and we would discuss this
+  later.
+  $t_j$ represents the truncation of columns and can be interpreted as
+  a type of regularization of the raw counts themselves through which
+  we prune away the noisy contexts. We chose $t_j =
+  max(t, d_j) \; t \in [50K, 100K, 150K, 200K]$ and show the results
+  in table~\ref{tab:t}. We can see that the results peak at $t=100K$
+  and then start dropping on both sides.
+\begin{table}[htbp]
+  \begin{tabular}{=l +c +c +c}
+    Test Set& Log        & Count & Count$^{\frac{1}{4}}$ \\ \hline
+    MEN     & 67.5       &  59.7 &  70.7 \\
+    RW      & 31.1       &  25.3 & 37.8 \\
+    SCWS    & 64.2       &  58.2 & 66.6 \\
+    SIMLEX  & 36.7       &  27.0 & 38.0 \\
+%% \rowstyle{\color{darkergray}}    WS      & 68.0       &  60.4 & 70.5 \\
+%% \rowstyle{\color{darkergray}}    MTURK   & 57.3       &  55.2 & 60.8 \\
+%% \rowstyle{\color{darkergray}}    WS-REL  & 60.4       &  52.7 & 62.9 \\
+%% \rowstyle{\color{darkergray}}    WS-SIM  & 75.0       &  67.2 & 76.2 \\
+%% \rowstyle{\color{darkergray}}    RG      & 69.1       &  55.3 & 75.9 \\
+%% \rowstyle{\color{darkergray}}    MC      & 70.5       &  67.6 & 80.9 \\
+    TOMAS-SYN&45.7       &  21.1 & 53.6 \\
+    TOMAS-SEM&25.4       &  15.9 & 38.7 \\
+%% \rowstyle{\color{darkergray}}    TOEFL   & 81.2       &  70.0 & 81.2
+  \end{tabular}
+  \caption{Performance versus the non linear processing of
+    Co-occurrence counts. We kept the truncation threshold $t$ to be
+     200K, performed partial SVD with $m=500$ and
+    the minimum view based support of a word was
+    16. $n_j=\textrm{Count}^{\frac{1}{4}}$ was the best setting.}
+  \label{tab:n}
+\end{table}
+
 
 \begin{table}[htbp]
-  \centering
-  \begin{tabular}{cccc}
-trunc=20 & trunc=200 & trunc=1000 & trunc=2000 \\
-0.662695 & 0.648926 & 0.628651 & 0.617984  \\
-0.775000 & 0.762500 & 0.775000 & 0.775000  \\
-0.578443 & 0.570095 & 0.568602 & 0.564312  \\
-0.288889 & 0.290344 & 0.285947 & 0.283235  \\
-0.542850 & 0.535231 & 0.524412 & 0.514771  \\
-0.332221 & 0.347575 & 0.370939 & 0.383623  \\
-0.545714 & 0.543425 & 0.552376 & 0.563701  \\
-0.402749 & 0.399231 & 0.389636 & 0.385855  \\
-0.466542 & 0.456188 & 0.436868 & 0.425998  \\
-0.435103 & 0.418960 & 0.402427 & 0.390047  \\
-0.549303 & 0.533453 & 0.513538 & 0.504565  \\
-0.381018 & 0.364080 & 0.343012 & 0.338609  \\
-0.237377 & 0.222576 & 0.210398 & 0.199532  \\
-0.037208 & 0.035179 & 0.029767 & 0.023903  \\
-  \end{tabular} 
-  \caption{Performance versus t}
+  \begin{tabular}{=l +c +c +c +c +c +c}
+Test Set                             &25K&   50K   & 75K & 100K  &   150K   &   200K \\
+\hline
+MEN                                  &&   71.6      &&  71.2   &  71.0        &  70.7  \\   
+RW                                   &&   40.9      &&  39.6   &  38.3        &  37.8  \\ 
+SCWS                                 &&   67.0      &&  66.9   &  66.8        &  66.6  \\ 
+SIMLEX                               &&   41.3      &&  39.5   &  38.4        &  38.0  \\ 
+%% \rowstyle{\color{darkergray}}WS      &&   71.2      &&  70.2   &  70.8        &  70.5  \\ 
+%% \rowstyle{\color{darkergray}}MTURK   &&   58.6      &&  60.3   &  61.0        &  60.8  \\ 
+%% \rowstyle{\color{darkergray}}WS-REL  &&   64.8      &&  63.7   &  63.7        &  62.9  \\ 
+%% \rowstyle{\color{darkergray}}WS-SIM  &&   78.2      &&  76.5   &  77.0        &  76.2  \\ 
+%% \rowstyle{\color{darkergray}}RG      &&   75.0      &&  74.3   &  75.6        &  75.9  \\ 
+%% \rowstyle{\color{darkergray}}MC      &&   80.3      &&  76.9   &  79.6        &  80.9  \\ 
+TOMAS-SYN                            &&   58.4      &&  56.1   &  54.3        &  53.6  \\
+TOMAS-SEM                            &&   39.2      &&  38.4   &  38.8        &  38.7  \\
+%% \rowstyle{\color{darkergray}}TOEFL   &&   83.8      &&  83.8   &  82.5        &  81.2
+      \end{tabular}
+  \caption{Performance versus the truncation threshold, $t$, of raw
+    cooccurrence counts. We used $n_j=\textrm{Count}^{\frac{1}{4}}$,
+    other settings were the same as Table~\ref{tab:t}. $t=100K$ was
+    found to be the best.} 
   \label{tab:t}
 \end{table}
-
-\begin{table*}[htbp]
-  \resizebox{2.2\columnwidth}{!}{
-  \begin{tabular}{cccccccccc}
- n=Count & n=Freq   &n=logFreq &n=logCount& n=CountPow050 & n=FreqPow050 & n=CountPow025 & n=FreqPow025 & n=CountPow012 & n=FreqPow012 \\
-0.498816 & 0.510894 & 0.633840 & 0.677297 & 0.630242 & 0.598831 & 0.705173 & 0.648926 & 0.696399 & 0.672731\\
-0.575000 & 0.700000 & 0.675000 & 0.775000 & 0.787500 & 0.725000 & 0.825000 & 0.762500 & 0.787500 & 0.787500\\
-0.377417 & 0.442312 & 0.511126 & 0.520742 & 0.540030 & 0.527911 & 0.597877 & 0.570095 & 0.592681 & 0.581406\\
-0.202837 & 0.208576 & 0.202293 & 0.132610 & 0.260255 & 0.257585 & 0.336898 & 0.290344 & 0.305030 & 0.279237\\
-0.194874 & 0.220522 & 0.521145 & 0.357487 & 0.473159 & 0.415191 & 0.609435 & 0.535231 & 0.604190 & 0.567486\\
-0.418558 & 0.361148 & 0.435024 & 0.333111 & 0.376947 & 0.274143 & 0.538496 & 0.347575 & 0.554295 & 0.310414\\
-0.320453 & 0.376403 & 0.542126 & 0.502289 & 0.517778 & 0.497963 & 0.587404 & 0.543425 & 0.574772 & 0.566881\\
-0.226945 & 0.168417 & 0.482783 & 0.304182 & 0.380501 & 0.365399 & 0.571669 & 0.399231 & 0.572762 & 0.478347\\
-0.262648 & 0.258519 & 0.480815 & 0.422909 & 0.475126 & 0.364711 & 0.626877 & 0.456188 & 0.560919 & 0.508127\\
-0.180723 & 0.171228 & 0.402079 & 0.317505 & 0.410990 & 0.346932 & 0.601806 & 0.418960 & 0.520509 & 0.490950\\
-0.421715 & 0.383676 & 0.546706 & 0.527739 & 0.581404 & 0.459896 & 0.642545 & 0.533453 & 0.608657 & 0.569659\\
-0.120988 & 0.254483 & 0.288272 & 0.325800 & 0.320096 & 0.322283 & 0.399447 & 0.364080 & 0.407408 & 0.394213\\
-0.050773 & 0.076815 & 0.242248 & 0.259485 & 0.306230 & 0.190632 & 0.355035 & 0.222576 & 0.289649 & 0.242155\\
-0.016913 & 0.002142 & 0.051528 & 0.030781 & 0.034728 & 0.009809 & 0.061788 & 0.035179 & 0.056376 & 0.043410\\
-  \end{tabular}}
-  \caption{Performance versus n. This uses tab\_Spearman\_fullgcca\_extrinsic\_test\_v5\_embedding\_mc\_"n"-truncatele200\_100~stgccano@bvgn@monotext1@monotext2@monotext4@monotext6@monotext8@monotext12@monotext14,300\_1e-5,monomultiwindow.300}}
-  \label{tab:n}
-\end{table*}
+$m$: The number of left singular vectors extracted after SVD of the preprocessed cooccurrence
+  matrices is can be interpreted as another regularization of the
+  GCCA procedure since we are keeping finding cooccurrence patterns
+  only between the top left singular vectors. We set $m_j = max(d_j,
+  m)$ with $m=[100, 300, 500]$ where we were upper limited by 500 due
+  to memory constraint and the fact that we did not implement
+  incremental QR methods to overcome the memory constraints.
+  trend we found was that increasing $m$ monotonically increased
+  performance, see table~\ref{tab:n} for details. The results were
+  somewhat mixed as increasing $m$ improved performance on some of the datasets
+  but decreased it on the others.
 
 \begin{table}[htbp]
-  \centering
-  \begin{tabular}{cc}
-Mean Normalization=mc &    Mean Normalization=muc\\
-0.640971     &    0.640803 \\
-0.750000     &    0.750000 \\
-0.552239     &    0.554700 \\
-0.278719     &    0.278998 \\
-0.543660     &    0.543744 \\
-0.298620     &    0.285492 \\
-0.531836     &    0.529717 \\
-0.343369     &    0.342778 \\
-0.435791     &    0.435940 \\
-0.417394     &    0.417066 \\
-0.489623     &    0.489734 \\
-0.369461     &    0.369314 \\
-0.222763     &    0.222295 \\
-0.025933     &    0.025482 \\
-  \end{tabular} 
-  \caption{Performance versus binary decision of mean normalization and unnormalization. The model spec was v5\_embedding\_\$m\_FreqPow025-truncatele200\_100~stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8,300\_1e-5,monomultiwindow.300 }
-  \label{tab:mean}
+  \begin{tabular}{=l +c +c +c +c}
+Test Set                              &     100   &     200         & 300         & 500  \\
+\hline
+MEN                                   &    65.6       &   68.5              & 70.1        &    71.1\\
+RW                                    &    34.6       &   36.0              & 37.2        &    37.1\\
+SCWS                                  &    64.2       &   65.4              & 66.4        &    66.5\\
+SIMLEX                                &    38.4       &   40.6              & 41.1        &    40.3\\
+%% \rowstyle{\color{darkergray}}WS       &    60.4       &   67.1              & 69.4        &    71.1\\
+%% \rowstyle{\color{darkergray}}MTURK    &    51.3       &   58.3              & 58.4        &    58.9\\
+%% \rowstyle{\color{darkergray}}WS-REL   &    49.0       &   58.2              & 61.6        &    65.1\\
+%% \rowstyle{\color{darkergray}}WS-SIM   &    73.6       &   76.8              & 76.8        &    78.0\\
+%% \rowstyle{\color{darkergray}}RG       &    61.6       &   69.7              & 73.2        &    74.6\\
+%% \rowstyle{\color{darkergray}}MC       &    65.6       &   74.1              & 78.3        &    77.7\\
+TOMAS-SYN                             &    50.5       &   56.2              & 56.4        &    56.4\\
+TOMAS-SEM                             &    24.3       &   31.4              & 34.3        &    40.6\\
+%% \rowstyle{\color{darkergray}} TOEFL   &    80.0       &   81.2              & 82.5        &    80.0
+      \end{tabular}                                        
+  \caption{Performance versus $m$, the number of left     
+singular vectors extracted from raw cooccurrence counts. We set
+$n_j=\textrm{Count}^\frac{1}{4}, \; t=100K, \; v=25, \;
+k=300$. $m=500$ was the best and was upper bounded by implementation
+constraints.} 
+  \label{tab:m}
 \end{table}
 
+$k$: The final dimensionsionality of the vector representations of the
+  word is another hyper-parameter. Pleasantly, the performance of GCCA
+  turns out to be insensitive to $k$. See Table~\ref{tab:k} for details.
+  \begin{table}[htbp]
+  \begin{tabular}{=l +c +c +c +c}
+Test Set                              & 100  &  200 & 300  & 500  \\
+\hline
+MEN                                   & 69.7 &  70.2 & 70.1 & 69.8 \\
+RW                                    & 35.0 &  35.2 & 37.2 & 38.3 \\
+SCWS                                  & 65.2 &  66.1 & 66.4 & 65.1 \\
+SIMLEX                                & 36.1 &  38.9 & 41.1 & 42.0 \\
+%% \rowstyle{\color{darkergray}}WS       & 69.5 &  69.5 & 69.4 & 66.0 \\
+%% \rowstyle{\color{darkergray}}MTURK    & 61.6 &  60.5 & 58.4 & 57.4 \\
+%% \rowstyle{\color{darkergray}}WS-REL   & 63.1 &  62.4 & 61.6 & 56.3 \\
+%% \rowstyle{\color{darkergray}}WS-SIM   & 76.9 &  77.1 & 76.8 & 75.6 \\
+%% \rowstyle{\color{darkergray}}RG       & 69.7 &  75.1 & 73.2 & 72.5 \\
+%% \rowstyle{\color{darkergray}}MC       & 71.3 &  79.1 & 78.3 & 75.7 \\
+TOMAS-SYN                             & 52.2 &  55.4 & 56.4 & 54.4\\
+TOMAS-SEM                             & 34.8 &  35.8 & 34.3 & 33.8 \\
+%% \rowstyle{\color{darkergray}} TOEFL   & 76.2 &  81.2 & 82.5 & 85.0
+      \end{tabular}
+  \caption{Performance versus $k$, the final dimensionality of the embeddings. We set
+    $n_j=\textrm{Count}^\frac{1}{4}, \; t=100K, \; v=25, \;
+    m=300$. $k=300$ was found to be the best.}
+  \label{tab:k}
+\end{table}
+
+$r_j$: The regularization parameter ensures that all the
+  inverses exist at all points in our method. We found that the
+  performance of our  procedure was invariant to $r$ over a large
+  range 
+  from 1 to 1e-10. This was because even upto the 1000th singular
+  values of 
+  our preprocessed data matrices were much higher than 1 which is
+  consistent with the observation that cooccurrence datasets in NLP
+  tend to have gently sloping spectrum. For all the experiments in
+  this paper we set $r=1e-5$.
+  
+$v$: Recall that in Section~\ref{ssec:missing} we described our method
+  of handling missing rows. In practice we found that even after using
+  this method the performance of GCCA decreased if the rows were too
+  sparse. This makes sense since the heuristic of linearly reweighting
+  the rows the rows would not work for rows which have a very high
+  variance. To counter this we simply set a minimum view threshold
+  to select words from the vocabulary before doing GCCA. This
+  prunes away the high variance portions of the data and
+  helps GCCA reach the right optima. Practically this amounts to
+  choosing a word for GCCA if $K_{ww} >= v$. Also note that though the
+  size of $G$ decreases as we increase $v$ (and hence the recall of
+  our embeddings) for these experiments the recall of the vocabulary
+  over the test sets remained complete except for RW and TOMAS-SEM for
+  which the recall was 1700 out of 2034 and 8714 out of 8869
+  respectively. From Table~\ref{tab:v} we can see that
+  \begin{table}[htbp]
+    \resizebox{!}{0.1\textwidth}{
+  \begin{tabular}{=l +c +c +c +c +c +c +c +c}
+Test Set                              &    16   &   17    &     19  &   21      &     23      &     25      &     27      &     29  \\ \hline
+MEN                                   &   70.4      &  70.4       &  70.2       &   70.2    &     70.1    &     70.1    &     70.0    &     70.0\\
+RW                                    &   39.9      &  38.8       &  40.1       &   39.7    &     38.3    &     37.2    &     35.3    &     33.5\\
+SCWS                                  &   67.0      &  66.8       &  66.8       &   66.5    &     66.3    &     66.4    &     66.1    &     65.7\\
+SIMLEX                                &   40.7      &  41.0       &  41.1       &   41.2    &     41.2    &     41.1    &     41.1    &     41.0\\
+%% \rowstyle{\color{darkergray}}WS       &   69.5      &  69.4       &  69.5       &   69.5    &     69.4    &     69.4    &     69.3    &     69.1\\
+%% \rowstyle{\color{darkergray}}MTURK    &   59.4      &  59.2       &  59.3       &   59.2    &     58.7    &     58.4    &     58.0    &     58.0\\
+%% \rowstyle{\color{darkergray}}WS-REL   &   62.1      &  61.9       &  62.1       &   62.3    &     61.9    &     61.6    &     61.4    &     61.1\\
+%% \rowstyle{\color{darkergray}}WS-SIM   &   76.8      &  76.8       &  76.9       &   77.0    &     76.7    &     76.8    &     76.7    &     76.8\\
+%% \rowstyle{\color{darkergray}}RG       &   73.0      &  72.8       &  72.7       &   72.8    &     73.6    &     73.2    &     73.4    &     73.7\\
+%% \rowstyle{\color{darkergray}}MC       &   75.0      &  76.0       &  76.4       &   76.5    &     78.2    &     78.3    &     78.6    &     78.6\\
+TOMAS-SYN                             &   56.0      &  55.8       &  56.0       &   55.9    &     56.3    &     56.4    &     56.3    &     56.0\\
+TOMAS-SEM                             &   34.6      &  34.3       &  34.1       &   34.0    &     34.5    &     34.3    &     34.4    &     34.3\\
+%% \rowstyle{\color{darkergray}} TOEFL   &   85.0      &  85.0       &  85.0       &   83.8    &     83.8    &     82.5    &     82.5    &     80.0
+      \end{tabular}}
+  \caption{Performance versus minimum view support threshold $v$, The other
+      hyperparameters were $n_j=\textrm{Count}^{\frac{1}{4}}, \;
+      m=300, \; t=100K$. Though a clear best setting did not emerge,
+      we chose $v=25$ as the middle ground.}
+  \label{tab:v}
+\end{table}
+  
+\textbf{View Selection}:
+Since our method is a multiview learning method it is important to
+measure what is the contribution of different views to our final
+performance. Note 
+that this is a combinatorial problem and necessarily we could only
+explore a small portion of the search space.
+An important direction that we have started to look into but leave for
+future work are algorithms for discriminative selection of the best
+views. Table~\ref{tab:vj} shows the results 
+of removing the views and it is pleasantly clear that increasing the
+number of views consistently improves performance for all the test
+sets.
+
 \begin{table*}[htbp]
-  \centering
-  \begin{tabular}{ccccccccc}
-    r=1e-2 & r=1e-3 & r=1e-4 & r=1e-5 & r=1e-6 & r=1e-7 & r=1e-8 & r=1e-9 & r=1e-10 \\
-0.64098 & 0.64097 & 0.64097 & 0.64097 & 0.64097 & 0.64097 & 0.64097 & 0.64097 & 0.64097 \\
-0.75000 & 0.75000 & 0.75000 & 0.75000 & 0.75000 & 0.75000 & 0.75000 & 0.75000 & 0.75000 \\
-0.55210 & 0.55296 & 0.55245 & 0.55223 & 0.55177 & 0.55292 & 0.55392 & 0.55376 & 0.55302  \\
-0.27872 & 0.27872 & 0.27872 & 0.27871 & 0.27871 & 0.27871 & 0.27871 & 0.27871 & 0.27871  \\
-0.54369 & 0.54365 & 0.54366 & 0.54366 & 0.54365 & 0.54365 & 0.54365 & 0.54365 & 0.54365  \\
-0.29862 & 0.29862 & 0.29862 & 0.29862 & 0.29862 & 0.29862 & 0.29862 & 0.29862 & 0.29862  \\
-0.53183 & 0.53183 & 0.53183 & 0.53183 & 0.53183 & 0.53183 & 0.53183 & 0.53183 & 0.53183  \\
-0.34336 & 0.34336 & 0.34336 & 0.34336 & 0.34336 & 0.34336 & 0.34336 & 0.34336 & 0.34336  \\
-0.43580 & 0.43579 & 0.43579 & 0.43579 & 0.43579 & 0.43579 & 0.43579 & 0.43579 & 0.43579  \\
-0.41741 & 0.41739 & 0.41739 & 0.41739 & 0.41739 & 0.41739 & 0.41739 & 0.41739 & 0.41739  \\
-0.48967 & 0.48962 & 0.48962 & 0.48962 & 0.48962 & 0.48962 & 0.48962 & 0.48962 & 0.48962  \\
-0.36948 & 0.36946 & 0.36946 & 0.36946 & 0.36946 & 0.36946 & 0.36946 & 0.36946 & 0.36946  \\
-0.22276 & 0.22276 & 0.22276 & 0.22276 & 0.22276 & 0.22276 & 0.22276 & 0.22276 & 0.22276  \\
-0.02593 & 0.02593 & 0.02593 & 0.02593 & 0.02593 & 0.02593 & 0.02593 & 0.02593 & 0.02593 \\
-  \end{tabular}
-  \caption{Performance versus reglarization coefficient. The model spec was v5\_embedding\_mc\_FreqPow025-truncatele200\_100~stgccanoenbvgnmonotext1@monotext2@monotext4@monotext6@monotext8,300\_1e-\$r,monomultiwindow.300 }
-  \label{tab:r}
-\end{table*}
-
-
-\textbf{Contribution of multiple views of data}
-Since our method is a multiview learning method which can take
-advantage of multiple views of data it is important to understand what
-is the contribution of different views to our final
-performance. Recall that we are using \ctotalview{} different views of the data,
-including 6 views made using the berkeley
-aligner over sentence aligned parallel bilingual corpora and
-\cwinlen{} monolingual views made using word-to-word 
-co-occurence over windows of lengths
-\cwindow{} and one view that made by the left and right
-neighboring words. Table~\ref{tab:multiviewcontri} shows the change in
-performance as we add views starting from monolingual cooccurence over
-a window of length 15 with bilingual data to window of length 1. \textbf{BEN,
-  RAMAN : Note that the choice of subsets is ad-hoc and it is possible
-  that there are other combinations that would give worse or better
-  performance.}
-
-\begin{table*}[htbp]
-  \begin{adjustwidth}{-2.6cm}{}
-  \resizebox{2.7\columnwidth}{!}{
-  \begin{tabular}{cccccccccccccccc}
-  -m1,en & -m12,en  & -m124,en &-m1246,en &-m1-8,en & -m1-8,10en & -m1-8,10,12en & -m1-8,10-14en & -m1-8,12,14en& -m1-8,12,14 &   +m10,15, &+m10,15,zh &+m10,15,zh,fr&+m10,15,zh,fr,es&+m10,15,zh,fr,es,de&+m10,15,zh,cs     \\
-0.647976 & 0.641259 & 0.641086 & 0.641408 & 0.640971 & 0.641149       & 0.641569         & 0.639144           & 0.642455         & 0.648926       &   0.532521 &  0.594833 &  0.585402   &0.618655        &        0.642503   &0.631143          \\       
-0.762500 & 0.762500 & 0.750000 & 0.750000 & 0.750000 & 0.762500       & 0.750000         & 0.762500           & 0.750000         & 0.762500       &   0.775000 &  0.750000 &  0.750000   &0.775000        &        0.762500   &0.737500          \\       
-0.557016 & 0.552484 & 0.550946 & 0.549844 & 0.552239 & 0.555853       & 0.558617         & 0.555967           & 0.558045         & 0.571063       &   0.539627 &  0.561718 &  0.571354   &0.572475        &        0.573988   &0.567798          \\       
-0.284785 & 0.285994 & 0.277012 & 0.278847 & 0.278719 & 0.278324       & 0.274790         & 0.257988           & 0.275386         & 0.290344       &   0.300906 &  0.297969 &  0.302155   &0.307935        &        0.286159   &0.274433          \\       
-0.549989 & 0.543328 & 0.543617 & 0.542285 & 0.543660 & 0.545212       & 0.545916         & 0.509456           & 0.545458         & 0.535230       &   0.516595 &  0.529811 &  0.543278   &0.541705        &        0.537355   &0.536095          \\       
-0.320205 & 0.299956 & 0.289497 & 0.308189 & 0.298620 & 0.322207       & 0.352025         & 0.287939           & 0.365599         & 0.347575       &   0.425234 &  0.421896 &  0.333556   &0.365376        &        0.313084   &0.332443          \\       
-0.542715 & 0.537844 & 0.534365 & 0.531796 & 0.531836 & 0.531556       & 0.532738         & 0.534990           & 0.530412         & 0.543425       &   0.508728 &  0.544475 &  0.537176   &0.568089        &        0.559061   &0.553051          \\       
-0.360612 & 0.348505 & 0.329184 & 0.346188 & 0.343369 & 0.349422       & 0.373201         & 0.414748           & 0.381331         & 0.399231       &   0.445061 &  0.434461 &  0.454262   &0.418004        &        0.385899   &0.379801          \\       
-0.433314 & 0.433213 & 0.430101 & 0.433433 & 0.435791 & 0.440036       & 0.446463         & 0.417079           & 0.445875         & 0.456188       &   0.458555 &  0.482204 &  0.475666   &0.479907        &        0.452223   &0.449089          \\       
-0.415089 & 0.410835 & 0.407877 & 0.413699 & 0.417394 & 0.421745       & 0.431181         & 0.403093           & 0.429666         & 0.418960       &   0.353533 &  0.388926 &  0.420160   &0.434316        &        0.415505   &0.401088          \\       
-0.499126 & 0.496963 & 0.488863 & 0.487644 & 0.489623 & 0.496532       & 0.506971         & 0.484234           & 0.505545         & 0.533453       &   0.587995 &  0.597522 &  0.564436   &0.565815        &        0.539500   &0.530027          \\       
-0.373794 & 0.373203 & 0.371000 & 0.369774 & 0.369461 & 0.369004       & 0.367857         & 0.365531           & 0.369491         & 0.364080       &   0.284565 &  0.315576 &  0.317761   &0.332818        &        0.354387   &0.357290          \\       
-0.242436 & 0.233162 & 0.227260 & 0.224731 & 0.222763 & 0.222295       & 0.219578         & 0.199906           & 0.220422         & 0.222576       &   0.168150 &  0.224543 &  0.232319   &0.265761        &        0.248899   &0.210960          \\       
-0.029090 & 0.026610 & 0.028075 & 0.026610 & 0.025933 & 0.024467       & 0.023114         & 0.017702           & 0.022663         & 0.035179       &   0.052317 &  0.048822 &  0.048709   &0.044537        &        0.033375   &0.027850          \\       
+  \resizebox{!}{0.21\textwidth}{
+  \begin{tabular}{=l +c +c +c +c +c +c +c +c}
+Test Set              & \specialcell{All\\Views} & !Framenet & !Morphology & !Bitext & !Wikipedia & !Dependency & \specialcell{!Morphology\\!Framenet} & \specialcell{!Morphology\\!Framenet\\!Bitext} \\
+\hline
+MEN                                   & 70.1     &  69.8    &   70.1       &  69.9   &   46.4       & 68.4     &    69.5   &    68.4     \\
+RW                                    & 37.2     &  36.4    &   36.1       &  32.2   &   11.6       & 34.9     &    34.1   &    27.1     \\
+SCWS                                  & 66.4     &  65.8    &   66.3       &  64.2   &   54.5       & 65.5     &    65.2   &    60.8     \\
+SIMLEX                                & 41.1     &  40.1    &   41.1       &  37.8   &   32.4       & 44.1     &    38.9   &    34.4     \\
+%% \rowstyle{\color{darkergray}}WS       & 69.4     &  69.1    &   69.2       &  67.6   &   43.1       & 70.5     &    69.3   &    66.6     \\
+%% \rowstyle{\color{darkergray}}MTURK    & 58.4     &  58.3    &   58.6       &  55.9   &   52.7       & 59.8     &    57.9   &    55.3     \\
+%% \rowstyle{\color{darkergray}}WS-REL   & 61.6     &  61.5    &   61.4       &  59.4   &   38.2       & 63.5     &    62.5   &    58.8     \\
+%% \rowstyle{\color{darkergray}}WS-SIM   & 76.8     &  76.3    &   76.7       &  75.9   &   48.1       & 75.7     &    75.8   &    73.1     \\
+%% \rowstyle{\color{darkergray}}RG       & 73.2     &  72.0    &   73.2       &  73.7   &   45.0       & 70.8     &    71.9   &    74.0     \\
+%% \rowstyle{\color{darkergray}}MC       & 78.3     &  75.7    &   78.2       &  78.2   &   46.5       & 77.5     &    76.0   &    80.2     \\
+TOMAS-SYN                             & 56.4     &  56.3    &   56.2       &  51.2   &   37.6       & 50.5     &    54.4   &    46.0     \\
+TOMAS-SEM                             & 34.3     &  34.3    &   34.3       &  36.2   &   4.1        & 35.3     &    34.5   &    30.6     \\
+%% \rowstyle{\color{darkergray}}TOEFL    & 82.5     &  82.5    &   82.5       &  71.2   &   45.0       & 85.0     &    82.5   &    65.0    
   \end{tabular}}
-  \end{adjustwidth}
-  \caption{Performance versus subsets of views input to GCCA. The
-    model specification string is
-    ``mc\_FreqPow025-truncatele200\_100~"\$pc",300\_1e-5,monomultiwindow.300''. Replace
-    pc by headers of the columns . -m12,en means that the
-  we removed monolingual views of half size 1 and 2 and we removed
-  monolingual view made from left and right neighbors.}
-  \label{tab:multiviewcontri}
+  \parbox{\textwidth}{\caption{Performance versus views removed from
+      the multiview GCCA procedure. !Framenet means that the view
+      containing counts derived from Frame semantic dataset was
+      removed. Other columns are named similarly. The other
+      hyperparameters were $n_j=\textrm{Count}^{\frac{1}{4}}, \;
+      m=300, \; t=100K, \; v=25$. }}
+  \label{tab:vj}
 \end{table*}
 
 
-\textbf{Comparison to other word embedding creation methods.}
-We wanted to understand 
-{BEN, RAMAN: There are a large number of spectral and non-spectral
-  methods of creating embeddings. However we compared our method to
-  Glove and Word2Vec as there performance is widely considered to be
-  the state of the art.} We trained those systems on the english
-portion of the datasets. Our dataset does put these systems at a
-disadvantage since by design they cannot leverage the bilingual views of
-the data whereas our method has multiple views at its disposal. To
-compensate for this we tabulate both type of results 1) where we use
-both bilingual views and 2) where we use monolingual views
-only. Table~\ref{tab:comparison} compares the performance of the
-datasets. We used standard hyperparameters usually used with these two
-programs on datasets of comparable size and more specifically we
-followed exactly the recipe outlined
-here.\footnote{\url{https://docs.google.com/document/d/1ydIujJ7ETSZ688RGfU5IMJJsbxAi-kRl8czSwpti15s}}
-We acknowledge that more exhaustive hyper parameter tuning could
-improve the performance of these models.
+\textbf{Comparison to other word representation creation methods.}
+There are a large number of methods of creating representations both
+multilingual and monolingual. We directly compare our method to the
+monolingual systems Glove and Word2Vec as their performance is widely
+considered to be the state of the art. We acknowledge that there 
+exist many more competitive methods such as the 3CosMul method proposed in
+\cite{levy2014dependency} or the Multimodal neural embedding methods
+presented recently in \cite{felix2014learning,weston2014hash} and many
+more. We trained the two systems on the English portion of the
+\textit{Polyglot} Wikipedia dataset with standard hyperparameters.\footnote{More specifically we
+followed  the recipe outlined in
+\url{docs.google.com/document/d/1ydIujJ7ETSZ688RGfU5IMJJsbxAi-kRl8czSwpti15s}
+except we explicitly provided the vocabulary file to be the same as
+the vocabulary to be used to Glove and Word2Vec and set the
+truncation threshold for word2Vec to 10 since the size of our corpus is only
+1.7B tokens.}
+Since
+these monolingual systems are
+put at a disadvantage since they cannot leverage 
+the data that our system can use therefore  we also provide 
+results where we use only the views derived from the \textit{Polyglot}
+wikipedia corpus. See column ``MV-LSA Monolingual'' in Table~\ref{tab:c}. 
+We also experimented with using GCCA as a framework for
+combining the embeddings created by different methods and show the
+results in column ``Combined'' of Table~\ref{tab:c}.
 
-\begin{table*}[htbp]
-  \centering
-  \begin{tabular}{cccc}
-                                     & word2vecBitext &  gloveBitext &  mono1015(our recall is oldone)\\
-JURI (0 out of 0)                    &  0.609977      &     0.574885 &  0.724909 \\
-TOEFL (68 out of 80)                 &  0.612500      &     0.637500 &  0.850000 \\
-SCWS (1909 out of 2003)              &  0.518767      &     0.466286 &  0.642227 \\
-RW (946 out of 2034)                 &  0.045796      &     0.136810 &  0.382991 \\
-MEN (2831 out of 3000)               &  0.455359      &     0.469963 &  0.679029 \\
-EN\_MC\_30 (29 out of 30)            &  0.343792      &     0.378950 &  0.613040 \\
-EN\_MTURK\_287 (283 out of 287)      &  0.520690      &     0.510015 &  0.592226 \\
-EN\_RG\_65 (63 out of 65)            &  0.344465      &     0.395279 &  0.653736 \\
-EN\_WS\_353\_ALL (349 out of 353)    &  0.502696      &     0.376691 &  0.649570 \\
-EN\_WS\_353\_REL (252 out of 252)    &  0.467833      &     0.372237 &  0.624353 \\
-EN\_WS\_353\_SIM (199 out of 203)    &  0.540855      &     0.444957 &  0.724754 \\
-SIMLEX (993 out of 999)              &  0.237295      &     0.286670 &  0.493386 \\
-EN\_TOM\_ICLR13\_SYN (10199 out of 10675) & 0.271756  &     0.399063 &  0.478314 \\
-EN\_TOM\_ICLR13\_SEM (7598 out of 8869)   &  0.130342 &    0.280302  &  0.105423 \\
+\begin{table}[htbp]
+  \resizebox{!}{0.14\textwidth}{
+  \begin{tabular}{=l |+c +c | +c   +c | +c}
+    Test Set                          & Glove  & Word2Vec & \specialcell{MV-LSA\\(All Views)} & \specialcell{MV-LSA\\(Monolingual)} & Combined    \\
+MEN                                   & 71.0   &  73.9        &   71.1    & 70.7& \\
+RW                                    & 28.5   &  32.9        &   37.1    & 26.4& \\
+SCWS                                  & 54.5   &  65.6        &   66.5    & 60.4& \\
+SIMLEX                                & 33.0   &  36.7        &   40.3    & 32.3& \\
+%% \rowstyle{\color{darkergray}}WS       & 59.2   &  70.8        &   71.1    & 70.3& \\
+%% \rowstyle{\color{darkergray}}MTURK    & 62.2   &  65.1        &   58.9    & 55.9& \\
+%% \rowstyle{\color{darkergray}}WS-REL   & 53.3   &  63.6        &   65.1    & 62.8& \\
+%% \rowstyle{\color{darkergray}}WS-SIM   & 68.6   &  78.4        &   78.0    & 75.3& \\
+%% \rowstyle{\color{darkergray}}RG       & 72.5   &  78.2        &   74.6    & 72.1& \\
+%% \rowstyle{\color{darkergray}}MC       & 69.2   &  78.5        &   77.7    & 80.9& \\                                                              
+TOMAS-SYN                             & 58.7   &  59.8        &   56.4    & 42.7& \\
+TOMAS-SEM                             & 79.6   &  73.7        &   40.6    & 37.3& \\                                                              
+%% \rowstyle{\color{darkergray}} TOEFL   & 85.0   &  81.2        &   80.0    & 71.2&
   \end{tabular}
-  \caption{Comparison of word2vec, glove and multiview-lsa.}
-  \label{tab:comparison}
-\end{table*}
-
-
-An important question which we leave for the future is that how does
-the performance of these systems vary as the size of the dataset
-grows. Since all three systems are scalable to large datasets,
-scalability itself is not a deciding factor, rather the efficiency of
-the three methods is the crucial point. Even though the corpus we are
-using has approximately 1.4 billion tokens it might happen that on
-larger datasets Glove and Word2vec outperform the proposed method. 
-
-\textbf{Incorporating other sources of embeddings}
-\textbf{TODO RAMAN, BEN} : Essentially we want to combine the all three of our methods
-while taking GCCA so that the hybrid is better. Also we can take CCA
-between either of the two in the hope that the result is better than
-the original. That is the approach taken in
-\cite{faruqui2014improving}. \textbf{ RAMAN, BEN Essentially this would provide a closure
-in the sense that we can always incorporate a new method into our own by using it as input to GCCA.}
+  }
+  \caption{Comparison of Word2Vec, Glove and Multiview LSA.}
+  \label{tab:c}
+\end{table}
 
 \section{Previous Work}
 \label{sec:previouswork}
-Winograd (1972) wrote that: "Two sentences are paraphrases if they
-produce the same representation in the internal formalism for
-meaning”, where this intuition was seen in decades of subsequent work.
-Recent efforts in compositional vector space models have loosened the
-definition: units (sentences, phrases, words) are considered
-paraphrastic if they produce “nearly” the same representation, based
-on an internal formalism for which we have a well defined distance
-metric.  Mitchell and Lapata (survey) and Pantel and Turney (survey)
-provide a survey of earlier efforts; here we will give background of
-the most relevant efforts to our work.
-
-The previous work that is most closely related to ours is
-\cite{faruqui2014improving}. While
-\cite{faruqui2014improving} presented the idea that CCA can be used
-for extracting multilingual correlations and showed that the learnt
-representations display increased performance over the original, our work takes the logical
-next step and uses Generalized CCA to learn distributed
-representations using data from multiple languages. Also while the
-idea that multiple sources of correlations are useful was known much before and
-many researchers attempted to improve the performance using bilingual
-correlation \cite{Huang2012Improving,zou2013bilingual}, 
-correlation with a structure database \cite{yu2014improving} or even
-correlation with images \cite{bruni2012distributional}. Howver, none of them
-take the view that all of these sources of data are just co-occurence
-statistics coming from different sources with underlying latent
-factors. Our method naturally uses multiple sources of data and
-does not require manual tuning of co-occurence window lengths. 
-
-Specifically \cite{zou2013bilingual} used word aligned
-parallel corpus in a specific way  by create a Language-to-Language word co-occurence
-matrix M which was used to add penalties to the original
-objective to force similarity between aligned words, and then in a
-coordinate-ascent hill-climbing fashion first 
-optimized the english embeddings with respect to chinese embeddings,
-and chinese with respect to english.
-
-
-\cite{bansal2014tailoring} noted that an ensemble of different
-types of distributed and discrete word representations like [TODO: add
-  citation] Brown embedding, SENNA, TURIAN, HUANG, CBOW are
-complementary and that an ensemble  improves upon the
-constituents. Our method can automatically incorporate different
-sources of embeddings to produce a single embedding.
-
-Ever since \cite{landauer1997solution} presented LSA researchers have
-been tuning the co-occurence window length, we generalize their framework
-and obviate the need to tune that parameter. Instead we can average
-over their parameters.
-
-In this sense of being a clever application of a multiview
-learning methods our work is an addition to the long chain which
-started from the work of \cite{yarowsky1995unsupervised} and continued
-with "Co-Training"~\cite{blum1998combining}, "CoBoosting"~\cite{collins1999unsupervised} and "2 view
-perceptrons"~\cite{brefeld2006efficient}.  The applications considered
-in these papers were NER and Web Page Type detection but they were
-general techniques for labeling sequences. These approaches forced
-predictors trained on individual views to agree with each other.
-However CCA is a different algorithm for multi view learning. 
-The following two papers were good overviews of application of CCA for
-multi view learning: \cite{kakade2007multi},\cite{ganchevuai08}.
-
-After the publication of the paper \cite{bach2005probabilistic} which gave a probabilistic
-interpretation of CCA the groups of Dan Klein and Ben Taskar were two
-of the groups that applied that view of CCA and multi view learning to tasks of Parsing,
-MT, NER \cite{ganchevuai08,Burkett2008Two,burkett2010learning,haghighi2008learning}.
-Amongst these 4 papers there was considerable variation in the
-objective, whether it used Bhattacharya Distance or Hellinger, does
-variational inference or uses EM or a directed graphical model
-versus undirected or used log linear models. 
-
-\cite{dhillon2011multi,dhillon2012two} used
+The most recent work in the NLP community most closely related to ours is \cite{faruqui2014improving}.
+Their demonstrated that bilingual representations extracted using CCA outperformed their monolingual
+counterparts and  clearly their method could be extended to
+multiple languages by merging the representations a pair at a time.
+\cite{felix2014learning} again demonstrated this same
+shared wisdom through their experiments over neural representations learnt from MT
+systems. Our work takes the logical
+next step after CCA and uses Generalized CCA to learn distributed
+representations using data from multiple languages. Also \cite{dhillon2011multi,dhillon2012two} used
 CCA as the primary method to learn vector representations. Our work
-is also closely related to theirs since our 
-work can be considered a direct generalization of theirs. 
+is closely related to theirs since our 
+work can be considered a direct generalization of theirs. Outside of
+the NLP community we can find many instances of the usage of GCCA for
+``data fusion''.  \cite{sun2013generalized,tripathi2011data} are two
+that we are aware of that have different goals from ours but share a
+lot of the motivation.
 
-Finally we note that the Machine translation community had already
-recognized the value of bilingual text and monolingual text
-to learn large collections of paraphrases.
-\cite{bannard2005paraphrasing} introduced the trick of pivoting off a
-machine translation phrase table and then \cite{ganitkevitch2013ppdb}
-improved it by filtering on the basis of monolingual
-similarities. The reason why these
-two views work is 
+We note however, that multiple researchers have leveraged the
+same wisdom to improve the performance of their paraphrase systems or
+vector space models using bilingual
+corpora\cite{bannard2005paraphrasing,Huang2012Improving,zou2013bilingual}, 
+correlation with a structure database \cite{yu2014improving} or even
+correlation with images \cite{bruni2012distributional}. The reason why using multiple views work is 
 that they complement each other. Monolingual data can't distinguish
 between antonyms but bilingual data can. And bilingual data confounds
 words that occur in the same sentence but monolingual data can
-distinguish them based on their context. So these are two different
-views over the same underlying representation which we can learn by
-using CCA or other multi view learning techniques.
+distinguish them based on their context. However, none of the previous
+work adopts the simplifying  view that 
+all of these sources of data are just cooccurrence 
+statistics coming from different sources with underlying latent
+factors. 
 
-\section{Future Work}
+Most recently, \cite{bansal2014tailoring} noted that  different
+types of distributed and discrete word representations are
+complementary and that an ensemble  improves upon the
+constituents. Our method can automatically incorporate different
+sources of representations to produce a single representation.
+
+Ever since \cite{landauer1997solution} presented LSA practitioners have
+been tuning the context window length to their data. GCCA naturally fuses
+multiple sources of data and does not require manual tuning of window lengths. 
+
+In the sense of being an application of multiview
+learning methods to NLP our work is an addition to the long chain which
+started from the work of \cite{yarowsky1995unsupervised} and continued
+with "Co-Training"~\cite{blum1998combining}, "CoBoosting"~\cite{collins1999unsupervised} and "2 view
+perceptrons"~\cite{brefeld2006efficient}.  CCA is also an algorithm
+for multi view learning, See \cite{kakade2007multi,ganchevuai08} for
+details, and it has a probabilistic interpretation
+\cite{bach2005probabilistic} which we conjecture could be extended to
+GCCA as well.
+
+\section{Discussion and Future Work}
 \label{sec:futurework}
-4. I formalized the idea of using the convex sum of the objectives and
-found that it cant be done unsupervised. I am attaching a pdf to
-better explain the arguments but the main point is that it cannot be
-done unsupervised and to do it in a supervised fashion would require
-me to posit a model and then optimize the embeddings. A lot of
-different methods could be used for that but they would borrow heavily
-from collobert-weston style of NLP. Since it is not unsupervised it
-would be a nice extension but I do not think we need to do this now.
-
-There is way on doign cosine of guassian based preprocessing to handle
-non-linear dependencies. 
-"Generalized CCA for disparate data fusion" is a paper by professor
-Carey Priebe which has different goals from ours but uses a lot of the
-same motivations. \url{arxiv.org/pdf/1209.3761v1.pdf} 
-
-"Data fusion and matching by maximizing statistical dependencies" is
-the PHD thesis of Abhishek Tripathi  
-\url{helda.helsinki.fi/bitstream/handle/10138/24569/datafusi.pdf}
-
-This paper does not compare the efficiency of our method versus the
-other state of the art methods. As in we have not varied the size of
-the datast and then tested how the performance varies. 
-
+\textcolor{red}{We selected points 1 (disagreement with sem-rel) 2 the
+  confusion matrix system comparison 3) the MSR system and 4  find
+  which of the tasks is most predictive of the rest given the ratings
+  and use that to keep the most predictive taksk of the black and the
+  gray. 5 also add a diagram to explain how I am making the views. 6
+  Do Incremental QR 6) Discuss the orthogonality of representation and
+the fact that the dimensions could be mapped to particular types of
+meanings easily. See if any of the particular dimensions are most
+predictive ? 7) Talk more about the MSR sentence completion challenge.
+Also see the naacl guideleines for dubmission.}
+\begin{itemize}
+\item It is significant that the disagreement on the semantic types is
+  so low, that should be investigated and can lead to a new insight.
+\item There are two different ways to compare the types of erros the
+  diferent systems make , I checked the confusion matrix and there are
+  658 mistakes I made that word22vec did not and there were 276
+  mistakes word2vec made that I did not . So oracle system combination
+  can be used to motivate the potential gains by employing the
+  systems in tandem or make a classifier to beat them. See the files
+  i\_am\_right\_glove\_is\_wrong and the other one.  
+\item TODO better error analysis of the errors that we make with like oracle
+type confusion matrices and other things
+\item powers of the counts (0.12, 0.5 and 0.75) specifically and found
+  that the fourth root performed the best. This sensitivity to
+  the procedure is a cause of concern and we would discuss this later
+\item Conjecture that we can extend p-CCA to p-GCCA.
+\item Think of these representations as the starting point. Task based
+  optimization may still be needed. Perform discriminative
+  optimization of weights over the views.
+\item We have not done Kernel CCA also.
+  There is way on doing cosine of guassian based preprocessing to handle non-linear dependencies. 
 Efficient Dimensionality reduction for CCA by Avron
 \url{jmlr.csail.mit.edu/proceedings/papers/v28/avron13.pdf} 
 You may want to use the proposed randomized Walsh-Hadamard transform
 on each input view as a form of preprocessing. That way you will
 preserve correlated dimensions in data despite view-specific
 dimensionality reduction.
-
-We note that corpus size and corpus type can make a huge
-  difference to the quality of embeddings therefore we would
-  experiment with different types and sizes of corpora as well.
-  
-Speed up the individual SVDs (maybe use redsvd ? ?) I did use it but
-it didn't really give me good speed gains because it was pretty bad at
-low iterations and high iterations means that its performance becomes
-the same as normal svd.
-
-We are not using larger monolingual datasets as well as other larger
+\item We note that corpus size and corpus type can make a huge
+  difference to the quality of representations therefore we would
+  experiment with different types and sizes of corpora as well. We are
+  not using larger monolingual datasets as well as other larger 
 datasets, for example the ClueWeb-FreeBase aligned dataset and other
-sources of alignments.
-
-We are also using a small vocabulary size of 100,000 words.
-
-We have not done Kernel CCA also. Also, we can easily fuse embeddings created using
-different frameworks like word2vec, HPCA, ivLBL, Glove etc. into a single representation.
-
-I would like to experiment on the MSR sentence completion challenge
+sources of alignments. Also, we can easily fuse representations created using
+different frameworks like word2vec, HPCA, ivLBL, Glove etc. into a
+single representation which could work better than the individual representations
+\item I would like to experiment on the MSR sentence completion challenge
 also \cite{zweig2011MSRSCC,zweig2012msrchallenge}.
-
-Also the Winograd Schema Challenge can possibly benefit from these
-embeddings so we could use these as well.
-
-Stacked CCA, Kernel CCA,
-1) All of these are not as tuned as they should be. 2) I want to check
-for bugs in my eval code. 3) I also want to understand better
-theoretically what would happen as I put more and more monolingual
-windows in GCCA. 4) My vocabulary size is only 100K 5) I am only using
-bitext data not wikipedia data. 5) There are issues of vocabulary in
-Mikolov SEM test.
-
-An interesting thing might be to learn embeddings over featurized
-words, rather than over just words.
-
-For example 
-Add gender, number, tense features to all words and postags features as well. 
-These features should then be reflected in the embedding that we learn
-somehow.
+An important task for any NLP model is to be able to model
+    language. That in turn means modeling sequence and having the
+    ability to generate them. Without that the model feels hollow. The
+    simplest method that I could think of involves creating
+    non-redundant views of sequence data.
+   For example 
+   [V1]\_xy contains count of the number of times word-y appears 1 space after word-x
+   [V2]\_xy contains count of the number of times word-y appears 2 space after word-x
+   and so on upto V15
+   Then the next word that we pick should be the word that would
+    minimize the objective : sum(fro-norm(G - Vi * Ui) for i=1:15) 
+   This would enable us to generate sequences and then we could look at
+    the example strings generated by model and show them in the paper.
+\item Create tools to help with qualitative analysis of the data. The
+    qualitative analysis should tell me where are the views improving
+    the word relations and where are they degrading them. The simplest
+    way to do that is to find top 10 word pairs where GCCA sucks and
+    glove/word2vec excel and vice-versa 
+  \item Improve performance on the Sem Rel Data, and the Mikolov
+    semantic analogy task. Optimize the SEMANTIC datasets .  Investigate why SEM Rel is so low. 
+  \item Compare against Chris Dyer's paper. (Their results are worse
+    include them.)
+  \item It is possible to use GCCA  (or CCA) to perform incremental guassian
+    language models. These would be different models from the Log
+    Bilinear Language model proposed by Hinton
+  \item Use this method on more different tasks. 
+  \item 10. [-] To scale the views I must find a way of searching over them.
+    If I have 30 views then one nice way to learn the representations could
+    be to tune the lambda. Inclusion/exclusion is then modelled as
+    putting weight to 0. In any case the first question is what is the
+    performance of the vanilla method ? 
+    - [-] Discriminatively
+      Simple gradient free optimization can be used. by using SPSA !
+      I mean the models are so naive anyway, we might as well optimize
+      ~30 dimensional constrained optimization problem inside the 0-1
+      hypercube by using gradient free methods. over the parameters $\lambda^2$
+\end{itemize}
 
 \section{Conclusion}
 We have shown that GCCA is a natural framework to fuse data from
@@ -770,15 +847,14 @@ source of information that should be utilized more heavily. Also we
 have shown that the proposed method works better or just as well as
 the state of the art methods.
 
+Pleasantly it turns out approximate RGCCA is quite predictable and
+insensitive to its hyper parameters.
 \section*{Acknowledgments}
 This material is based on research sponsored DARPA under agreement
-number FA8750-13-2-0017 (DEFT). We were greatly helped by
-the list of datasets created by Manaal
-Faruqui.\footnote{\url{www.cs.cmu.edu/~mfaruqui/suite.html}}
-We thank Juri Ganitkevitch for providing the aligned bitext corpora
-used throughout this paper. We also give a special thanks to Dmitry Savostyanov
-who proposed the fast method that to calculate GCCA.
-
+number FA8750-13-2-0017 (DEFT). We thank Juri Ganitkevitch for
+providing the word aligned bitext corpus used in this paper. We also
+give a special thanks to Dmitry Savostyanov 
+who proposed the key step to perform fast GCCA.
 \bibliographystyle{acl}
 \bibliography{references}
 \end{document}
