@@ -1,7 +1,7 @@
-function [G, S_tilde, sort_idx]=v5_generic_tmp(r, deptoload, ...
+function [G, S_tilde, sort_idx]=v5_generic_tmp(final_embedding_size deptoload, ...
                                            min_view_to_accept_word, ...
                                            M) 
-% r is the number of gcca components that we want.
+% final_embedding_size is the number of gcca components that we want.
 % deptoload is a cell that contains mat file names.
 % min_view_to_accept_word is a threshold over the number of views
 % that a particular word must appear in. I am overloading
@@ -71,6 +71,6 @@ clear ajtj;
 disp('starting GCCA NOW');
 %% Now do the GCCA after checking for NaNs 
 tic;
-   [G, S_tilde, ~]=ste_rgcca(M_tilde, r);
+   [G, S_tilde, ~]=ste_rgcca(M_tilde, final_embedding_size);
    sort_idx=logical_acceptable_rows; 
 toc;

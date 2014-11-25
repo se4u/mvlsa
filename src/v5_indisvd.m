@@ -10,8 +10,8 @@ disp('preprocessing complete');
 if strcmp(mc_muc, 'muc')
     [a, s]=svds(align_mat, svd_size);
     s=transpose(diag(s));
-    error('Unsupported options mc_muc=mc');
-    exit(1);
+    %error('Unsupported options mc_muc=mc');
+    %exit(1);
 elseif strcmp(mc_muc, 'mc')
     [a, s, b]=svds(align_mat, svd_size);
     [a, s, b]=rank_one_svd_update(a, s, b, ...

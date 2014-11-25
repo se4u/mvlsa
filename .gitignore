@@ -7,7 +7,10 @@ tmp_cooccur_en
 tex/mvppdb.aux
 tex/mvppdb.log
 tex/mvppdb.pdf
-submit_grid_stub.sh.[oep]*
+*.o[0-9]*
+*.e[0-9]*
+*.po[0-9]*
+*.pe[0-9]*
 v5_indisvd_dir/*
 tmp*
 glove_*train_*code*
