@@ -1,0 +1,710 @@
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+
+%% Page size
+
+\setlength{\oddsidemargin}{0pt}
+\setlength{\evensidemargin}{0pt}
+\setlength{\textwidth}{6.5in}
+\setlength{\topmargin}{0in}
+\setlength{\textheight}{8.5in}
+
+% Footnote commands.
+\newcommand{\footnotenonumber}[1]{{\def\thempfn{}\footnotetext{#1}}}
+\newcommand{\footnotetight}[1]{\footnote{\renewcommand\baselinestretch{1}\footnotesize #1}}
+
+% Assorted theorem/proof environments
+
+
+% Figure/Tables Stuff
+\makeatletter
+\def\fnum@figure{{\bf Figure \thefigure}}
+\def\fnum@table{{\bf Table \thetable}}
+\long\def\@mycaption#1[#2]#3{\addcontentsline{\csname
+  ext@#1\endcsname}{#1}{\protect\numberline{\csname
+  the#1\endcsname}{\ignorespaces #2}}\par
+  \begingroup
+    \@parboxrestore
+    \small
+    \@makecaption{\csname fnum@#1\endcsname}{\ignorespaces #3}\par
+  \endgroup}
+\def\mycaption{\refstepcounter\@captype \@dblarg{\@mycaption\@captype}}
+\makeatother
+
+\newcommand{\figcaption}[1]{\mycaption[]{#1}}
+\newcommand{\tabcaption}[1]{\mycaption[]{#1}}
+\newcommand{\head}[1]{\chapter[Lecture \##1]{}}
+\newcommand{\mathify}[1]{\ifmmode{#1}\else\mbox{$#1$}\fi}
+
+%% Math Stuff, Symbols
+\renewcommand{\Pr}[1]{\mathify{\mbox{Pr}\left[#1\right]}}
+\newcommand{\Exp}[1]{\mathify{\mbox{Exp}\left[#1\right]}}
+\newcommand{\set}[1]{\mathify{\left\{ #1 \right\}}}
+\newcommand{\bigO}O
+\def\setof#1{\left\{ #1\right\}  }
+\def\sizeof#1{\left| #1\right|}
+\def\implies{\Rightarrow}
+\def\half{\frac{1}{2}}
+\newcommand{\N}{\mathbb{N}} % natural numbers
+\newcommand{\R}{\mathbb{R}} % real numbers
+\newcommand{\Z}{\mathbb{Z}} % integers
+\renewcommand{\Re}{\R} % reals
+\newcommand{\1}{{\bf 1}} % vector of all 1's
+\newcommand{\I}[1]{\mathbb{I}_{\left\{#1\right\}}} % indicator function
+\newcommand{\tends}{{\rightarrow}} % arrow for limits
+\newcommand{\ra}{{\rightarrow}} % abbreviation for right arrow
+\newcommand{\PR}{\mathsf{P}} % probability
+\newcommand{\E}{\mathsf{E}} % expectation
+\newcommand{\subjectto}{\mbox{\rm subject to}} % subject to
+\newcommand{\norm}[1]           {\left\| #1\right\|}
+\newcommand{\card}[1]           {\left| #1\right|}
+%% some caligraphic symbols
+\newcommand{\Ascr}{{\cal A}}
+\newcommand{\Bscr}{{\cal B}}
+\newcommand{\Cscr}{{\cal C}}
+\newcommand{\Dscr}{{\cal D}}
+\newcommand{\Escr}{{\cal E}}
+\newcommand{\Fscr}{{\cal F}}
+\newcommand{\Gscr}{{\cal G}}
+\newcommand{\Hscr}{{\cal H}}
+\newcommand{\Iscr}{{\cal I}}
+\newcommand{\Jscr}{{\cal J}}
+\newcommand{\Kscr}{{\cal K}}
+\newcommand{\Lscr}{{\cal L}}
+\newcommand{\Mscr}{{\cal M}}
+\newcommand{\Nscr}{{\cal N}}
+\newcommand{\Oscr}{{\cal O}}
+\newcommand{\Pscr}{{\cal P}}
+\newcommand{\Qscr}{{\cal Q}}
+\newcommand{\Rscr}{{\cal R}}
+\newcommand{\Sscr}{{\cal S}}
+\newcommand{\Tscr}{{\cal T}}
+\newcommand{\Uscr}{{\cal U}}
+\newcommand{\Vscr}{{\cal V}}
+\newcommand{\Wscr}{{\cal W}}
+\newcommand{\Xscr}{{\cal X}}
+\newcommand{\Yscr}{{\cal Y}}
+\newcommand{\Zscr}{{\cal Z}}
+
+
+%%%%%%%%
+%%%%%%%%%
+%%%% Copied from defs.tex
+\def \lbrack {(}
+\def \rbrack {)_\Delta}
+\def \one {{\bf 1}}
+\def \e {{\bf 1}}
+\def \E {\mathbb{E}}
+\def \hP {\hat{\P}}
+\def \hPR {\hat{\P R}}
+\def \hK {\hat{\K}}
+\def \I {{\mathcal{I}}}
+\def \Ii {{{I}}}
+\def \K {\textrm{K}}
+\def \Lam {{ \Lambda}}
+\def \Mm {{{M}}}
+\def \n {{{n}}}
+\def \o {{o}}
+\def \O {{O}}
+\def \ori {{\bf 0}}
+\def \P {{ P}}
+\def \Pp {{\mathcal{Q}}}
+\def \Q {{ Q}}
+\def \Rr{\textrm{R}}
+\def \Ss {{\mathcal{S}}}
+\def \SO {\textrm{SO}}
+\def \tE {\tilde{\E}}
+\def \tK {\tilde{\K}}
+\def \tlam {\tilde{\lambda}}
+\def \tLam {\tilde{\Lam}}
+\def \tP {\tilde{\P}}
+\def \tQ {\tilde{Q}}
+\def \tRr {\tilde{\Rr}}
+\def \tM {\tilde{M}}
+\def \tSs {\tilde{\mathcal{S}}}
+\def \Xcal {\mathcal{X}}
+\def \Ccal {\mathcal{C}}
+\def \Acal {\mathcal{A}}
+\def \tX {\tilde{X}}
+\def \tY {\tilde{Y}}
+\def \tx {\tilde{x}}
+\def \ty {\tilde{y}}
+\def \u {{{u}}}
+\def \w {\textrm{w}}
+\def\bd{\begin{defn}}
+\def\ed{\end{defn}}
+\def\br{\begin{rem}}
+\def\er{\end{rem}}
+\def\bp{\begin{prop}}
+\def\ep{\end{prop}}
+\def\bc{\begin{cor}}
+\def\ec{\end{cor}}
+\def\bl{\begin{lem}}
+\def\el{\end{lem}}
+
+% Spaces
+\newcommand{\Real}{\mathbb{R}}
+
+\newcommand{\Comp}{C}
+\newcommand{\Nat}{N}
+\newcommand{\Sym}{\mathrm{Sym}}
+% Greek letters
+\newcommand{\sigmab}{\bar\sigma}
+\newcommand{\tSigma}{\tilde{\Sigma}}
+% Other
+\newcommand{\ttext}[1]{\qquad\mbox{#1}\qquad}
+\newcommand{\tr}{\textrm{trace}}
+\newcommand{\tV}{\tilde{V}}
+
+\def\co{co}
+\def\cov{\textrm{Cov}}
+\def\var{\textrm{Var}}
+\def\diag{diag}
+\def\spa{\textrm{span}}
+\def\rank{rank}
+\def\Dir{Dir}
+\def\dBeta{Beta}
+
+\newcommand{\proj}[2][]{\mathcal{P}_{#1}\left(#2\right)}
+\newcommand{\pr}[1]{\mathrm{Pr}\left\{#1\right\}}
+\newcommand{\ex}[2][]{\mathbb{E}_{#1}\left[#2\right]}
+\newcommand{\abs}[1]{\left\lvert#1\right\rvert}
+
+\newcommand{\inn}[1]{\left\langle#1\right\rangle}
+\newcommand{\p}{\partial}
+
+\newcommand{\pp}[2]{{\frac{\partial #1}{\partial #2}}}
+\newcommand{\Ran}{\mathscr{R}}
+\newcommand{\st}{\;\big\lvert\;}
+
+% TODO comments
+\newcommand{\todo}[1]{ \textcolor{red}{TODO: #1} }
+%%%%%% End defs.tex %%%%%
+\def \D{{\textbf D}}
+\def \c{{\textbf c}} 
+\def \d{{\textbf d}} 
+\def \E{{\textrm E}} 
+\def \Ee{{\mathcal E}}
+\def \fig{Figure } 
+\def \figs{Figures}
+\def \F{{\textrm{F}}}
+\def \Ff{{\mathcal{F}}}
+\def \G{{\textrm{G}}}
+\def \GL{\textrm{GL}}
+\def \hE{\hat{\Ee}}
+\def \hy {\hat{\y}}
+\def \hx {\hat{\x}}
+\def \hRr{\hat{\textrm R}}
+\def \htt {\hat{\t}}
+\def \hP {\hat{\P}}
+\def \H{{\mathcal H}} 
+\newcommand{\Hh}{\mathcal{H}}
+\def \K{{\textrm{K}}} 
+\def \Lam{{\Lambda}}
+\def \I {{\textrm{I}}}
+\def \V {{\textrm{V}}}
+\def \L{{\textrm{L}}}
+\def \LL{{\mathscr L}} 
+\def \Lc{|\A|}
+\newcommand{\modk}[2]{\lfloor #1 \rfloor_{#2}}
+
+
+% \newcommand{\V}[1]{{\textrm{X}}^{(#1)}}
+\newcommand{\Y}{{\textrm{Y}}}
+
+\def \C{{\textrm{C}}} 
+
+\def \ms{ms}
+\def \M{{\textrm{M}}}
+\def \Mm{{\textrm{M}}}
+\def \N{{\mathbb N}}
+\def \Nn{{\mathcal N}}
+\def \O{{\mathcal{O}}}
+\def \Ow {\Omega}
+\def \ow {\omega}
+\def \P{{\mathcal P}} 
+\def \Pp{{\mathbb{P}}}
+\def \q{{\textrm q}} 
+\def \Q{{\textrm{Q}}}
+\def \Qq{{\textrm{Q}}}
+\def \R{{\mathbb{R}}}
+\def \Rr {{\textrm R}}
+\def \Rg {\ \buildrel {\circ} \over { R}}
+\def \s{{\textrm{s}}}
+\def \sec{Section} 
+\def \skew{{\textbf{skew}}}
+\def \so{{\mathfrak{so}}}
+\def \S{{\textrm{S}}} 
+\def \SA{{\textrm{SA}}}
+\def \SE{{\textrm{SE}}}
+\def \SL{{\textrm{SL}}}
+\def \SO{{\textrm{SO}}}
+\def \Ss {{\textrm{S}}}
+\def \SS {{\textrm{S}}}
+\def \SU{{\textrm{SU}}}
+\def \tK {\tilde{\K}}
+\def \tlam {\tilde{\lambda}}
+\def \tLam {\tilde{\Lam}}
+\def \tP {\tilde{\P}}
+\def \tK {\tilde{\K}}
+\def \tPhi {\tilde{\Phi}}
+\def \tQ {\tilde{\bf Q}}
+\def \tRr {\tilde{\Rr}}
+\def \tM {\tilde{M}}
+\def \tSs {\tilde{\mathcal{S}}}
+\def \t{{\textrm{t}}}
+\def \til{$\sim$}
+\def \T{\textrm{T}} 
+\def \Tr{\mbox{Tr}}
+\def \u{{\textrm{u}}} 
+\def \U {{\textrm{U}}}
+\def \v{{\textrm{v}}}
+\def \Vv {{\textrm{V}}}
+\def \K{{\textrm{K}}}
+\def \rank{{\textrm{rank}}} 
+\def \r{{\textrm{r}}}
+\def \Ww{{\mathcal{W}}}
+\def \W{{\textrm{W}}}
+\def \x{{\textrm{x}}}
+\def \X{{\textrm{X}}}
+\def \Xx{{\mathcal{X}}}
+\def \uu{{\textrm{u}}}
+\def \vv{{\textrm{v}}}
+\def \Yy{{\mathcal{Y}}} 
+\def \y {{\textrm{y}}}
+\def \z{{\textrm{z}}} 
+\def \Z{{\mathbb Z}} 
+\def \zero{{\textrm{0}}} 
+\def \Ll{{\textrm L}} 
+\def \P{{\textrm{P}}}
+\def \Fcal {\mathcal{F}}
+\def \ms{ms}
+\def \til{$\sim$}
+\def \kth{{\em k}th\ }
+\def \k+1{{\em k+1}st}
+\def \matlab{{\tt MATLAB}}
+
+%% math operators
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
+%% \DeclareMathOperator*{\maximize}{maximize}
+%% \DeclareMathOperator*{\minimize}{minimize}
+
+
+
+
+
+
+
+
+%% FLAG
+\usepackage{etex}
+\usepackage{multicol}
+\usepackage{wrapfig}
+\usepackage{epsfig,epstopdf,color,framed,parskip}
+\usepackage{amsthm, amsmath, amssymb, amsbsy,amsfonts,textpos,algorithm2e, subfigure, caption, sidecap, mathrsfs}
+\usepackage{outline,rotating}
+\usepackage{graphicx}
+\usepackage{fancybox}
+\usepackage{algorithmic,stmaryrd}
+\usepackage[english]{babel}
+\usepackage{algorithm2e}
+\usepackage{anyfontsize}
+\usepackage{tikz}
+\usetikzlibrary{mindmap,backgrounds}
+\usetikzlibrary{calc}
+\usetikzlibrary{decorations.pathreplacing,shapes,snakes} 
+\usetikzlibrary{shapes.callouts}
+
+
+\usetikzlibrary{shapes.arrows}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage[thicklines]{cancel}
+%\setlength{\parskip}{\smallskipamount}
+%\setlength{\parindent}{0pt}
+\usepackage[]{natbib}
+\usepackage{movie15}
+\usepackage{epstopdf}
+\usepackage{ifthen} 
+\newboolean{BIGPOLICY}
+\setboolean{BIGPOLICY}{FALSE}
+
+\newboolean{PIAZZA}
+\setboolean{PIAZZA}{FALSE}
+
+
+\usepackage{hyperref}
+
+\usefonttheme{serif}
+\newcommand*{\newblock}{}
+\newcommand{\msample}{m(d,k,r,G,\epsilon)}
+\newcommand{\trace}{\textrm{Trace }}
+\newcommand{\code}[1]{\mbox{\texttt{#1}}}
+
+\newcommand{\expectation}[2][]{\mathbb{E}_{#1}[#2]}
+\newcommand\tikzmark[1]{%
+  \tikz[overlay,remember picture,baseline] \node [anchor=base] (#1) {};}
+
+\newcommand\MyLine[3][]{%
+  \begin{tikzpicture}[overlay,remember picture]
+    \draw[#1] (#2.north west) -- (#3.south east);
+  \end{tikzpicture}}
+
+\newcommand{\betweenWidth}{.0in}
+\newcommand{\sfigWidth}{0.225\textwidth}
+\newcommand{\sfigHeight}{0.15\textwidth}
+\newcommand{\ssfigHeight}{0.14\textwidth}
+
+
+\newcommand{\MP}{\textrm{X}} % matrix
+\newcommand{\MU}{\textrm{U}}
+\newcommand{\Vcal}{\mathcal{V}} % matrix
+\newcommand{\MD}{{\Lambda}}%{\mathbf{D}}
+\newcommand{\MV}{\textrm{V}}
+\newcommand{\MY}{\hat{\textrm{X}}}
+\newcommand{\tc}[2]{{#1}^{(#2)}}
+\newcommand{\mybullet}{\rhd}
+\newcommand{\dimr}{k}
+\newcommand{\MX}{\textrm{U}}
+\definecolor{darkred}{rgb}{0.5,0,0}
+\definecolor{darkblue}{rgb}{0,0,0.5}
+\definecolor{darkgreen}{rgb}{0.2,0.4,0.2}
+% \definecolor{shadecolor}{1,0.8,0.3}
+
+\def\Circlearrowleft{\ensuremath{%
+  \rotatebox[origin=c]{180}{$\circlearrowleft$}}}
+\def\Circlearrowright{\ensuremath{%
+  \rotatebox[origin=c]{180}{$\circlearrowright$}}}
+\def\CircleArrowleft{\ensuremath{%
+  \reflectbox{\rotatebox[origin=c]{180}{$\circlearrowleft$}}}}
+\def\CircleArrowright{\ensuremath{%
+  \reflectbox{\rotatebox[origin=c]{180}{$\circlearrowright$}}}}
+
+
+\newcommand\bigzero{\makebox(0,0){\text{\huge0}}}
+\newcommand\BIGzero{\makebox(0,0){\text{\Huge0}}}
+
+\newcommand{\blue}[1]{{\color{darkblue}#1}}
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}[]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{prop}[thm]{Proposition}
+% \newtheorem{rem}[]{Remark}
+\newtheorem{cor}{Cor}
+\def\br{\begin{rem}}
+\def\er{\end{rem}}
+\def\bt{\begin{thm}}
+\def\et{\end{thm}}
+\def\bl{\begin{lem}}
+\def\el{\end{lem}}
+\def\bp{\begin{prop}}
+\def\ep{\end{prop}}
+\def\bc{\begin{cor}}
+\def\ec{\end{cor}}
+\parindent 0pt
+\parskip 5pt
+
+\newcommand\HUGE{\@setfontsize\Huge{38}{47}} 
+
+\newcommand{\removed}[1]{}
+
+\newcommand{\minimize}[3]{
+\begin{aligned}
+& \underset{#1}{\textrm{minimize:}}
+& & #2 \\
+& \textrm{subject to:}
+& &  #3
+\end{aligned}
+}
+
+\newcommand{\maximize}[3]{
+\begin{aligned}
+& \underset{#1}{\textrm{maximize}}
+& & #2 \\
+& \textrm{subject to}
+& &  #3
+\end{aligned}
+}
+
+\newcommand{\maximizetwo}[4]{
+\begin{aligned}
+& \underset{#1}{\textrm{maximize}}
+& & #2 \\
+& \textrm{subject to}
+& & \begin{aligned} &  #3, \\ &  #4 \end{aligned}
+\end{aligned}
+}
+
+\newcommand{\maximizethree}[5]{
+\begin{aligned}
+& \underset{#1}{\textrm{maximize}}
+& & #2 \\
+& \textrm{subject to}
+& & \begin{aligned} &  #3, \\ &  #4 \\ &  #5 \end{aligned}
+\end{aligned}
+}
+
+
+\newcommand{\minimizeNoConstraints}[2]{
+\begin{aligned}
+& \underset{#1}{\textrm{minimize}}
+& & #2
+\end{aligned}
+}
+
+\newcommand{\maximizeNoConstraints}[2]{
+\begin{aligned}
+& \underset{#1}{\textrm{maximize}}
+& & #2
+\end{aligned}
+}
+
+
+\newcommand{\minimizetwoline}[4]{
+\begin{aligned}
+& \underset{#1}{\textrm{minimize}} & & #2 \\
+& & & #3 \\
+& \textrm{s.t.}
+& &  #4
+\end{aligned}
+}
+
+\makeatletter
+\newcommand{\fixed@sra}{$\vrule height 2\fontdimen22\textfont2 width 0pt\shortrightarrow$}
+\newcommand{\shortarrow}[1]{%
+  \mathrel{\text{\rotatebox[origin=c]{\numexpr#1*45}{\fixed@sra}}}
+}
+\makeatother
+
+\setbeamertemplate{theorem begin}
+{%
+{%
+\textup{{\large \structure{%
+\inserttheoremname
+\inserttheoremnumber
+\ifx\inserttheoremaddition\@empty\else\ (\inserttheoremaddition)\fi%
+\inserttheorempunctuation
+}}}%
+}%
+}%
+\setbeamertemplate{theorem end}{}
+
+% \def\D{{D}}
+
+\def \one {{\textrm{1}}}
+\def \e {{\textrm{1}}}
+\def \ee {{\textrm{e}}}
+
+\def\a{{\textrm{a}}}
+
+\def\D{{\textrm{D}}}
+\def\P{{\textrm{P}}}
+\def\Q{{\textrm{Q}}}
+\newcommand{\reals}{\mathbb{R}}
+\def\A{{\textrm{A}}}
+\def\Aa{{\mathbb A}}
+\def\Aaa{{\textrm{A}}}
+
+\def\B{{\textrm{B}}}
+\def\Bb{{\mathbb B}}
+\def \Bbb {{\textrm B}}
+\def\bexp{{\textbf{exp}}}
+\newcommand{\bfQ}[2]{{\bf #1}^{(#2)}}
+\def\blog{{\textbf{log}}}
+\def\cal{\mathcal}
+
+\def\c{\textrm{c}} 
+\def\C{{\textrm{C}}}
+\def\Dd{{\mathscr{D}}}
+
+\makeatletter
+\def\Ddots{\mathinner{\mkern1mu\raise\p@
+\vbox{\kern7\p@\hbox{.}}\mkern2mu
+\raise4\p@\hbox{.}\mkern2mu\raise7\p@\hbox{.}\mkern1mu}}
+\makeatother
+
+% \def\D{{\textbf D}}
+\def\c{{\textbf c}} 
+\def\d{{\textbf d}} 
+\def\E{{\textrm E}} 
+\def\Ee{{\mathcal E}}
+\def\fig{Figure } 
+\def\figs{Figures}
+\def\F{{\textrm{F}}}
+\def\Ff{{\mathcal{F}}}
+\def\G{{\textrm{G}}}
+\def\J{{\textrm{J}}}
+\def\GL{\textrm{GL}}
+\def \hE{\hat{\Ee}}
+\def \hy {\hat{\y}}
+\def \hx {\hat{\x}}
+\def\hRr{\hat{\textrm R}}
+\def \htt {\hat{\t}}
+\def \hP {\hat{\P}}
+\def\H{{\mathcal H}} 
+
+% \def\J{{\textbf J}}
+\def\K{{\textrm{K}}} 
+\def\Lam{{\Lambda}}
+\def \I {{\textrm{I}}}
+\def \V {{\textrm{V}}}
+\def\L{{\textrm{L}}}
+\def\LL{{\mathscr L}} 
+\def\Lc{|\A|}
+
+
+
+% \newcommand{\V}[1]{{\textrm{X}}^{(#1)}}
+
+
+\def\ms{ms}
+\def\M{{\textrm{M}}}
+\def\Mm{{\textrm{M}}}
+\def\N{{\mathbb N}}
+\def\Nn{{\mathcal N}}
+\def\O{{\mathcal{O}}}
+
+
+\def\periodic{statistically periodic} 
+\def\periodicities{statistical periodicities} 
+\def\periodicity{statistical periodicity}  
+% \def\P{{\mathcal P}} 
+\def\Pp{{\mathbb{P}}}
+\def\q{{\textrm q}} 
+\def\Q{{\textrm{Q}}}
+\def\Qq{{\textrm{Q}}}
+% \def\R{{\mathbb{R}}}
+\def \Rr {{\textrm R}}
+\def \Rg {\ \buildrel {\circ} \over { R}}
+\def\s{{\textrm{s}}}
+\def\sec{Section} 
+\def\skew{{\textbf{skew}}}
+\def\so{{\mathfrak{so}}}
+\def\S{{\textrm{S}}} 
+\def\SA{{\textrm{SA}}}
+\def\SE{{\textrm{SE}}}
+\def\SL{{\textrm{SL}}}
+\def\SO{{\textrm{SO}}}
+\def \Ss {{\textrm{S}}}
+\def \SS {{\textrm{S}}}
+\def\SU{{\textrm{SU}}}
+\def \tK {\tilde{\K}}
+\def \tlam {\tilde{\lambda}}
+\def \tLam {\tilde{\Lam}}
+\def \tP {\tilde{\P}}
+\def \tQ {\tilde{\bf Q}}
+\def \tRr {\tilde{\Rr}}
+\def \tM {\tilde{M}}
+\def \tSs {\tilde{\mathcal{S}}}
+
+% \def\I{{\textbf{I}}}
+
+
+\def\t{{\textrm{t}}}
+\def\til{$\sim$}
+% \def\tr{\textrm{ Tr }}
+\def\T{\textrm{T}} 
+\def\Tr{\mbox{Tr}}
+\def\u{{\textrm{u}}} 
+\def \U {{\textrm{U}}}
+\def\v{{\textrm{v}}}
+\def \Vv {{\textrm{V}}}
+% \def\w{{\textbf{w}}} 
+\def\K{{\textrm{K}}}
+%\def\W{{\textbf{W}}}
+
+\def\rank{{\textrm{rank}}} 
+\def\r{{\textrm{r}}}
+\def\Ww{{\mathcal{W}}}
+\def\W{{\textrm{W}}}
+\def\x{{\textrm{x}}}
+\def\X{{\textrm{X}}}
+\def\Xx{{\mathcal{X}}}
+\def\uu{{\textrm{u}}}
+\def\vv{{\textrm{v}}}
+% \def\Y{{\textbf{Y}}}
+\def\Yy{{\mathcal{Y}}} 
+\def \y {{\textrm{y}}}
+\def\z{{\textrm{z}}} 
+\def\Z{{\mathbb Z}} 
+\def\zero{{\textrm{0}}} 
+\def\Ll{{\textrm L}} 
+\def\P{{\textrm{P}}}
+
+
+
+% \def\sec{Sect.~}
+% \def\fig{Fig.~}
+% \def\figs{Figs.~}
+% \def\s{sec}
+%\def\secs{Sects.~}
+\def\ms{ms}
+\def\til{$\sim$}
+\def\michelle{{\em Michelle}}
+\def\kth{{\em k}th\ }
+\def\k+1{{\em k+1}st}
+\def\matlab{{\tt MATLAB}}
+\newcounter{enum}
+\newcounter{fnum}
+
+%\renewcommand{\sfdefault}{phv}
+%\renewcommand{\rmdefault}{phv}      % default for roman text
+%\newcommand{\slidetitle}[2]{\shadowslidetitle{#1}}
+%---------------------------------------------------------------
+\definecolor{lightred}{rgb}{1,0.3,0.3}
+\definecolor{darkred}{rgb}{0.5,0,0}
+
+
+\definecolor{darkgreen}{rgb}{0,0.6,0}
+\definecolor{lightbrown}{rgb}{1,0.9,0.8}
+\definecolor{darkblue}{rgb}{0,0,0.8}
+\definecolor{darkmagenta}{rgb}{0.5,0,0.5}
+\definecolor{black}{rgb}{0,0,0}
+\definecolor{white}{rgb}{1,1,1}
+\definecolor{red}{rgb}{1,0,0}
+\definecolor{green}{rgb}{0,1,0}
+\definecolor{blue}{rgb}{0,0,1}
+\definecolor{lightblue}{rgb}{0.8,0.8,1}
+\definecolor{lightpink}{rgb}{1,0.8,0.8}
+\definecolor{lightgreen}{rgb}{0,0.8,0.2}
+\pagecolor{white}
+\color{black}
+
+
+%---------------------------------------------------------------
+%---------------------------------------------------------------
+%---------------------------------------------------------------
+%---------------------------------------------------------------
+
+\mode<presentation>
+{
+  \setbeamertemplate{background canvas}[vertical shading][bottom=white]
+  \usetheme{Madrid} % Madrid, Warsaw, Boadilla, Darmstadt, Frankfurt, Malmoe
+  % \useoutertheme[subsection=false]{smoothbars}
+  
+\usecolortheme{seahorse}
+% \setbeamertemplate{footline}[text line]{} % makes the footer EMPTY
+
+  \usefonttheme[onlysmall]{structurebold}
+	\setbeamertemplate{footline}
+	{
+		\leavevmode
+		\hbox
+		{
+%			\begin{beamercolorbox}[wd=.45\paperwidth,ht=2.5ex,dp=1.125ex,right]{author in head/foot}
+%				\usebeamerfont{title in head/foot}\insertshortauthor\hspace{.3cm}
+%			\end{beamercolorbox}
+%	
+%			\begin{beamercolorbox}[wd=.45\paperwidth,ht=2.5ex,dp=1.125ex,left]{title in head/foot}
+%				\usebeamerfont{author in head/foot}\hspace{.3cm}\insertshorttitle
+%			\end{beamercolorbox}
+%	
+%			\begin{beamercolorbox}[wd=.1\paperwidth,ht=2.5ex,dp=1.125ex,center]{title in head/foot}
+%				\usebeamerfont{author in head/foot}\insertframenumber / {\inserttotalframenumber}
+%			\end{beamercolorbox}
+		}
+		\vskip0pt
+	}
+}
+\setbeamercovered{}
