@@ -22,9 +22,10 @@ def should_include(v, dep_excl_incl, vcode):
         return instring
 
 target=sys.argv[1]
-
-target=target.replace("trunccol100000_200", "trunccol100000_300")
+target=target.replace("trunccol100000_10", "trunccol100000_300")
+target=target.replace("trunccol100000_50", "trunccol100000_300")
 target=target.replace("trunccol100000_100", "trunccol100000_300")
+target=target.replace("trunccol100000_200", "trunccol100000_300")
     
 standep_list=sys.argv[2].split(",")
 bitext_list=sys.argv[3].split(",")

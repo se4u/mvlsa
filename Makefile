@@ -42,6 +42,7 @@ QSUBPEMAKE := $(QSUBCMD) -pe smp 10 $(CWD_SUBMIT)
 QSUBP1PEMAKE := $(QSUBP1CMD) -pe smp 10 $(CWD_SUBMIT)
 QSUBPEMAKEHOLD = qsub -N $1 -V -hold_jid $2 -l mem_free=$3,ram_free=$3 -r yes -pe smp $4 -cwd submit_grid_stub.sh
 QSUBPEMAKEHOLD2 = qsub -N $1 -V -hold_jid $2,$3 -l mem_free=$4 -r yes -pe smp $5 -cwd submit_grid_stub.sh
+QSUBPEMAKEHOLD3 = qsub -N $1 -V -hold_jid $2 -l mem_free=$3,ram_free=$4 -r yes -pe smp $5 -cwd submit_grid_stub.sh
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
 STORE := /export/a15/prastog3
@@ -62,25 +63,62 @@ VOCABWITHCOUNT_500K_FILE := $(STORE)/polyglot_wikitxt/en/full.txt.vc5.500K
 VOCAB_500K_FILE := $(VOCABWITHCOUNT_500K_FILE)_word
 
 ##############################
-## PAPER MAKING CODE 
-# Your job 9329056 ("tmp_embqsub_mc_
-# Your job 9329069 ("tmp_embqsub_mc_
-# Your job 9329063 ("tmp_fullgcca_ex
-# Your job 9329086 ("tmp_fullgcca_ex
-table_c:
-	for c in glove word2vec; do \
-	echo $$c ; $(MAKE) -s ts_extrinsic_"$$c"_mytrain_mycode; done | pr -2 -l 26 ; \
-	for best_gcca in 20 25; do \
-	echo $$best_gcca ; $(MAKE) -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_"$$best_gcca".300.1.1 ; done | pr -2 -l 26; \
-	for mono_gcca in 130 170; do \
-	echo $$mono_gcca ; $(MAKE) -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi@bi@ag@fn@mo,300_1e-5_"$$mono_gcca"000.300.1.1 ; done | pr -2 -l 26
+## LOG ANALYSIS CODE
+get2_%_3waycorr:
+	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$4};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_glove_mytrain_mycode |sort -k1,1 > tmpg ;\
+	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$4};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_word2vec_mytrain_mycode |sort -k1,1 > tmpw ;\
+	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$4};if($$4=="$*_FILENAME"){a=1};}' log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1 |sort -k1,1 > tmpme; \
+	join -j 1 tmpg tmpw > tmpgw ; \
+	join -j 1 tmpgw tmpme > tmpgwme; 
 
-# Your job 9328135 ("tmp_embqsub_mc_Count
-# Your job 9328138 ("tmp_embqsub_mc_Count
-# Your job 9328142 ("tmp_embqsub_mc_Count
-# Your job 9328137 ("tmp_fullgcca_extrins
-# Your job 9328141 ("tmp_fullgcca_extrins
-# Your job 9328144 ("tmp_fullgcca_extrins
+# WS
+# 1.00, 0.83, 0.72, 
+# 0.83, 1.00, 0.88, 
+# 0.72, 0.88, 1.00, 
+
+# MTURK
+# 1.00, 0.88, 0.80, 
+# 0.88, 1.00, 0.88, 
+# 0.80, 0.88, 1.00, 
+
+# SIMLEX
+# 1.00, 0.83, 0.62, 
+# 0.83, 1.00, 0.78, 
+# 0.62, 0.78, 1.00, 
+
+# SCWS
+# 1.00, 0.92, 0.87, 
+# 0.92, 1.00, 0.94, 
+# 0.87, 0.94, 1.00,
+
+# RW
+# G     W2V    Me
+# 1.00, 0.56, 0.72, 
+# 0.56, 1.00, 0.74, 
+# 0.72, 0.74, 1.00, 
+get_%_3waycorr:
+	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$3};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_glove_mytrain_mycode |sort -k1,1 > tmpg ;\
+	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$3};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_word2vec_mytrain_mycode |sort -k1,1 > tmpw ;\
+	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$3};if($$4=="$*_FILENAME"){a=1};}' log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1 |sort -k1,1 > tmpme; \
+	join -j 1 tmpg tmpw > tmpgw ; \
+	join -j 1 tmpgw tmpme > tmpgwme; \
+	python src/get_3way_correlation.py <(awk '{print $$2}' tmpgwme) <(awk '{print $$3}' tmpgwme) <(awk '{print $$4}' tmpgwme)
+# G     W2V    Me
+# 1.00, 0.83, 0.72,
+# 0.83, 1.00, 0.89,
+# 0.72, 0.89, 1.00,
+get3waycorr_%:
+	python src/get_3way_correlation.py <(awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){print $$3};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_glove_mytrain_mycode) <(awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){print $$3};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_word2vec_mytrain_mycode) <(awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){print $$3};if($$4=="$*_FILENAME"){a=1};}' log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1) 2>/dev/null
+##############################
+## PAPER MAKING CODE
+table_c: 
+	for c in glove glove_0  word2vec; do \
+	   echo $$c ; $(MAKE) -s ts_extrinsic_"$$c"_mytrain_mycode; done 
+	echo "monolingMVLSA"; make -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol12500_500~E@mi@bi@ag@fn@mo,300_1e-5_170000.300.1.1 ; \
+	echo "MVLSA"; make -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol12500_500~E@mi,300_1e-5_16.300.1.1 ;\
+	echo "3combo"; make -s ts_combined_embedding_0; \
+	echo "2combo"; make -s ts_combined_embedding_1 \
+
 table_v:
 	for v in 16 17 19 21 23 25 27 29 ; do \
 	echo $$v; make -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$v".300.1.1 ; done | pr -8 -l 27
@@ -95,20 +133,17 @@ table_vj:
 	echo $$vj; make -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$vj",300_1e-5_25.300.1.1 ; done | pr -8 -l 27
 
 table_k:
-	for k in 100 200 300 500; do \
-	echo $$k; $(MAKE) -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,"$$k"_1e-5_25.300.1.1; done | pr -4 -l 27
+	for k in 10 25 50 100 200 300 500; do \
+	echo $$k; $(MAKE) -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,"$$k"_1e-5_25.300.1.1; done | pr -7 -l 27
 
 table_m:
 	for m in 100 200 300 500; do \
 	echo $$m; $(MAKE) -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done | pr -4 -l 27
 
-# Your job 9327147 ("tmp_embqsub
-# Your job 9327155 ("tmp_embqsub
-# Your job 9327151 ("tmp_fullgcc
-# Your job 9327158 ("tmp_fullgcc
 table_tj: 
-	for tj in 50 100 150 200 ; do \
-	  echo "$$tj"K ; $(MAKE) -s  ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol"$$tj"000_500~E@mi,300_1e-5_16.300.1.1 ; done | pr -4 -l 27
+	for tj in 6250 12500 25000 50000 75000 100000 150000 200000 ; do \
+	  echo "$$tj" ; $(MAKE) -s  ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol"$$tj"_500~E@mi,300_1e-5_16.300.1.1 ; done | pr -8 -l 27
+
 table_nj:
 	for nj in  logCount CountPow100 CountPow025  ; do \
 	echo $$nj ; $(MAKE) -s ts_fullgcca_extrinsic_test_v5_embedding_mc_"$$nj"-trunccol200000_500~E@mi,300_1e-5_16.300.1.1 ; done | pr -3 -l 27
@@ -118,6 +153,9 @@ eval_extr:
 	for t in glove_theirtrain_mycode glove_mytrain_mycode \
 	word2vec_theirtrain_theircode word2vec_theirtrain_mycode word2vec_mytrain_mycode word2vec_mytrain_theircode  ; do \
 	$(call QSUBPEMAKEHOLD2,$$t,9223311,9223325,5G,10) log/extrinsic_$$t ; done
+
+eval_extr2:
+	for t in glove_0 ; do $(call QSUBPEMAKEHOLD,$$t,9371550,5G,1) log/extrinsic_"$$t"_mytrain_mycode; done
 
 EXTRINSIC_TEST_WORD2VEC_THEIRCODE_CMD = echo $(word 2,$+) > $@ && \
 	$(WORD2VECDIR)/compute-accuracy $< 929000 < $(word 2,$+) >> $@ && \
@@ -147,6 +185,14 @@ log/extrinsic_%_mycode:
 	  export VOCAB_FILE=$(VOCAB_500K_FILE);\
 	  export EMB_FILE=$(STORE2)/$*.txt; \
 	  export ROW_SKIP=0 ;\
+	elif [ $* == glove_0_mytrain ]; then \
+	  export VOCAB_FILE=$(VOCAB_500K_FILE);\
+	  export EMB_FILE=$(STORE2)/$*.txt; \
+	  export ROW_SKIP=0 ;\
+	elif [ $* == glove_1_mytrain ]; then \
+	  export VOCAB_FILE=$(VOCAB_500K_FILE);\
+	  export EMB_FILE=$(STORE2)/$*.txt; \
+	  export ROW_SKIP=0 ;\
 	else \
 	  echo "unimplemented extrinsic_test type $*"; false; \
 	fi && \
@@ -155,22 +201,33 @@ log/extrinsic_%_mycode:
 extrinsic_test_generic: $(VOCAB_FILE) $(EMB_FILE)
 	$(MATCMDENV)"tic; word=textread('$(VOCAB_FILE)', '%s', 'headerlines', $(ROW_SKIP)); emb=dlmread('$(EMB_FILE)', '', $(ROW_SKIP), $(COL_SKIP)); if size(emb,2)==600 emb=(emb(:,1:300)+emb(:,301:600))/2; end; emb=normalize_embedding(emb); conduct_extrinsic_test_impl(emb, '$(MYTAG)', word, 1); toc; exit;" | tee $(TARGET)
 
+COMBINED_EMB_JOBNAME_MAKER = combined_embedding_$*_trunccol125000_16
+log/combined_embedding_%: $(STORE2)/combined_embedding_%.mat
+	sleep 3 && qsub -N log_combined_embedding_$* -hold_jid $(COMBINED_EMB_JOBNAME_MAKER) -V -l mem_free=5G,ram_free=1G,hostname="a*" -r yes -pe smp 1 -cwd submit_grid_stub.sh TARGET=$@ MYDEP=$< MYTAG='combined' log_combined_embedding_generic
+
+log_combined_embedding_generic:
+	$(MATCMDENV)"tic; load('$(MYDEP)'); emb=normalize_embedding(emb); conduct_extrinsic_test_impl(emb, '$(MYTAG)', word, 1); toc; exit;" | tee $(TARGET)
+
+$(STORE2)/combined_embedding_%.mat: 
+	qsub -N $(COMBINED_EMB_JOBNAME_MAKER) -V -l mem_free=15G,ram_free=2G,hostname="a*" -r yes -pe smp 10 -cwd submit_grid_stub.sh TARGET=$@ REMOVE_MVLSA=$* combined_embedding_generic
+
+combined_embedding_generic: $(STORE2)/v5_embedding_mc_CountPow025-trunccol12500_500~E@mi,300_1e-5_16.mat
+	$(MATCMD)"w2v_vocab_file='$(STORE2)/word2vec_mytrain.txt_word'; w2v_emb_file='$(STORE2)/word2vec_mytrain.txt'; w2v_skip=1;  glove_vocab_file='$(VOCAB_500K_FILE)'; glove_emb_file='$(STORE2)/glove_mytrain.txt'; glove_skip=0; mvlsa_vocab_file=glove_vocab_file; mvlsa_emb_file='$<'; savefile = '$(TARGET)'; remove_mvlsa=$(REMOVE_MVLSA); make_combined_embedding; exit;"
+
 #################################################################################
 ## TRAIN MIKOLOV/GLOVE ON MY DATA AND PREPARE THEIR EMBEDDINGS FOR MY EVAL SCRIPT
 GM_MEM := 20
 $(STORE2)/glove_theirtrain.txt: $(STORE2)/glove.6B.300d.txt
 	cp $< $@
-# qsub -V -j y -l mem_free=15G -r yes -pe smp 20 -cwd submit_grid_stub.sh $(STORE2)/glove_mytrain.bin
-# Your job 9223311
-$(STORE2)/glove_mytrain.bin $(STORE2)/glove_mytrain.txt: $(STORE2)/glove_cooccurence_shuf_file $(VOCABWITHCOUNT_500K_FILE)
-	$(GLOVEDIR)/glove -save-file $(subst .bin,,$@) -threads 20 -input-file $< -x-max 100 -iter 15 -vector-size 300 -binary 2 -vocab-file $(word 2,$+) -verbose 2 -model 2
-$(STORE2)/glove_cooccurence_shuf_file: $(STORE2)/glove_cooccurence_file
+# qsub -V -j y -l mem_free=15G -r yes -pe smp 10 -cwd submit_grid_stub.sh $(STORE2)/glove_mytrain.bin
+$(STORE2)/glove_%_mytrain.bin $(STORE2)/glove_%_mytrain.txt: $(STORE2)/glove_%_cooccurence_shuf_file $(VOCABWITHCOUNT_500K_FILE)
+	$(GLOVEDIR)/glove -save-file $(subst .bin,,$@) -threads 20 -input-file $< -x-max 100 -iter 25 -vector-size 300 -binary 2 -vocab-file $(word 2,$+) -verbose 2 -model 2
+$(STORE2)/glove_%_cooccurence_shuf_file: $(STORE2)/glove_%_cooccurence_file
 	$(GLOVEDIR)/shuffle -memory $(GM_MEM) -verbose 2 < $< > $@
-$(STORE2)/glove_cooccurence_file: $(VOCABWITHCOUNT_500K_FILE) $(STORE)/polyglot_wikitxt/en/full.txt_lowercase
-	$(GLOVEDIR)/cooccur -memory $(GM_MEM) -vocab-file $< -verbose 2 -window-size 10 < $(word 2,$+) > $@
+$(STORE2)/glove_%_cooccurence_file: $(VOCABWITHCOUNT_500K_FILE) $(STORE)/polyglot_wikitxt/en/full.txt_lowercase
+	$(GLOVEDIR)/cooccur -memory $(GM_MEM) -vocab-file $< -verbose 2 -window-size 15 -symmetric $* < $(word 2,$+) > $@
 
 # qsub -V -j y -l mem_free=10G -r yes -pe smp 20 -cwd submit_grid_stub.sh $(STORE2)/word2vec_mytrain.bin
-# Your job 9223325
 TXT2BIN_CMD = ./res/convertvec txt2bin $<  $@
 $(STORE2)/word2vec_mytrain.bin: $(STORE2)/word2vec_mytrain.txt
 	$(TXT2BIN_CMD)
@@ -222,7 +279,7 @@ log/fullgcca_extrinsic_test_%:
 	$(MAKE) JOB_NAME=$(subst $(COMMA),,$(subst @,_at_,tmp_$(@F))) \
 		JID_HOLD=$(subst v5_embedding_,,$(word 1,$(subst ., ,$(V5_EMB_JOBNAME_MAKER)))) \
 		MEMORY=5G \
-		PE=2 \
+		PE=1 \
 		TARGET=$@ \
 		MYDEP=$(STORE2)/$(call GET_LOG_OPT,1).mat \
 		DIM_AFTER_CCA=$(call GET_LOG_OPT,2) \
@@ -231,7 +288,7 @@ log/fullgcca_extrinsic_test_%:
 	gcca_extrinsic_test_gen1
 
 gcca_extrinsic_test_gen1: $(MYDEP)
-	sleep 10 && $(call QSUBPEMAKEHOLD,$(JOB_NAME),$(JID_HOLD),$(MEMORY),$(PE)) \
+	sleep 3 && $(call QSUBPEMAKEHOLD,$(JOB_NAME),$(JID_HOLD),$(MEMORY),$(PE)) \
 		TARGET=$(TARGET) \
 		MYDEP=$(MYDEP) \
 		DIM_AFTER_CCA=$(DIM_AFTER_CCA) \
@@ -298,7 +355,7 @@ $(STORE2)/projection_%.mat:
 # This rule basically launches the SVD of the individual files then
 # registers another job which hold_jid on dependencies which I have
 # named properly. This is the way to depend on makefile dependencies
-# that we have qsubbed 
+# that we have qsubbed
 GCCA_OPT_EXTRACTOR = $(word 2,$(subst $(COMMA), ,$(word 2,$(subst ~, ,$*))))
 V5_PREPROC_OPT_EXTRACTOR = $(word 1,$(subst -, ,$(word 2,$(subst _, ,$*))))
 $(STORE2)/v5_embedding_%.mat:
@@ -312,8 +369,8 @@ $(STORE2)/v5_embedding_%.mat:
 
 v5_generic_qsub: $(V56_GENERIC_DEP)
 	echo $(V56_GENERIC_DEP) > $(DEP_FILE_NAME) && \
-	sleep 10 &&  \
-	  $(call QSUBPEMAKEHOLD,$(JOB_NAME),$(HOLD_JID),60G,1) \
+	sleep 3 &&  \
+	  $(call QSUBPEMAKEHOLD3,$(JOB_NAME),$(HOLD_JID),100G,60G,1) \
 		TARGET=$(TARGET) \
 		DEP_FILE_NAME=$(DEP_FILE_NAME) \
 		GCCA_OPT=$(GCCA_OPT) \
@@ -343,7 +400,7 @@ v5_generic: $(V56_GENERIC_DEP)
 # With 300 columns it only takes 5 slots and 15G memory
 V5_INDISVD_MEM := 25G
 $(STORE2)/v5_indisvd_%.mat:
-	qsub -N tmp_$* -p -1 -V -j y -l mem_free=$(V5_INDISVD_MEM),ram_free=$(V5_INDISVD_MEM),h_vmem=$(V5_INDISVD_MEM) -r yes -pe smp 5 -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl 
+	qsub -N tmp_$* -p -1 -V -j y -l mem_free=$(V5_INDISVD_MEM),h_vmem=$(V5_INDISVD_MEM) -r yes -pe smp 5 -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl 
 
 V5_INDISVD_CMD1 = "options=strsplit('$*', '~'); f2load=['$(STORE2)/' options{1} '.mat']; load(f2load); assert(exist('align_mat')==1); mc_muc=options{2}; if strcmp(f2load, '$(STORE2)/mikolov_cooccurence_intersect.mat') preprocess_option='Count'; else preprocess_option=options{3}; end; svd_size=str2num(options{4}); r=str2num(options{5}); outfile='$(word 1,$(subst ., ,$@)).mat';"
 # The usage for the below targets is as follows
@@ -768,46 +825,3 @@ res/ben_synonym_pair_and_location: res/ben_lsh_projection_of_rnnlm_vocab_word
 	$(CMD1)
 res/rnnlm_synonym_pair_and_location:  res/rnnlm_word_projection-80_word
 	$(CMD1)
-
-#############################
-## OLD PAPER MAKING CODE
-# FANGING CODE
-# Your job 9249291 ("tmp_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol200000_500~E_at_mi300_1e-5_16.300.1.") truncation
-# Your job 9256818 ("tmp_fullgcca_extrinsic_test_v5_embedding_mc_logCount-trunccol200000_500~E_at_mi300_1e-5_16.300.1.1") logCount
-# Your job 9249399 ("tmp_fullgcca_extrinsic_test_v5_embedding_mc_CountPow100-trunccol200000_500~E_at_mi300_1e-5_16.300.1.") Power
-# Your job 9268822 ("tmp_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol200000_500~E_at_mi_at_ag_at_bi_at_fn") has been submitted
-# Your job 9269002 ("submit_grid_stub.sh") has been submitted log/extrinsic_word2vec_mytrain_mycode
-# Your job 9269840 ("tmp_embqsub_mc_CountPow025-trunccol200000_500~E_at_mi300_1e-5_0") has been submitted
-# Your job 9269876 ("tmp_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol200000_500~E_at_mi300_1e-5_0.300.1.1") has been submitted
-# TARGET: TABBING_IT_n (OR) TABBING_IT_s
-TABBING_IT_%:
-	make  tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1 && \
-	make tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E,300_1e-5_20.300.1.1 && \
-	for m in 500; do \
-	    echo $$m; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done ;\
-	for dset in "" @mo @fn @mo@fn @mo@fn@bi @po ; do \
-	   echo $$dset; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_25.300.1.1; done | pr -6; \
-	for dset in @mo@fn@ag @mo@fn@ag@bi  @bi@po @ag@po ; do \
-	   echo $$dset; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_100000.300.1.1; done | pr -4 ;\
-	for thresh in 21 23 25 27 29 ; do \
-	    echo $$thresh; make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$thresh".300.1.1; done | pr -5 ;
-	make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol200000_500~E@mi,300_1e-5_16.300.1.1 ; \
-	make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_logCount-trunccol200000_500~E@mi,300_1e-5_16.300.1.1 ; \
-	make -$* tab_Spearman_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol200000_500~E@mi,300_1e-5_16.300.1.1 ; \
-
-DATASET_FANG_%: 
-	for dset in @mo@fn @mo@fn@bi @po ; do \
-	   make -$* $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_25.mat; done
-
-DATASET2_FANG_%:  # @ag@bi@po can't be done, the method becomes unstable
-	for dset in @mo@fn@ag @mo@fn@ag@bi  @bi@po @ag@po ; do \
-	   make -$* $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi"$$dset",300_1e-5_100000.mat; \
-	done
-
-VIEW_THRESHOLD_FANG_%: 
-	for thresh in 21 23 25 27 29 ; do \
-	    make -$* $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_300~E@mi,300_1e-5_"$$thresh"; done
-
-BIG_FANG_%:  # Note that there are 114,428 words in the vocabulary here.
-	for m in 500; do \
-	    make -$* $(STORE2)/v5_embedding_mc_CountPow025-trunccol100000_"$$m"~E@mi,300_1e-5_25.300.1.1; done
