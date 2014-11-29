@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 .SECONDARY:
 .PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate big_input $(STORE2)/agigastandep
 .INTERMEDIATE: gn_ppdb.itermediate
@@ -64,51 +65,32 @@ VOCAB_500K_FILE := $(VOCABWITHCOUNT_500K_FILE)_word
 
 ##############################
 ## LOG ANALYSIS CODE
-get2_%_3waycorr:
-	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$4};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_glove_mytrain_mycode |sort -k1,1 > tmpg ;\
-	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$4};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_word2vec_mytrain_mycode |sort -k1,1 > tmpw ;\
-	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$4};if($$4=="$*_FILENAME"){a=1};}' log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1 |sort -k1,1 > tmpme; \
-	join -j 1 tmpg tmpw > tmpgw ; \
-	join -j 1 tmpgw tmpme > tmpgwme; 
+# TARGET: This finds the least counts for all the datasets by using the
+# The first argument is the maximum LC from start, then number of data points, then assumed 3rd correlation then the required confidence level.
+find_lcs_datasets:
+	for n in 3000 2034 2003 999 353 287 252 203 ; do python src/find_lc_spearman_significance.py 0.1 $$n 0.7 0.05; done 
+	for n in 3000 2034 2003 999 353 287 252 203 65 30 ; do python src/find_lc_spearman_significance.py 0.6 $$n 0.5 0.01; done ; \
+	for n in 3000 2034 2003 999 353 287 252 203 65 30 ; do python src/find_lc_spearman_significance.py 0.6 $$n 0.5 0.001; done ;
 
-# WS
-# 1.00, 0.83, 0.72, 
-# 0.83, 1.00, 0.88, 
-# 0.72, 0.88, 1.00, 
-
-# MTURK
-# 1.00, 0.88, 0.80, 
-# 0.88, 1.00, 0.88, 
-# 0.80, 0.88, 1.00, 
-
-# SIMLEX
-# 1.00, 0.83, 0.62, 
-# 0.83, 1.00, 0.78, 
-# 0.62, 0.78, 1.00, 
-
-# SCWS
-# 1.00, 0.92, 0.87, 
-# 0.92, 1.00, 0.94, 
-# 0.87, 0.94, 1.00,
-
-# RW
-# G     W2V    Me
-# 1.00, 0.56, 0.72, 
-# 0.56, 1.00, 0.74, 
-# 0.72, 0.74, 1.00, 
+# TARGET: This finds the 3 way correlation between glove, w2v and me for all the similarity test sets
+# make find_all_3way_spearman_corr
+# make find_all_3way_pearson_corr
+find_all_3way_%_corr:
+	echo "ds glove, w2v"; \
+	for t in MEN RW SCWS SIMLEX EN_WS_353_ALL EN_MTURK_287 EN_WS_353_REL \
+	         EN_WS_353_SIM EN_RG_65 EN_MC_30 ; do \
+	    make -s  get_"$$t".$*_3waycorr 2> /dev/null | awk -v ds=$$t '{if(NR == 3){print ds, $$1, $$2}}'; \
+	done
 get_%_3waycorr:
+	$(MAKE) TYPE=$(word 2,$(subst ., ,$*)) get_$(word 1,$(subst ., ,$*))_3waycorr_generic
+get_%_3waycorr_generic: log/combined_embedding_0 # log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1
 	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$3};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_glove_mytrain_mycode |sort -k1,1 > tmpg ;\
 	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$3};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_word2vec_mytrain_mycode |sort -k1,1 > tmpw ;\
-	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$3};if($$4=="$*_FILENAME"){a=1};}' log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1 |sort -k1,1 > tmpme; \
+	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$3};if($$4=="$*_FILENAME"){a=1};}' $< |sort -k1,1 > tmpme; \
 	join -j 1 tmpg tmpw > tmpgw ; \
 	join -j 1 tmpgw tmpme > tmpgwme; \
-	python src/get_3way_correlation.py <(awk '{print $$2}' tmpgwme) <(awk '{print $$3}' tmpgwme) <(awk '{print $$4}' tmpgwme)
-# G     W2V    Me
-# 1.00, 0.83, 0.72,
-# 0.83, 1.00, 0.89,
-# 0.72, 0.89, 1.00,
-get3waycorr_%:
-	python src/get_3way_correlation.py <(awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){print $$3};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_glove_mytrain_mycode) <(awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){print $$3};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_word2vec_mytrain_mycode) <(awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){print $$3};if($$4=="$*_FILENAME"){a=1};}' log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1) 2>/dev/null
+	python src/get_3way_correlation.py <(awk '{print $$2}' tmpgwme) <(awk '{print $$3}' tmpgwme) <(awk '{print $$4}' tmpgwme) $(TYPE)
+
 ##############################
 ## PAPER MAKING CODE
 table_c: 
