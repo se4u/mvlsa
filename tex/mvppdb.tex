@@ -46,6 +46,8 @@
   >{\@rowstyle}%
 }
 
+\newcommand{\raman}[1]{ (\textcolor{red}{Raman: #1})}
+
 \definecolor{lightgray}{gray}{0.96}
 \definecolor{darkgray}{gray}{0.7}
 \definecolor{darkergray}{gray}{0.0}
@@ -73,7 +75,7 @@
   Analysis (GCCA). We present a method
   for fast approximate computation of GCCA, coupled with a method
   for handling missing values that is general enough to approximate
-  some other recent algorithms. Experiments  across a comprehensive
+  some other recent algorithms. Experiments across a comprehensive
   collection of test-sets show our approach to be competitive with the
   state-of-art.   
 \end{abstract}
@@ -90,6 +92,11 @@ One of the earliest linguistic vector space model is Latent
 Semantic Analysis (LSA).  LSA has been used widely in fields such
 as Information Retrieval and Cognitive Science, but is limited in its
 reliance on a single matrix, or \emph{view} of term co-occurrences.
+
+%% Many recent efforts since the introduction of LSA are similarly
+%% restricted to a single view of terms, focusing on some combination of
+%% finding an ``optimal'' view, paired with more advanced algorithms\raman{Need references}.
+
 
 Here we address the single-view limitation of LSA by demonstrating
 that the framework of Generalized Canonical Correlation Analysis
@@ -196,12 +203,15 @@ The objective of \emph{MAX-VAR GCCA} can be written as the following search prob
 \end{split}
 \end{equation}
 The matrix $G$ that satisfies expression~\ref{eq:gcca} would also be our
-distributed representation of the vocabulary.
-The optimal value of $G$ is has the following closed form:
-
+distributed\raman{Why distributed?} representation of the vocabulary.
+The optimal value of $G$ is has the following closed form\raman{Not really}:
+Finding representations $G$ reduces to spectral decomposition of sum of projection matrices of different views: Define
 \begin{align}
 P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top \label{eq:pp}\\
 M =& \sum_{j=1}^J P_j \label{eq:mm}\\
+\end{align}
+Then $G$ and $U_j$ satisfy:
+\begin{align}
 M G =& G \Lambda\\
 U_j =& \left(X_j^\top X_j\right)^{-1} X_j^\top G
 \end{align}
