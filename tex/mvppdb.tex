@@ -68,103 +68,131 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-  Latent Semantic Analysis is a long-standing method for inducing
-  vector-based lexical representations from corpus-statistics.  We
-  demonstrate that the framework of Generalized Canonical Correlation
-  Analysis allows for similar intuitions to LSA, but supports the
-  fusion of arbitrary additional perspectives: we term this Multiview
-  LSA.  Experiments across a comprehensive collection of datasets show
-  this approach to be competitive with the state-of-art, and allows
-  for treating representations learned via other mechanisms as simply
-  additional informative views in our process.
-  % We present the results  of our experiments with
-  % the framework of Generalized Canonical Correlation Analysis (GCCA) for extracting vector
-  % representations from multiple views such as cooccurrence statistics and
-  % even other representations. 
-  % The aim of the paper is to analyze the performance of GCCA in fusing
-  % multiple sources of linguistic 
-  % data and to compare the performance of representations learnt using
-  % this technique with  the state of the art.
+  \emph{Multiview LSA (MVLSA)} is a generalization of Latent Semantic Analysis (LSA) that supports the 
+  fusion of arbitrary views of data and relies on Generalized Canonical Correlation
+  Analysis (GCCA). We present a method
+  for fast approximate computation of GCCA, coupled with a method
+  for handling missing values that is general enough to approximate
+  some other recent algorithms. Experiments  across a comprehensive
+  collection of test-sets show our approach to be competitive with the
+  state-of-art.   
 \end{abstract}
 
 \section{Introduction}
-
 \newcite{winograd1972understanding} wrote that: \emph{``Two sentences
   are paraphrases if they produce the same representation in the
   internal formalism for meaning''}.  This intuition is made soft in
 vector-space models \cite{turney2010frequency}, where we say that
-expressions in language are of similar meaning, or paraphrastic, if
+expressions in language are paraphrases if
 their representations are \emph{close} under some distance measure.
-These vector representations are typically created via some form of
-dimensionality reduction over corpus co-occurrence statistics.
 
-One of the earliest and most well-known of these methods is Latent
-Semantic Analysis (LSA), where term-paragraph, or term-document
-statistics are collected into a matrix, with the most important
-eigenvectors under a Singular Value Decomposition (SVD) then forming
-the basis in vector-space for representing the input terms
-\cite{landauer1997solution}.  LSA has been used widely in fields such
+One of the earliest linguistic vector space model is Latent
+Semantic Analysis (LSA).  LSA has been used widely in fields such
 as Information Retrieval and Cognitive Science, but is limited in its
 reliance on a single matrix, or \emph{view} of term co-occurrences.
-Many recent efforts since the introduction of LSA are similarly
-restricted to a single view of terms, focusing on some combination of
-finding an ``optimal'' view, paired with more advanced algorithms.
 
 Here we address the single-view limitation of LSA by demonstrating
 that the framework of Generalized Canonical Correlation Analysis
-(GCCA) allows for what we call ``multi-view'' LSA (MVLSA).  This
+(GCCA) can be used to perform Multiview LSA (MVLSA). This
 approach allows for the use of an arbitrary number of views in the
-induction process, including those single-view vector-representations
-induced using recent alternatives to LSA.
+induction process, including embeddings
+induced using other algorithms. We also present a fast approximate method
+for performing GCCA and approximately recover the objective of
+\cite{pennington2014glove} while accounting for missing values.
 
-Our experiments show this approach to be competitive to recent
-approaches, while being based fundamentally on a decades-old mechanism
-widely recognized in the community.  Finally, as a methodological
-aside, we discuss the (in-)appropriateness of various datasets being
-used as the basis for comparison within the community.
+Our experiments show that MVLSA is competitive with recent appraoches.
+As a methodological aside, we discuss the (in-)appropriateness of
+various datasets being used as the basis for comparison within the community.
 
-% leading to the
-% intuitive conclusion that overly small evaluation sets can lead to
-% potentially misleading results.
+\section{Background: LSA, PCA and CCA}
+LSA is a dimensionality reduction method based on
+eigen-decomposition. The term-paragraph, or term-document 
+statistics are collected into a matrix and the top
+principal components of that matrix are then found using a Singular
+Value Decomposition (SVD). Subsequently these eigenvectors form 
+the basis in vector-space for representing the input terms
+\cite{landauer1997solution}. Since LSA is simply an application of PCA
+therefore all the theoretical results for PCA apply to LSA as well.
 
-\section{LSA}
+CCA is another dimensionality reduction method that finds two vector-space basis such that
+once we project two datasets X and Y to those basis then the
+correlation between corresponding projections gets
+maximized\cite{hotelling1935the}. CCA has recently been applied by
+\cite{dhillon2011multi,dhillon2012two,faruqui2014improving} for
+learning embeddings of words. Note that CCA is a special case of
+\emph{MAX-VAR GCCA}, see \cite{velden2011on} for proof.
 
-Pushpendre: what is LSA?  You can't call your method Multiview LSA
-without first telling the reader what LSA is!
+\section{Motivation}
+\label{sec:motivation}
+GCCA has been derived in many ways and we would use those derivations
+to motivate our appraoch. \cite{horst1961generalized} derived GCCA as follows. Assume that you have samples of $J$
+``co-variates''. Horst's goal was to find unit variance linear
+projections $\textrm{Z}$ such that some measure of the inter-projection correlation
+matrix $\Phi$ is maximized. For example one could choose the measure to be
+the spectral-norm of $\Phi$. Note that maximizing the spectral-norm of $\Phi$ is equivalent to
+finding $Z$ that can be best explained by a rank 
+one approximation. In other words we are finding $Z$ that are most
+amenable to rank-one PCA, or that can be best explained by a single
+term factor model. \cite{kettenring1971canonical} called this procedure
+\emph{MAX-VAR GCCA} and showed that this
+objective was equivalent to another one proposed by
+\cite{carroll1968generalization}. Carroll's objective was to maximize the following: $\sum_{j=1}^J
+\textrm{correlation}(G, Z_j)^2$. In
+words this expression tells us to find an orthogonal  
+representation $G$ of the co-variates $Z_j$ that is maximally
+correlated to them. This objective agrees with the intuition that representations
+learnt from multiple views should correlate with all of them as much
+as possible.
 
+\cite{bach2005probabilistic} presented a probabilistic
+intepretation for CCA. Though they did not generalize it to
+include GCCA we believe that one could give a probabilistic
+interpretation of \emph{MAX-VAR GCCA} easily and we are working on
+it. We mention it, since a probabilistic
+interpretation would allow us to build an online-generative model and learn
+lexical representations unlike methods like Glove or LSA that rely
+solely on global term cooccurrence matrices and cannot calculate
+perplexity or generate sequences. We also note that
+\cite{via2007learning} presented a neural network model of GCCA and 
+adaptive/incremental GCCA. However, that approach is out of the scope of this work.
 
-\section{GCCA}
+Often in many applications we have multiple views in data, for
+instance the left and right contexts of words are two views which are both
+present at training time. In such
+settings, LSA, and related techniques, process data as a single
+monolithic object obtained by stacking different views. However, the
+alternative multi-view approaches like CCA have received attention
+recently in semi-supervised learning because multi-view learning reduces the complexity of learning problem by
+restricting hypothesis class in each view to those which tend to
+agree with each other under the assumption that either
+view has sufficient information about the latent semantic content
+ \cite{sridharan2008information}. 
+%% Another benefit of using GCCA over vanilla LSA is that since we can
+%% naturally fuse the statistics generated by using different window sizes we
+%% don't have to specify an arbitray weighting method, like reciprocal
+%% weighting, for creating a single cooccurrence matrix to represent a
+%% corpus. NOT TRUE, NOT TRUE
+
+\section{Proposed Method: MVLSA}
 \label{sec:gcca}
-%% Let us briefly mention Canonical Correlation analysis to better motivate
-%% GCCA. CCA is a procedure for finding subspaces such that once we
-%% project two datasets X and Y to those subspaces then the correlation
-%% between corresponding projections gets
-%% maximized\cite{hotelling1935the}.
-%% It can be proven that this happens
-%% if and only if the dimensions of the projections are orthogonal and the optimization can
-%% be done by constraining the projections to be
-%% orthogonal. 
-\textbf{GCCA} is an extension of CCA to the case when we have aligned
-data from $J$ vector valued random variables.\footnote{See
-  \cite{velden2011on} for a proof that GCCA with two views gives the
-  same solution as CCA.}  Let $X_j \in \mathbb{R}^{N\times d_j} \;
+Let $X_j \in \mathbb{R}^{N\times d_j} \;
 \forall j \in [1,\ldots,J]$ be the mean centered matrix containing
-data from view $j$. Let the number of words in the vocabulary be $N$
-and number of contexts (columns in $X_j$) be $d_j$. Note that $N$
-remains the same and $d_j$ varies across views. Following standard
+data from view $j$ such that row $i$ of $X_j$ contains the informaion for
+word $w_i$. Let the number of words in the vocabulary be $N$
+and number of contexts (columns in $X_j$) be $d_j$. %% Note that $N$
+%% remains the same and $d_j$ varies across views.
+Following standard
 notation \cite{hastie2009elements} we call $X_j^\top X_j$ the scatter
 matrix and $X_j (X_j^\top X_j)^{-1}X_j^\top$ the projection matrix.
 
-As discussed in \S~\ref{sec:motivation} there are different
-characterizations of GCCA\footnote{See \cite{kettenring1971canonical}
-  for further details.} and we would perform ``MAX-VAR'' GCCA and find
-a matrix $G \in \mathbb{R}^{N\times r}$ and matrices $U_j \in
+The objective of \emph{MAX-VAR GCCA} can be written as the following search problem:
+ Find $G \in \mathbb{R}^{N\times r}$ and $U_j \in
 \mathbb{R}^{d_j \times r}$ that satisfy expression~\ref{eq:gcca}:
 \begin{equation}
   \label{eq:gcca}
 \begin{split}
   \operatorname*{\arg\,\min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} G - X_jU_j \end{Vmatrix}^2_F \\
-  \text{such that } & G^\top G = I
+  \text{subject to } & G^\top G = I
 \end{split}
 \end{equation}
 The matrix $G$ that satisfies expression~\ref{eq:gcca} would also be our
@@ -179,37 +207,31 @@ U_j =& \left(X_j^\top X_j\right)^{-1} X_j^\top G
 \end{align}
 
 The above expressions tell us that our word representations are the
-eigenvectors of the sum of $J$ projection matrices. Also note that we
-explicitly constrained the dimensions of $G$ to be orthogonal to each
-other. Orthogonality in representations is a nice property that we
-will discuss later.
+eigenvectors of the sum of $J$ projection matrices. Also note that the
+dimensions of $G$ are orthogonal to each other. %% Orthogonality in
+%% representations is a nice property that we 
+%% will discuss later.
 
-We can immediately see that we can not compute
+We can immediately see that we can not store
  $P_j \in \mathbb{R}^{N \times N}$ because of memory constraints.
-%% Since eigenvalues of
-%% projection matrices are either 0 or 1 that implies 
-%% that eigenvalues of sum of M must lie between 0 and J.
-%% This leads us to the problem of finding the eigenvectors of large 
-%% projection matrices which have wide and gentle spectrum.
-Also the
-scatter matrices may be non-singular so the procedure may become
-ill-posed. Next we make a single reasonable assumption and present an
-approximate regularized method 
-to compute GCCA. Parts of the
-following method were proposed to us by \cite{savostyanov}.
+Also the scatter matrices may be non-singular so the procedure may become
+ill-posed. 
+Let us now describe a method to overcome these problems.
 
-\noindent\textbf{Approximate Regularized GCCA}: GCCA is typically regularized by adding $r_jI$ to each
-scatter matrix $X_j^\top X_j$ before doing the inversion. Typically
-$r_j$ is a small constant like 1e-8. Equations~\ref{eq:pp}
+\noindent\textbf{Approximate Regularized GCCA}: GCCA can be regularized by adding $r_jI$ to 
+scatter matrix $X_j^\top X_j$ before doing the inversion where
+$r_j$ is a small constant e.g. $1e-8$. Equations~\ref{eq:pp}
 and \ref{eq:mm} change to
 \begin{align}
   \widetilde{P}_{j} =& X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top \label{eq:6}\\
   M =& \sum_{j=1}^J \widetilde{P}_{j} \label{eq:mmm}
 \end{align}
 
-We can side step the computational difficulties as follows.
+We can side step the computational difficulties by assuming that only
+the top $m$ singular values of $X_j$ are non-negligible. Parts of the
+following method were proposed to us by \cite{savostyanov}.
 Let $SVD_m$ denotes a partial SVD where $S_j$ is a rectangular diagonal
-matrix that contains only the $m$ largest eigen values and $A_j, B_j$
+matrix that contains only the $m$ largest singular values and $A_j, B_j$
 are square, orthonormal, unitary matrices. Defining $SVD_m$ like this
 ensures correctness but in practice we only need to compute $m$
 columns of $A_j$. Take the SVD of $X_j$.
@@ -274,7 +296,7 @@ Specifically, the objective now becomes:
   \label{eq:gcca2}
 \begin{split}
   \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} K_j(G - X_jU_j) \end{Vmatrix}^2_F \\
-  \text{such that } & G^\top G = I
+  \text{subject to } & G^\top G = I
 \end{split}
 \end{equation}
 if row $i$ of view $j$ is observed then $[k_j]_{ii} = 1$ otherwise $0$.
@@ -294,109 +316,23 @@ only the observed rows.
 
 Also note that other heuristic weighting schemes could be used
 here. For example if we modify our objective as follows then we would
-recover the objective of \cite{pennington2014glove}:
+approximately recover the objective of \cite{pennington2014glove}:
 \begin{equation}
   \label{eq:gcca3}
 \begin{split}
   \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} W_j K_j(G - X_jU_j) \end{Vmatrix}^2_F \\
-  \text{such that } G^\top G &= I \\
-  \text{where } [W_j]_{ii} &= \frac{w_i}{w_{\max}}^{\frac{3}{4}} \text{ if } w_i <
+  \text{subject to } G^\top G &= I \\
+  \text{where: } [W_j]_{ii} &= \frac{w_i}{w_{\max}}^{\frac{3}{4}} \text{ if } w_i <
   w_{\max} \text{ else } 1 \\
   \text{and } w_i &=  \sum_k [X_j]_{ik}
 \end{split}
 \end{equation}
 
 
-\section{Motivation}
-\label{sec:motivation}
-
-If our goal is to find vector space representations or
-\emph{embeddings} of words from multiple sources of data, then let us
-enumerate the interpretations of GCCA to motivate why applying this
-framework to our problem makes sense.
-
-\begin{enumerate}[leftmargin=*]
-\item \cite{horst1961generalized} provided the following
-  interpretation. Assume that you have samples of $m$
-  ``co-variates''; Then GCCA finds unit variance linear
-  projections $Z$ such that some measure of the inter-projection ``correlation
-  matrix'' $\Phi$ is maximized. Specifically we choose the measure to be
-  the ``spectral-norm'' or the largest singular value of $\Phi$. This
-  is referred to as ``MAX-VAR'' GCCA. A more illuminating
-  interpretation of maximizing the ``spectral-norm'' of $\Phi$ is that
-  by doing so we are finding $Z$ that can be best explained by a rank
-  one approximation, in other words we are finding $Z$ that are most
-  amenable to rank-one PCA, or that can be best explained by a single
-  term factor model.
-\item \cite{carroll1968generalization} derived ``MAX-VAR'' GCCA from a
-  the following objective. They found an orthogonal
-  representation $G$ of the co-variates $Z_j$ that was maximally
-  correlated to them. Mathematically they maximized
-   the expression $\sum_j \textrm{correlation}(G, Z_j)^2$. In words
-   this expression is telling us to find the best middle ground
-   representation $G$ between the projections $Z_j$ as measured by the
-   norm of the correlation vector $\phi$. This seems like a sensible
-   objective for the problem of learning lexical representation from
-   multiple arbitary views/sources of data and therefore
-   we use it.
-\item \cite{bach2005probabilistic} presented a probabilistic
-  intepretation for CCA. Though they did not generalize it to
-  include GCCA we believe that one could give a probabilistic
-  interpretation of ``MAX-VAR'' GCCA easily and we are working on
-  it. We mention it, since a probabilistic
-  interpretation would allow us to build a generative model and learn
-  lexical representations unlike methods like Glove or LSA that rely
-  solely on global term cooccurrence matrices and cannot calculate
-  perplexity or generate sequences.
-\item \cite{via2007learning} presented a neural network model of GCCA and
-  adaptive/incremental GCCA. That approach is out of the scope of this work.
-\end{enumerate}
-
-Let us make a connection to multi-view learning to further motivate
-why using a large number of views can help during learning. The aim of
-multi-view learning is to leverage multiple views during training to
-improve generalization. GCCA is a general multi view learning method that has the appealing
-property that the representations it learns are invariant to affine
-transformations of the input, which reduces the number of
-pre-processing options. For instance, we don't have to choose 
-between log(tf) and log(tf-idf) transformation since log(tf) is the
-same as log(tf-idf) up to an affine transformation. Another benefit of
-using GCCA over vanilla LSA is that since we can naturally 
-fuse the statistics generated by using different window sizes we
-don't have to specify an arbitray weighting method, like reciprocal
-weighting, for creating a single cooccurrence matrix to represent a
-corpus.
-
-
-%% For example, we can define the rows to be English language words
-%% and the columns to be the foreign language words and
-%% count the number of times an English word aligns with a
-%% foreign language word in a word aligned bitext corpus. Similarly,
-%% a monolingual corpus provides multiple sources of 
-%% cooccurrence statistics depending on the definition of the
-%% context. By changing context of a word from the last word to 15th
-%% previous word we can
-%% create 15 different sources of non redundant cooccurrence
-%% statistics. Even structured databases like WordNet and
-%% FrameNet can be used to gather cooccurrence statistics and we would
-%% give an example of how FrameNet can be used for this purpose later in
-%% the paper. Finally, we can fuse representation generated using
-%% multiple different algorithms with the goal that the fused representations should perform better
-%% than the components.
-
-In Section~\ref{sec:gcca} we present GCCA and a fast method to
-compute it. 
-Then we describe our Train and Test data in
-Section~\ref{sec:data} followed by Experiments and Results in
-Section~\ref{sec:exp} and conclude with Discussion and Future~Work. 
-We call this method \textit{Multiview LSA} because we are using GCCA
-which uses multiple views and because GCCA is a generalization of PCA and LSA
-relies on PCA. 
-
 \section{Data}
 \label{sec:data}
 \noindent\textbf{Training Data}: We used the English portion of the \textit{Polyglot} wikipedia dataset
-released by \cite{al2013polyglot} to create 15 irredundant views of
+released by \newcite{al2013polyglot} to create 15 \emph{irredundant} views of
 cooccurrence statistics where element $[z]_{ij}$ of view $Z_k$
 represents that number of times word $w_j$ occurred $k$ words behind
 $w_i$.
@@ -423,8 +359,8 @@ views\footnote{Following is the list of dependency relations that we
   conj\xline{}but, pobj. We selected these dependency relations since
   they seemed to be the particularly interesting which could capture
   different aspects of similarity.}  where element $[z]_{ij}$ of view
-$Z_{\textrm{dep}}$ represents the number of times word $w_j$ occurred
-as the governor of word $w_i$ with dependency relation $\textrm{dep}$.
+$Z_d$ represents the number of times word $w_j$ occurred
+as the governor of word $w_i$ under dependency relation $d$.
 
 We combined the knowledge of paraphrases present in FrameNet and PPDB by
 using the dataset created by \newcite{rastogi2014augmenting} to create a
@@ -442,7 +378,7 @@ merits or demerits of the MVLSA method and stopped collecting more data.
 \begin{table}[htbp]
   \centering
   \rowcolors{1}{}{lightgray}
-  \begin{tabular}{lll}
+  \begin{tabular}{lrr}
     Language & Sentences & English Tokens \\
     \hline
     Bitext-Arabic   & 8.8M   & 190M  \\
@@ -451,9 +387,10 @@ merits or demerits of the MVLSA method and stopped collecting more data.
     Bitext-Spanish  & 11.1M  & 241M  \\
     Bitext-French   & 30.9M  & 671M  \\
     Bitext-Chinese  & 10.3M  & 215M  \\
-    Monotext-En-Wiki& 75M    & 1.7B 
+    Monotext-En-Wiki& 75M    & 1700M 
   \end{tabular}  
-  \caption{Portion of data used to create GCCA representations.}
+  \caption{Portion of data used to create GCCA representations. All
+    numbers have unit of Million.}
   \label{tab:dataperlang}
 \end{table}
 
@@ -467,12 +404,18 @@ analogous words and the task is to predict the missing word given the
 first three.
 
 \begin{table*}[ht] \label{tab:testlist}
+  \centering
   %\setlength{\tabcolsep}{1pt}
   %\begin{adjustwidth}{0cm}{}
   \rowcolors{1}{}{lightgray}
   \resizebox{\textwidth}{!}{
-  \begin{tabular}{l c c c c H H H c H l}
-    Acronym & Size  & \specialcell{LC\\(0.01,0.5)} & \specialcell{LC\\(0.01,0.9)} & \specialcell{LC\\(1e-3,0.5)} & \specialcell{LC\\(1e-3,0.9)} & \specialcell{LC\\(0.25,0.7)}& \specialcell{LC\\(0.25,0.5)} & \specialcell{LC\\(0.05,0.5)} & \specialcell{LC\\(0.05,0.9)} & Reference  \\
+  \begin{tabular}{lr  cc  HH  HH  cc  l}
+    Acronym & Size  &
+    \specialcell{LC\\(0.01,0.5)} & \specialcell{LC\\(0.01,0.9)} &
+    \specialcell{LC\\(1e-3,0.5)} & \specialcell{LC\\(1e-3,0.9)} &
+    \specialcell{LC\\(0.25,0.7)} & \specialcell{LC\\(0.25,0.5)} &
+    \specialcell{LC\\(0.05,0.5)} & \specialcell{LC\\(0.05,0.9)} &
+    Reference  \\ 
     \hline
     
     MEN    & 3000  & 4.2  & 1.8  & 5.6  & 2.5  & 0.9 & 1.2 & 3    & 1.3  & \cite{bruni2012distributional}  \\
@@ -496,37 +439,9 @@ first three.
     representations.
     T-SYN and T-SEM are open vocabulary tasks and TOEFL is a closed
     vocabulary task and we would report accuracies on
-  those tasks with the full vocabulary. The LC column contains the
-  least counts for significant difference in performance metrics for
-  these datasets. E.g. the value 20.6 in the RG row under the
-  LC(0.05, 0.5) column signifies that if the difference between the
-  ratings produced by algorithms A and B have spearman correlation
-  $\rho_{AB} \le 0.5$ and $\rho_{A,RG} - \rho_{B,RG} \le 20.6$ then there is a
-  greater than 5\% chance that the difference would vanish under
-  different training conditions.}
+  those tasks with the full vocabulary.}
   %\end{adjustwidth}
 \end{table*}
-
-While surveying the literature we found that even for small test sets researchers only report the Spearman Correlations e.g. \cite{hill2014not,faruqui2014improving,faruqui2014retrofitting} between the similarity values assigned by the embeddings produced by their method and the
-average human ratings. \newcite{steiger1980tests} proposed a test for finding the significance of difference in spearman correlations which needs the spearman correlation $\rho_{AB}$ between ratings of the two algorithms. Since one usually doesn't have access to
-those scores  we experimented over a range of fixed values for those
-scores and found the ``least count (LC)'' of difference in correlation coefficients that would allow us to say with
-some confidence that the correlations produced by two algorithms are
-truly different. The LC is the smallest number that 
-when added to $r_{AT} \in (0, 1)$ lowers the probability of null
-hypothesis to acceptable levels.
-
-For finding the LC for the last three accuracy based tests we
-used the beta-binomial setup.  We estimated posterior
-probability of $\theta_1, \theta_2$ given a $\beta(1,1)$ prior and
-given the data. Then we computed $\tilde{p} = p(\theta_2 - \theta_1 >
-0 | \hat{\theta_1}, \hat{\theta_1} + \textrm{LC})$ and chose
-the smallest value of LC for which $\tilde{p} > 0.95$.
-
-We hope that
-the high values of LC for the small sized datasets would convince
-researchers to either include confidence measures with their reported
-performance metrics or discourage the usage of those datasets.
 
 Unfortunately, there are no widely followed train-test splits of the above
 datasets and we also evaluated the effects of hyper-parameter tuning
@@ -534,19 +449,57 @@ on the entire test set therefore our final comparison could have
 favored us due to ``soft supervision'' on these datasets while
 hyperparameter tuning. However the consistent performance of our
 method across the test sets lends hope that the trends we report would
-generalize. 
+generalize.
+
+\noindent\textbf{Significance of comparison}: Imagine that there exist
+two sets of  scores produced by algorithms $A, B$ and a set of gold
+test score $T$ and we want to test 
+whether the spearman correlations $r_{AT} < r_{BT}$ are truly different.
+\newcite{steiger1980tests} proposed a test for
+finding the significance of difference between spearman correlations
+which requires $\rho_{AB}$, the spearman correlation between ratings of the two
+algorithms. Since one usually doesn't have access to 
+those scores  we experimented over a range of fixed values for those
+scores and found the \emph{Least Count (LC)} of difference in correlation
+coefficients that would allow us to say with 
+some confidence that the correlations produced by two algorithms are
+truly different. In other words the LC is the smallest number that 
+when added to $r_{AT}$ lowers the probability of null
+hypothesis to acceptable levels over all possible $r_{AT} \in (0,
+1)$. Note that LC is a liberal test and it 
+might mark differences as significant when they are not. The results are shown in
+Table~\ref{tab:testlist}. The LC column contains the
+least counts for significant difference in performance metrics for
+the corresponding datasets. E.g. the value 20.6 in the RG row under the
+LC(0.05, 0.5) column means that if $\rho_{AB} \le 0.5$ and
+$\rho_{B,RG} - \rho_{A,RG} < 20.6$ then the probability that the
+difference would vanish on a larger test set is greater than 0.05.
+For finding the LC for the last three accuracy based tests we
+used the beta-binomial setup.  We estimated posterior
+probability of $\theta_1, \theta_2$ given a $\beta(1,1)$ prior and
+given the data. Then we computed $\tilde{p} = p(\theta_2 - \theta_1 >
+0 | \hat{\theta_1}, \hat{\theta_1} + \textrm{LC})$ and chose
+the smallest value of LC for which $\tilde{p} > 0.95$.
+
+While surveying the literature we found that even while comparing
+competing methods on small test sets researchers do not report
+confidence  measures to judge the significance of difference between
+the Spearman Correlations. 
+E.g. the comparative difference between ratings produced by competing
+algorithms reported in \cite{faruqui2014retrofitting}  
+is not significant for the test set ``WS'', even if we assume that the correlation between Faruqui
+et. al's method and their competitors was as high as 0.9 and set the
+pval threshold to be 0.05. There are other examples such as
+\cite{hill2014not} but the main aim of these examples is only to
+convince researchers to  indicate confidence measures with their reported 
+performance metrics and to discourage the usage of the smaller datasets.
 
 \section{Experiments and Results}
 \label{sec:exp}
-Let us first enumerate the central questions which we wanted to answer through
-our experiments: 
-\begin{enumerate}[leftmargin=*]
-  \itemsep-0.1em 
-\item How do hyper parameters affect performance ?
-%\item How much does the performance vary on different test sets and why ?
-\item What is the contribution of the multiple sources of data to performance ?
-\item How does the performance of MVLSA compare with other methods ?
-\end{enumerate}
+%% We wanted to answer the following questions through our experiments:
+%% (1) How do hyper parameters affect performance? (2) What is the
+%% contribution of the multiple sources of data to performance? (3) How
+%% does the performance of MVLSA compare with other methods?
 
 \noindent\textbf{Effect of Hyper parameters}: 
 $f_j$: We modeled the preprocessing function $f_j$ as the composition
@@ -565,6 +518,7 @@ of two functions, i.e. $f_j = n_j \circ t_j$.
   context columns and emphasizes the sparser views. 
   Table~\ref{tab:n} and Table~\ref{tab:t} show the results.
 \begin{table}[htbp]
+  \centering
   \begin{tabular}{=l| +c +c +c}
     Test Set                            & Log  & Count & Count$^{\frac{1}{4}}$ \\ \hline
     MEN                                 & 67.5 & 59.7  & \mb{70.7}                  \\
@@ -587,6 +541,7 @@ of two functions, i.e. $f_j = n_j \circ t_j$.
 \end{table}
 
 \begin{table}[htbp]
+  \centering
   \resizebox{0.5\textwidth}{!}{
   \begin{tabular}{=l | +c +c +c +c H +c H +c}
 Test Set                            & 6.25K & 12.5K & 25K  & 50K  & 75K  & 100K & 150K & 200K \\ \hline
@@ -617,6 +572,7 @@ $m$: The number of left singular vectors extracted after SVD of the preprocessed
   m)$ with $m=[100, 300, 500]$. See table~\ref{tab:n}.
 
 \begin{table}[htbp]
+  \centering
   \begin{tabular}{=l | +c +c +c +c}
 Test Set                            & 100  & 200  & 300  & 500  \\\hline
 MEN                                 & 65.6 & 68.5 & \mi{70.1} & \mi{71.1} \\
@@ -647,6 +603,7 @@ versus the dimensionsionality of the learnt vector representations of the
   representations is a trivial matrix slicing operation and does not
   require retraining.
   \begin{table}[htbp]
+    \centering
   \begin{tabular}{=l | +c H +c +c +c +c +c}
 Test Set                            & 10   & 25   & 50   & 100  & 200       & 300       & 500       \\\hline
 MEN                                 & 49.0 & 59.3 & 67.0 & \mb{69.7} & \mb{70.2} & \mi{70.1} & \mb{69.8}\\
@@ -696,6 +653,7 @@ $v$: Recall that in Expression~\ref{eq:gcca3} we described a method to
   %% respectively.
   
   \begin{table}[htbp]
+    \centering
   \begin{tabular}{=l | +c +c H +c H +c H +c}
 Test Set                            & 16   & 17   & 19   & 21   & 23   & 25   & 27   & 29   \\ \hline
 MEN                                 & \mb{70.4} & \mb{70.4} & \mi{70.2} & \mi{70.2} & \mi{70.1} & \mi{70.1} & \mi{70.0} & \mi{70.0} \\
@@ -723,13 +681,14 @@ $r_j$: The regularization parameter ensures that all the
   inverses exist at all points in our method. We found that the
   performance of our  procedure was invariant to $r$ over a large
   range from 1 to 1e-10. This was because even the 1000th singular
-  value of  our data was much higher than 1 which is
-  consistent with the observation that cooccurrence datasets in NLP
-  tend to have gently sloping spectrum. For all the experiments in
-  this paper we set $r=1e-5$.
+  value of  our data was much higher than 1.%%  which is
+  %% consistent with the observation that cooccurrence datasets in NLP
+  %% tend to have gently sloping spectrum. For all the experiments in
+  %% this paper we set $r=1e-5$.
 
 
 \begin{table*}[ht]
+  \centering
   \label{tab:j}
    \setlength\tabcolsep{3pt}
   \begin{tabular}{=l| +c +c +c +c +c +c +c +c}
@@ -781,7 +740,8 @@ We trained the two systems on the English portion of the
 \textit{Polyglot} Wikipedia dataset.\footnote{More specifically
 we explicitly provided the vocabulary file to Glove and Word2Vec and set the
 truncation threshold for word2Vec to 10. Also Glove was trained for 25
-iterations and both methods used window of 15 previous words.}
+iterations. Glove was provided a window of 15 previous words and Word2Vec
+used a symmetric window of 10 words.}
 
 To make a fair comparison we also provide 
 results where we used only the views derived from the \textit{Polyglot}
@@ -803,25 +763,26 @@ for the MVLSA algorithm since more and more algorithms can now be combined by us
 %%         echo "2combo"; make -s ts_combined_embedding_1 \
 
 \begin{table*}[ht]
+  \centering
     \begin{adjustwidth}{-2cm}{}
       \rowcolors{1}{}{lightgray}
-  \setlength\tabcolsep{2pt}
-  \begin{tabular}{=l| +c +c +c | +c +c +c +c H H | +c +c H +c +c}
+  \setlength\tabcolsep{1.5pt}
+  \begin{tabular}{=l| +c +c +c | +c +c +c +c c H | +c +c c +c +c}
     Test Set &
     \specialcell{LC\\(0.05,0.7)} &
     Glove  &
-    Word2Vec &
+    W-SG &
     \specialcell{MVLSA\\Monolingual} &
     \specialcell{MVLSA\\All Views}&
     \specialcell{$\rho$ \\Glove}&
-    \specialcell{$\rho$ \\Word2Vec}&
+    \specialcell{$\rho$ \\W-SG}&
     Increment  &
     Gap &
-    \specialcell{Glove, Word2Vec\\Combined} &
+    \specialcell{Glove, W-SG\\Combined} &
     \specialcell{All\\Combined} &
     Increment &
     \specialcell{$\rho$ \\Glove}&
-    \specialcell{$\rho$ \\Word2Vec}\\\hline
+    \specialcell{$\rho$ \\W-SG}\\\hline
     
 MEN                                & 2.3  & 70.4       & \myu{73.9} & 71.4 & 71.2 & 72 & 90 & -0.2      & -2.7  & 76.0 & \myu{75.8} & -0.2      & 84 & 92 \\
 RW                                 & 2.8  & 28.1       & 32.9       & 29.0 & 41.7 & 70 & 71 & \mb{12.7} & 8.8   & 37.2 & \myu{40.5} & \mb{3.3}  & 77 & 73 \\
@@ -837,7 +798,7 @@ T-SYN                              & 0.68 & 61.8       & 59.8       & 42.7 & 60.
 T-SEM                              & 0.74 & \myu{80.9} & 73.7       & 36.2 & 38.6 &    &    & \mb{2.4}  & -42.3 & 73.5 & 77.2       & \mb{3.7}  &    &    \\
 \rowstyle{\color{darkergray}}TOEFL & 6.30 & \myu{83.8} & 81.2       & 78.8 & 87.5 &    &    & \mb{8.7}  & 3.7   & 86.2 & \myu{88.8} & 2.6       &    & 
   \end{tabular}
-  \caption{Comparison of Word2Vec, Glove and Multiview LSA. Change in
+  \caption{Comparison of W-SG(Word2Vec Skip Gram), Glove and Multiview LSA. Change in
     accuracy from the use of multiple views that is higher than LC is
     in bold and the top scoring entries from the Glove, Word2Vec and Combined(All)
   columns are underlined when the difference in their scores from the
@@ -966,12 +927,12 @@ datasets used to evalue word embeddings.
 %% predictions so the systems are producing a very similar representation
 %% even though the absolute performance on the extrinsic metrics differs
 %% by a lot sometimes.  
-\section*{Acknowledgments}
-This material is based on research sponsored by Defense Advanced Research
-Projects Agency (DARPA) under the Deep Exploration and
-Filtering of Text (DEFT) Program (Agreement number
-FA8750-13-2-0017). We also thank Juri Ganitkevitch for 
-providing the word aligned bitext corpus used in this paper.
+%% \section*{Acknowledgments}
+%% This material is based on research sponsored by Defense Advanced Research
+%% Projects Agency (DARPA) under the Deep Exploration and
+%% Filtering of Text (DEFT) Program (Agreement number
+%% FA8750-13-2-0017). We also thank Juri Ganitkevitch for 
+%% providing the word aligned bitext corpus used in this paper.
 
 \bibliographystyle{naaclhlt2015}
 \bibliography{references}
