@@ -1,0 +1,126 @@
+\documentclass[11pt]{article}
+\usepackage[ruled,]{algorithm2e}
+\usepackage{naaclhlt2015}
+\usepackage{times}
+\usepackage{mathtools}
+\usepackage{url}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{changepage}
+\usepackage{booktabs}
+\usepackage{placeins}
+\usepackage[normalem]{ulem}
+\usepackage[table]{xcolor}
+\usepackage{color, colortbl}
+\newcommand{\cwindow}{1, 2, 4, 6, 8, 10, 12, 14, 15}
+\newcommand{\cwinlen}{9}
+\newcommand{\ctotalview}{16}
+\newcommand{\xline}[0]{\noindent\underline{\makebox[0.1cm][l]{}}}
+\newcommand{\specialcell}[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+\newcommand{\mb}[1]{\textbf{#1}}
+\newcommand{\mi}[1]{\textbf{#1}}
+\newcommand{\myu}[1]{\uline{#1}}
+\usepackage{array}
+\usepackage{enumitem}
+\newcolumntype{H}{>{\setbox0=\hbox\bgroup}c<{\egroup}@{}}
+\newcolumntype{S}{l}
+\makeatletter
+\newcommand{\remove}[1]{}
+\newcommand{\removet}[1]{#1}
+\newcommand*{\@rowstyle}{}
+
+\newcommand*{\rowstyle}[1]{% sets the style of the next row
+  \gdef\@rowstyle{#1}%
+  \@rowstyle\ignorespaces%
+}
+
+\newcolumntype{=}{% resets the row style
+  >{\gdef\@rowstyle{}}%
+}
+
+\newcolumntype{+}{% adds the current row style to the next column
+  >{\@rowstyle}%
+}
+
+\newcommand{\raman}[1]{ (\textcolor{red}{Raman: #1})}
+
+\definecolor{lightgray}{gray}{0.96}
+\definecolor{darkgray}{gray}{0.7}
+\definecolor{darkergray}{gray}{0.0}
+%\setlength\titlebox{5cm}
+
+% You can expand the titlebox if you need extra space
+% to show all the authors. Please do not make the titlebox
+% smaller than 5cm (the original size); we will check this
+% in the camera-ready version and ask you to change it back.
+
+\title{Multiview LSA: Representation Learning via Generalized CCA}
+
+% \author{Pushpendre Rastogi \\
+%   Johns Hopkins University \\
+%   {\tt pushpendre@jhu.edu} 
+% }
+
+\date{} 
+
+\begin{document}
+\maketitle
+\begin{abstract}
+  Latent Semantic Analysis is a long-standing method for inducing
+  vector-based lexical representations from corpus-statistics.  We
+  demonstrate that the framework of Generalized Canonical Correlation
+  Analysis allows for similar intuitions to LSA, but supports the
+  fusion of arbitrary additional perspectives: we term this Multiview
+  LSA.  Experiments across a comprehensive collection of datasets show
+  this approach to be competitive with the state-of-art, and allows
+  for treating representations learned via other mechanisms as simply
+  additional informative views in our process.
+  % We present the results  of our experiments with
+  % the framework of Generalized Canonical Correlation Analysis (GCCA) for extracting vector
+  % representations from multiple views such as cooccurrence statistics and
+  % even other representations. 
+  % The aim of the paper is to analyze the performance of GCCA in fusing
+  % multiple sources of linguistic 
+  % data and to compare the performance of representations learnt using
+  % this technique with  the state of the art.
+\end{abstract}
+
+\input{intro}
+
+\input{multiview}
+
+\input{manyview}
+
+\input{motivation}
+
+\input{data}
+
+\input{results}
+
+\input{prior}
+
+\input{future}
+
+\input{conclusion}
+
+%% The inter algorithm pearson correlation before and after performing
+%% GCCA showed  we see that the
+%% systems (word2vec and the Multiview LSA) are making the same types of
+%% predictions so the systems are producing a very similar representation
+%% even though the absolute performance on the extrinsic metrics differs
+%% by a lot sometimes.  
+\section*{Acknowledgments}
+This material is based on research sponsored by Defense Advanced Research
+Projects Agency (DARPA) under the Deep Exploration and
+Filtering of Text (DEFT) Program (Agreement number
+FA8750-13-2-0017). We also thank Juri Ganitkevitch for 
+providing the word aligned bitext corpus used in this paper.
+
+\bibliographystyle{naaclhlt2015}
+\bibliography{references}
+\end{document}
+

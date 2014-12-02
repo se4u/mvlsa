@@ -1,0 +1,179 @@
+\section{GCCA}
+\label{sec:gcca}
+%% Let us briefly mention Canonical Correlation analysis to better motivate
+%% GCCA. CCA is a procedure for finding subspaces such that once we
+%% project two datasets X and Y to those subspaces then the correlation
+%% between corresponding projections gets
+%% maximized\cite{hotelling1935the}.
+%% It can be proven that this happens
+%% if and only if the dimensions of the projections are orthogonal and the optimization can
+%% be done by constraining the projections to be
+%% orthogonal. 
+\textbf{GCCA} is an extension of CCA to the case when we have aligned
+data from $J$ vector valued random variables.\footnote{See
+  \cite{velden2011on} for a proof that GCCA with two views gives the
+  same solution as CCA.}  Let $X_j \in \mathbb{R}^{N\times d_j} \;
+\forall j \in [1,\ldots,J]$ be the mean centered matrix containing
+data from view $j$. Let the number of words in the vocabulary be $N$
+and number of contexts (columns in $X_j$) be $d_j$. Note that $N$
+remains the same and $d_j$ varies across views. Following standard
+notation \cite{hastie2009elements} we call $X_j^\top X_j$ the scatter
+matrix and $X_j (X_j^\top X_j)^{-1}X_j^\top$ the projection matrix.
+
+As discussed in \S~\ref{sec:motivation} there are different
+characterizations of GCCA\footnote{See \cite{kettenring1971canonical}
+  for further details.} and we would perform ``MAX-VAR'' GCCA and find
+a matrix $G \in \mathbb{R}^{N\times r}$ and matrices $U_j \in
+\mathbb{R}^{d_j \times r}$ that satisfy expression~\ref{eq:gcca}:
+\begin{equation}
+  \label{eq:gcca}
+\begin{split}
+  \operatorname*{\arg\,\min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} G - X_jU_j \end{Vmatrix}^2_F \\
+  \text{such that } & G^\top G = I
+\end{split}
+\end{equation}
+The matrix $G$ that satisfies expression~\ref{eq:gcca} would also be our
+distributed\raman{Why distributed?} representation of the vocabulary.
+The optimal value of $G$ is has the following closed form\raman{Not really}:
+Finding representations $G$ reduces to spectral decomposition of sum of projection matrices of different views: Define
+\begin{align}
+P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top \label{eq:pp}\\
+M =& \sum_{j=1}^J P_j \label{eq:mm}\\
+\end{align}
+Then $G$ 
+
+
+\begin{align}
+P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top \label{eq:pp}\\
+M =& \sum_{j=1}^J P_j \label{eq:mm}\\
+M G =& G \Lambda\\
+U_j =& \left(X_j^\top X_j\right)^{-1} X_j^\top G
+\end{align}
+
+The above expressions tell us that our word representations are the
+eigenvectors of the sum of $J$ projection matrices. Also note that we
+explicitly constrained the dimensions of $G$ to be orthogonal to each
+other. Orthogonality in representations is a nice property that we
+will discuss later.
+
+We can immediately see that we can not compute
+ $P_j \in \mathbb{R}^{N \times N}$ because of memory constraints.
+%% Since eigenvalues of
+%% projection matrices are either 0 or 1 that implies 
+%% that eigenvalues of sum of M must lie between 0 and J.
+%% This leads us to the problem of finding the eigenvectors of large 
+%% projection matrices which have wide and gentle spectrum.
+Also the
+scatter matrices may be non-singular so the procedure may become
+ill-posed. Next we make a single reasonable assumption and present an
+approximate regularized method 
+to compute GCCA. Parts of the
+following method were proposed to us by \cite{savostyanov}.
+
+\noindent\textbf{Approximate Regularized GCCA}: GCCA is typically regularized by adding $r_jI$ to each
+scatter matrix $X_j^\top X_j$ before doing the inversion. Typically
+$r_j$ is a small constant like 1e-8. Equations~\ref{eq:pp}
+and \ref{eq:mm} change to
+\begin{align}
+  \widetilde{P}_{j} =& X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top \label{eq:6}\\
+  M =& \sum_{j=1}^J \widetilde{P}_{j} \label{eq:mmm}
+\end{align}
+
+We can side step the computational difficulties as follows.
+Let $SVD_m$ denotes a partial SVD where $S_j$ is a rectangular diagonal
+matrix that contains only the $m$ largest eigen values and $A_j, B_j$
+are square, orthonormal, unitary matrices. Defining $SVD_m$ like this
+ensures correctness but in practice we only need to compute $m$
+columns of $A_j$. Take the SVD of $X_j$.
+$$A_{j} S_{j} B^\top_{j} \xleftarrow{SVD_{m}} X_j$$
+ Substitute the above in equation~\ref{eq:6} to get 
+$$\widetilde{P}_j = A_j S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j A_j^\top$$ 
+Define, $T_j \in \mathbb{R}^{m \times m}$ to be the diagonal matrix such that
+$T_jT_j^\top = S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j $ then
+$$\widetilde{P}_j = A_j T_j T_j^\top A_j^\top$$
+Define, $\tilde{M} = \left[ A_1T_1 \ldots A_JT_J \right] \in \mathbb{R}^{N
+  \times mJ}$
+Then 
+$$M = \tilde{M} \tilde{M}^\top$$
+Perform QR decomposition of $\tilde{M}$ to get
+$$M = Q R R^\top Q$$
+Do eigen decomposition of $R R^\top \in \mathbb{R}^{mJ \times mJ}$
+to get its eigen vectors $U$ and eigen values $S$.
+$$M = Q U S U^\top Q^\top$$
+ which implies $G = QU$. 
+
+\subsection{Computing SVD of mean centered $X_j$}
+\label{ssec:svdmc}
+Recall that we assumed $X_j$ to be mean centered matrices. Let $Z_j
+\in \mathbb{R}^{N \times d_j}$ be sparse matrices containing
+mean-uncentered cooccurrence counts. Let $f_j = n_j \circ t_j $ be the preprocessing
+function that we apply to $Z_j$. 
+\begin{align}
+  Y_j =& f_j (Z_j) \\
+  X_j =& Y_j + 1 (1^\top Y_j)
+\end{align}
+In order to compute the SVD of mean centered matrices $X_j$ we first
+compute the partial SVD of uncentered 
+matrix $Y_j$ and then update it. See \cite{brand2006fast} for details.
+%% We experimented with representations created from the
+%% uncentered matrices $Y_j$ and found that they performed as well as 
+%% the mean centered versions but we would not mention them further since
+%% it is computationally efficient to follow the principled approach. We
+%% note, however, that even the method of mean-centering the SVD
+%% produces an approximation.
+
+\subsection{Handling missing rows across views}
+\label{ssec:missing}
+%% Recall that we assumed that rows of $X_j \forall j \in [0,\ldots , J]$ correspond to unique
+%% words in the vocabulary and that the rows correspond to each
+%% other.
+With real data it may happen that a word was not observed in a view at
+all. A significant number of 
+missing rows can corrupt the learnt representations since the rows
+in the left singular matrix become zero.
+%% The procedure described above
+%% can not recover from this and the representation for those words may become a
+%% one hot vector. 
+To counter this problem we adopted a variant of the ``missing-data
+passive'' algorithm from \cite{van2006generalized} who modified the
+GCCA objective to counter the problem of missing 
+rows.\footnote{A more recent paper, \cite{van2012generalized},
+  describes newer iterative and non-iterative(Test-Equating Method)
+  approaches for handling missing values. It is possible that using
+  one of those methods could improve performance.}
+Specifically, the objective now becomes:
+\begin{equation}
+  \label{eq:gcca2}
+\begin{split}
+  \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} K_j(G - X_jU_j) \end{Vmatrix}^2_F \\
+  \text{such that } & G^\top G = I
+\end{split}
+\end{equation}
+if row $i$ of view $j$ is observed then $[k_j]_{ii} = 1$ otherwise $0$.
+Essentially $K_j$ is a diagonal row-selection matrix which ensures
+that we optimize our representations only on the observed rows. Note that
+$X_j = K_jX_j$ since the rows that $K_j$ removed were already
+zero. Let, $K =
+\sum_j K_j$ then the optima
+of the objective can be computed by modifying Equation~\ref{eq:mmm} as:
+\begin{align}
+  M =& K^{-\frac{1}{2}}(\sum_{j=1}^J P_j)K^{-\frac{1}{2}}
+\end{align}
+Again if we regularize and approximate the GCCA solution, we get
+$G=QU$ where $Q, R$ come from the QR decomposition of
+$K^{-\frac{1}{2}}\tilde{M}$. Also, we mean center the matrices using
+only the observed rows.
+
+Also note that other heuristic weighting schemes could be used
+here. For example if we modify our objective as follows then we would
+recover the objective of \cite{pennington2014glove}:
+\begin{equation}
+  \label{eq:gcca3}
+\begin{split}
+  \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} W_j K_j(G - X_jU_j) \end{Vmatrix}^2_F \\
+  \text{such that } G^\top G &= I \\
+  \text{where } [W_j]_{ii} &= \frac{w_i}{w_{\max}}^{\frac{3}{4}} \text{ if } w_i <
+  w_{\max} \text{ else } 1 \\
+  \text{and } w_i &=  \sum_k [X_j]_{ik}
+\end{split}
+\end{equation}

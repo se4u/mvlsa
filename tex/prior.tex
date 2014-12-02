@@ -1,0 +1,65 @@
+\section{Previous Work}
+\label{sec:previouswork}
+Vector space representations of words have been created using diverse
+ frameworks ranging from Spectral methods
+ \cite{dhillon2011multi,dhillon2012two}
+ %% \footnote{\url{cis.upenn.edu/~ungar/eigenwords}}
+ to Neural Networks
+ \cite{mikolov2013efficient,mikolov2013distributed,collobert2013word}
+ %%\footnote{\url{code.google.com/p/word2vec},\url{metaoptimize.com/projects/wordreprs}}
+ and trained using either one
+ \cite{pennington2014glove}
+ %% \footnote{\url{nlp.stanford.edu/projects/glove}}
+ or two sources of cooccurrence statistics
+ \cite{zou2013bilingual,faruqui2014improving,bansal2014tailoring,levy2014dependency}
+ %% \footnote{\url{ttic.uchicago.edu/~mbansal/data/syntacticEmbeddings.zip,cs.cmu.edu/~mfaruqui/soft.html}}
+ or using multi-modal data
+ \cite{felix2014learning,bruni2012distributional}.
+ 
+\cite{faruqui2014improving} demonstrated that bilingual
+representations extracted using CCA outperformed their monolingual 
+counterparts.
+%% and clearly their method could be extended to
+%% multiple languages by merging the representations a pair at a time,
+%% though they did not do so in the paper.
+More recently \cite{hill2014not} demonstrated this same
+phenomenon through their experiments over neural representations learnt from MT
+systems. Also \cite{dhillon2011multi,dhillon2012two} used
+CCA as the primary method to learn vector representations. Our work
+takes all these threads to work to a logical extreme and uses GCCA to learn distributed
+representations using data from multiple languages.
+%% Outside of the NLP
+%% community \cite{sun2013generalized,tripathi2011data} are two
+%% publications 
+%% that we are aware of that have used GCCA for ``data fusion''.
+
+While various researchers have tried to improve the
+performance of their paraphrase systems or vector space models by using
+multiple sources of information such as bilingual
+corpora~\cite{bannard2005paraphrasing,Huang2012Improving,zou2013bilingual}, 
+structured datasets~\cite{yu2014improving,faruqui2014retrofitting} or even
+tagged images~\cite{bruni2012distributional}; 
+%% The intuitive reason that using multiple sources of data improves performance is 
+%% that the views complement each other. For example it was mentioned in
+%% \cite{ganitkevitch2013ppdb} that monolingual data can't distinguish
+%% between antonyms but bilingual data can. And bilingual data confounds
+%% words that occur in the same sentence but monolingual data can
+%% distinguish them based on their context.
+However, the previous
+work did not adopt the general, simplifying view that 
+all of these sources of data are just cooccurrence 
+statistics coming from different sources with underlying latent
+factors.\footnote{Though \cite{faruqui2014retrofitting} use
+  the sophisticated technique of belief propagation the graph that
+  they use it on is a single undirected weighted information. That
+  information can be perfectly captured in an adjacency matrix which is another type of
+cooccurrence matrix. Also they do not fuse arbitrary views such as
+other vector representations which we are performing.}
+
+%% In the sense of being an application of multiview
+%% learning methods to NLP our work is an addition to the long chain which
+%% started from the work of \cite{yarowsky1995unsupervised} and continued
+%% with Co-Training~\cite{blum1998combining}, CoBoosting~\cite{collins1999unsupervised} and ``2 view
+%% perceptrons''~\cite{brefeld2006efficient}.  CCA is also an algorithm
+%% for multi view learning \cite{kakade2007multi,ganchevuai08}, and it
+%% has a probabilistic interpretation \cite{bach2005probabilistic} as well.

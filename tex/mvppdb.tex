@@ -46,6 +46,8 @@
   >{\@rowstyle}%
 }
 
+\newcommand{\raman}[1]{ (\textcolor{red}{Raman: #1})}
+
 \definecolor{lightgray}{gray}{0.96}
 \definecolor{darkgray}{gray}{0.7}
 \definecolor{darkergray}{gray}{0.0}
@@ -108,7 +110,7 @@ as Information Retrieval and Cognitive Science, but is limited in its
 reliance on a single matrix, or \emph{view} of term co-occurrences.
 Many recent efforts since the introduction of LSA are similarly
 restricted to a single view of terms, focusing on some combination of
-finding an ``optimal'' view, paired with more advanced algorithms.
+finding an ``optimal'' view, paired with more advanced algorithms\raman{Need references}.
 
 Here we address the single-view limitation of LSA by demonstrating
 that the framework of Generalized Canonical Correlation Analysis
@@ -168,8 +170,15 @@ a matrix $G \in \mathbb{R}^{N\times r}$ and matrices $U_j \in
 \end{split}
 \end{equation}
 The matrix $G$ that satisfies expression~\ref{eq:gcca} would also be our
-distributed representation of the vocabulary.
-The optimal value of $G$ is has the following closed form:
+distributed\raman{Why distributed?} representation of the vocabulary.
+The optimal value of $G$ is has the following closed form\raman{Not really}:
+Finding representations $G$ reduces to spectral decomposition of sum of projection matrices of different views: Define
+\begin{align}
+P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top \label{eq:pp}\\
+M =& \sum_{j=1}^J P_j \label{eq:mm}\\
+\end{align}
+Then $G$ 
+
 
 \begin{align}
 P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top \label{eq:pp}\\

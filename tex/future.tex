@@ -1,0 +1,36 @@
+\section{Future Work}
+\label{sec:futurework}
+In a rough order of importance we believe we could improve our method in the following ways:
+\begin{itemize}[leftmargin=*]
+  \itemsep-0.1em
+  \renewcommand\labelitemi{--}
+\item By implementing the probabilistic version of GCCA which would
+  allow us to create generative models which could be trained in an
+  online fashion. We conjectured that ``MAXVAR'' formulation of GCCA is closely related to a probabilistic interpretation of GCCA. We are not aware of any work
+that has made this connection before and we are working on proving this where the proof technique and style would closely mirror that in \cite{bach2005probabilistic}.
+\item By using count dependent non-linear weighting as exemplified
+  through Expression~\ref{eq:gcca3}
+\item By implementing procedures for constant memory QR decomposition so that we can scale our method to larger vocabularies. 
+\item By adding more views such as views that derived from successive
+  words instead of  using only the previous words. Since we are not using
+  any PMI-like or frequency like features there is scope for
+  improvement on that front.  We note that the performance of our
+  method on the ``T-SEM'' dataset was very low which we believe could
+  have been caused due to lack of PMI type features have been reported
+  to work well in \cite{levy2014neural}.  
+%% \item by using kernel methods that promise to liberate us from tuning over non-linearities, though tuning over kernels is a problem as well.
+\item By using more sophisticated method for handling missing values
+  as mentioned earlier.
+\item By performing discriminative optimization of multiplicative
+  factors over the views. For example we saw that bitext views hurt
+  performance on the ``T-SEM'' task whereas they improved performance
+  on all the other tasks in general. A simple technique could be to
+  simply assign a multiplicative factor to each view and 
+  then to tune the values of that factor by using discriminative
+  techniques. Of course such a method would not remain unsupervised any
+  more. Such a discriminative optimization could help us understand
+  better the reasons why a particular corpus improves performance on
+  certain datasets but decreases performance on another dataset. %% Since
+  %% we could calculate gradient of the gram matrix between words in a
+  %% dataset versus the multiplicative factor.
+\end{itemize}

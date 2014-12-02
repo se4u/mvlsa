@@ -1,0 +1,44 @@
+\section{Introduction}
+
+\newcite{winograd1972understanding} wrote that: \emph{``Two sentences
+  are paraphrases if they produce the same representation in the
+  internal formalism for meaning''}.  This intuition is made soft in
+vector-space models \cite{turney2010frequency}, where we say that
+expressions in language are of similar meaning, or paraphrastic, if
+their representations are \emph{close} under some distance measure.
+These vector representations are typically created via some form of
+dimensionality reduction over corpus co-occurrence statistics.
+
+One of the earliest and most well-known of these methods is Latent
+Semantic Analysis (LSA), where term-paragraph, or term-document
+statistics are collected into a matrix, with the most important
+eigenvectors under a Singular Value Decomposition (SVD) then forming
+the basis in vector-space for representing the input terms
+\cite{landauer1997solution}.  LSA has been used widely in fields such
+as Information Retrieval and Cognitive Science, but is limited in its
+reliance on a single matrix, or \emph{view} of term co-occurrences.
+Many recent efforts since the introduction of LSA are similarly
+restricted to a single view of terms, focusing on some combination of
+finding an ``optimal'' view, paired with more advanced algorithms\raman{Need references}.
+
+Here we address the single-view limitation of LSA by demonstrating
+that the framework of Generalized Canonical Correlation Analysis
+(GCCA) allows for what we call ``multi-view'' LSA (MVLSA).  This
+approach allows for the use of an arbitrary number of views in the
+induction process, including those single-view vector-representations
+induced using recent alternatives to LSA.
+
+Our experiments show this approach to be competitive to recent
+approaches, while being based fundamentally on a decades-old mechanism
+widely recognized in the community.  Finally, as a methodological
+aside, we discuss the (in-)appropriateness of various datasets being
+used as the basis for comparison within the community.
+
+% leading to the
+% intuitive conclusion that overly small evaluation sets can lead to
+% potentially misleading results.
+
+\section{LSA}
+
+Pushpendre: what is LSA?  You can't call your method Multiview LSA
+without first telling the reader what LSA is!

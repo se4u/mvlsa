@@ -1,0 +1,142 @@
+\section{Data}
+\label{sec:data}
+\noindent\textbf{Training Data}: We used the English portion of the \textit{Polyglot} wikipedia dataset
+released by \cite{al2013polyglot} to create 15 irredundant views of
+cooccurrence statistics where element $[z]_{ij}$ of view $Z_k$
+represents that number of times word $w_j$ occurred $k$ words behind
+$w_i$.
+%% We lowercased all the words and discarded all
+%% words which were longer than 5 characters and contained more than 3 non
+%% alphabetical symbols. This was done to preserves years and smaller
+%% numbers.
+We selected the top 500K words by occurrence to 
+create our vocabulary for the rest of the paper.
+
+We extracted cooccurrence statistics from a large bitext corpus that was made by combining a
+number of parallel bilingual corpora. See \cite{ganitkevitch2013ppdb} for details and
+Table~\ref{tab:dataperlang} for a summary. The Berkeley aligner was used for word alignment. Element
+$[z]_{ij}$ of the \textit{bitext} matrix represents the number of times English
+word $w_i$ was aligned to the foreign word $w_j$.
+
+We also used the dependency relations in the \textit{Annotated
+  Gigaword Corpus}~\cite{annotatedGigaword12} to create 21
+views\footnote{Following is the list of dependency relations that we
+  used: nsubj, amod, advmod, rcmod, dobj, prep\xline{}of,
+  prep\xline{}in, prep\xline{}to, prep\xline{}on, prep\xline{}for,
+  prep\xline{}with, prep\xline{}from, prep\xline{}at, prep\xline{}by,
+  prep\xline{}as, prep\xline{}between, xsubj, agent, conj\xline{}and,
+  conj\xline{}but, pobj. We selected these dependency relations since
+  they seemed to be the particularly interesting which could capture
+  different aspects of similarity.}  where element $[z]_{ij}$ of view
+$Z_{\textrm{dep}}$ represents the number of times word $w_j$ occurred
+as the governor of word $w_i$ with dependency relation $\textrm{dep}$.
+
+We combined the knowledge of paraphrases present in FrameNet and PPDB by
+using the dataset created by \newcite{rastogi2014augmenting} to create a
+\textit{FrameNet} view. Element $[z]_{ij}$ of the \textit{FrameNet}
+view represents whether word $w_i$ was present in frame
+$f_j$. Similarly we combined the knowledge of morphology present in
+the \textit{CatVar} database released by \newcite{habash2003catvar} and
+\textit{morpha, morphg} released by \newcite{minnen2001applied}.
+The morphological views and the frame semantic views were especially
+sparse with densities of 0.0003\% and 0.03\%. While we could have utilized more sources of semantic data like
+Coccurrence in WordNet Synsets or Narrative Chains etc, we decided
+that the above set would be representative enough to inform us of the
+merits or demerits of the MVLSA method and stopped collecting more data.
+
+\begin{table}[htbp]
+  \centering
+  \rowcolors{1}{}{lightgray}
+  \begin{tabular}{lll}
+    Language & Sentences & English Tokens \\
+    \hline
+    Bitext-Arabic   & 8.8M   & 190M  \\
+    Bitext-Czech    & 7.3M   & 17M   \\
+    Bitext-German   & 1.8M   & 44M   \\
+    Bitext-Spanish  & 11.1M  & 241M  \\
+    Bitext-French   & 30.9M  & 671M  \\
+    Bitext-Chinese  & 10.3M  & 215M  \\
+    Monotext-En-Wiki& 75M    & 1.7B 
+  \end{tabular}  
+  \caption{Portion of data used to create GCCA representations.}
+  \label{tab:dataperlang}
+\end{table}
+
+\noindent\textbf{Test Data}: We evaluated the representations on the
+word similarity datasets listed in Table~\ref{tab:testlist}. The first
+10 datasets in Table~\ref{tab:testlist} were annotated with different
+rubrics and rated on different scales. But broadly they all
+contain human judgements about how similar two words are.
+The ``T-SYN'' and ``T-SEM'' datasets contain 4-tuples of
+analogous words and the task is to predict the missing word given the
+first three.
+
+\begin{table*}[ht] \label{tab:testlist}
+  %\setlength{\tabcolsep}{1pt}
+  %\begin{adjustwidth}{0cm}{}
+  \rowcolors{1}{}{lightgray}
+  \resizebox{\textwidth}{!}{
+  \begin{tabular}{l c c c c H H H c H l}
+    Acronym & Size  & \specialcell{LC\\(0.01,0.5)} & \specialcell{LC\\(0.01,0.9)} & \specialcell{LC\\(1e-3,0.5)} & \specialcell{LC\\(1e-3,0.9)} & \specialcell{LC\\(0.25,0.7)}& \specialcell{LC\\(0.25,0.5)} & \specialcell{LC\\(0.05,0.5)} & \specialcell{LC\\(0.05,0.9)} & Reference  \\
+    \hline
+    
+    MEN    & 3000  & 4.2  & 1.8  & 5.6  & 2.5  & 0.9 & 1.2 & 3    & 1.3  & \cite{bruni2012distributional}  \\
+    RW     & 2034  & 5.1  & 2.3  & 6.8  & 3    & 1.1 & 1.4 & 3.6  & 1.6  & \cite{Luong2013morpho}          \\
+    SCWS   & 2003  & 5.1  & 2.3  & 6.8  & 3    & 1.1 & 1.5 & 3.6  & 1.6  & \cite{Huang2012Improving}       \\
+    SIMLEX & 999   & 7.3  & 3.2  & 9.7  & 4.3  & 1.6 & 2.1 & 5.2  & 2.3  & \cite{hill2014simlex}           \\
+    WS     & 353   & 12.3 & 5.5  & 16.3 & 7.3  & 2.7 & 3.6 & 8.7  & 3.9  & \cite{finkelstein2001placing}   \\
+    MTURK  & 287   & 13.7 & 6.1  & 18.1 & 8.1  & 3.1 & 4   & 9.7  & 4.3  & \cite{Radinsky2011word}         \\
+    WS-REL & 252   & 14.6 & 6.5  & 19.3 & 8.6  & 3.3 & 4.2 & 10.3 & 4.6  & \cite{agirre2009study}          \\
+    WS-SEM & 203   & 16.2 & 7.3  & 21.4 & 9.6  & 3.6 & 4.7 & 11.5 & 5.1  & -Same-As-Above-                 \\
+    RG     & 65    & 28.6 & 12.9 & 37.0 & 16.8 & 6.6 & 8.5 & 20.6 & 9.2  & \cite{Rubenstein1965Contextual} \\
+    MC     & 30    & 41.7 & 19   & 52.4 & 24.3 & 10  & 13  & 30.6 & 13.8 & \cite{miller1991contextual}     \\ \hline
+    T-SYN  & 10675 & 0.95 &      &      &      &     &     & 0.68 &      & \cite{mikolov2013distributed}   \\
+    T-SEM  & 8869  & 1.03 &      &      &      &     &     & 0.74 &      & -Same-As-Above-                 \\ \hline
+    TOEFL  & 80    & 8.13 &      &      &      &     &     & 6.30 &      & \cite{landauer1997solution}
+  \end{tabular}
+  }
+  \caption{List of test datasets used. The first 10 datasets contain human
+    judgements of annotations and we would report Spearman correlation
+    of  the human ratings with similarity between the word
+    representations.
+    T-SYN and T-SEM are open vocabulary tasks and TOEFL is a closed
+    vocabulary task and we would report accuracies on
+  those tasks with the full vocabulary. The LC column contains the
+  least counts for significant difference in performance metrics for
+  these datasets. E.g. the value 20.6 in the RG row under the
+  LC(0.05, 0.5) column signifies that if the difference between the
+  ratings produced by algorithms A and B have spearman correlation
+  $\rho_{AB} \le 0.5$ and $\rho_{A,RG} - \rho_{B,RG} \le 20.6$ then there is a
+  greater than 5\% chance that the difference would vanish under
+  different training conditions.}
+  %\end{adjustwidth}
+\end{table*}
+
+While surveying the literature we found that even for small test sets researchers only report the Spearman Correlations e.g. \cite{hill2014not,faruqui2014improving,faruqui2014retrofitting} between the similarity values assigned by the embeddings produced by their method and the
+average human ratings. \newcite{steiger1980tests} proposed a test for finding the significance of difference in spearman correlations which needs the spearman correlation $\rho_{AB}$ between ratings of the two algorithms. Since one usually doesn't have access to
+those scores  we experimented over a range of fixed values for those
+scores and found the ``least count (LC)'' of difference in correlation coefficients that would allow us to say with
+some confidence that the correlations produced by two algorithms are
+truly different. The LC is the smallest number that 
+when added to $r_{AT} \in (0, 1)$ lowers the probability of null
+hypothesis to acceptable levels.
+
+For finding the LC for the last three accuracy based tests we
+used the beta-binomial setup.  We estimated posterior
+probability of $\theta_1, \theta_2$ given a $\beta(1,1)$ prior and
+given the data. Then we computed $\tilde{p} = p(\theta_2 - \theta_1 >
+0 | \hat{\theta_1}, \hat{\theta_1} + \textrm{LC})$ and chose
+the smallest value of LC for which $\tilde{p} > 0.95$.
+
+We hope that
+the high values of LC for the small sized datasets would convince
+researchers to either include confidence measures with their reported
+performance metrics or discourage the usage of those datasets.
+
+Unfortunately, there are no widely followed train-test splits of the above
+datasets and we also evaluated the effects of hyper-parameter tuning
+on the entire test set therefore our final comparison could have
+favored us due to ``soft supervision'' on these datasets while
+hyperparameter tuning. However the consistent performance of our
+method across the test sets lends hope that the trends we report would
+generalize. 
