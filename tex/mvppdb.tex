@@ -11,7 +11,7 @@
 \usepackage{graphicx}
 \usepackage{tabularx}
 \usepackage{changepage}
-\usepackage{booktabs}
+%\usepackage{booktabs}
 \usepackage{placeins}
 \usepackage[normalem]{ulem}
 \usepackage[table]{xcolor}
@@ -22,8 +22,9 @@
 \newcommand{\xline}[0]{\noindent\underline{\makebox[0.1cm][l]{}}}
 \newcommand{\specialcell}[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
 \newcommand{\mb}[1]{\textbf{#1}}
+\newcommand{\ma}[1]{*#1}
 \newcommand{\mi}[1]{\textbf{#1}}
-\newcommand{\myu}[1]{\uline{#1}}
+\newcommand{\myu}[1]{\textbf{#1}}
 \usepackage{array}
 \usepackage{enumitem}
 \newcolumntype{H}{>{\setbox0=\hbox\bgroup}c<{\egroup}@{}}
@@ -203,12 +204,11 @@ The objective of \emph{MAX-VAR GCCA} can be written as the following search prob
 \end{split}
 \end{equation}
 The matrix $G$ that satisfies expression~\ref{eq:gcca} would also be our
-distributed\raman{Why distributed?} representation of the vocabulary.
-The optimal value of $G$ is has the following closed form\raman{Not really}:
-Finding representations $G$ reduces to spectral decomposition of sum of projection matrices of different views: Define
+vector representation of the vocabulary.
+Finding $G$ reduces to spectral decomposition of sum of projection matrices of different views: Define
 \begin{align}
 P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top \label{eq:pp}\\
-M =& \sum_{j=1}^J P_j \label{eq:mm}\\
+M =& \sum_{j=1}^J P_j \label{eq:mm}
 \end{align}
 Then $G$ and $U_j$ satisfy:
 \begin{align}
@@ -216,9 +216,9 @@ M G =& G \Lambda\\
 U_j =& \left(X_j^\top X_j\right)^{-1} X_j^\top G
 \end{align}
 
-The above expressions tell us that our word representations are the
-eigenvectors of the sum of $J$ projection matrices. Also note that the
-dimensions of $G$ are orthogonal to each other. %% Orthogonality in
+%% The above expressions tell us that our word representations are the
+%% eigenvectors of the sum of $J$ projection matrices. Also note that the
+%% dimensions of $G$ are orthogonal to each other. %% Orthogonality in
 %% representations is a nice property that we 
 %% will discuss later.
 
@@ -411,105 +411,125 @@ rubrics and rated on different scales. But broadly they all
 contain human judgements about how similar two words are.
 The ``T-SYN'' and ``T-SEM'' datasets contain 4-tuples of
 analogous words and the task is to predict the missing word given the
-first three.
-
+first three. Both of these are  open vocabulary tasks while TOEFL is a closed
+vocabulary task. 
 \begin{table*}[ht] \label{tab:testlist}
   \centering
   %\setlength{\tabcolsep}{1pt}
   %\begin{adjustwidth}{0cm}{}
   \rowcolors{1}{}{lightgray}
-  \resizebox{\textwidth}{!}{
-  \begin{tabular}{lr  cc  HH  HH  cc  l}
+  %\resizebox{\textwidth}{!}{
+  \begin{tabular}{lr | ccc  | ccc | l}
     Acronym & Size  &
-    \specialcell{LC\\(0.01,0.5)} & \specialcell{LC\\(0.01,0.9)} &
-    \specialcell{LC\\(1e-3,0.5)} & \specialcell{LC\\(1e-3,0.9)} &
-    \specialcell{LC\\(0.25,0.7)} & \specialcell{LC\\(0.25,0.5)} &
-    \specialcell{LC\\(0.05,0.5)} & \specialcell{LC\\(0.05,0.9)} &
+    $\sigma_{0.01}^{0.5}$ & $\sigma_{0.01}^{0.7}$ & $\sigma_{0.01}^{0.9}$ &
+    $\sigma_{0.05}^{0.5}$ & $\sigma_{0.05}^{0.7}$ & $\sigma_{0.05}^{0.9}$ &
     Reference  \\ 
     \hline
-    
-    MEN    & 3000  & 4.2  & 1.8  & 5.6  & 2.5  & 0.9 & 1.2 & 3    & 1.3  & \cite{bruni2012distributional}  \\
-    RW     & 2034  & 5.1  & 2.3  & 6.8  & 3    & 1.1 & 1.4 & 3.6  & 1.6  & \cite{Luong2013morpho}          \\
-    SCWS   & 2003  & 5.1  & 2.3  & 6.8  & 3    & 1.1 & 1.5 & 3.6  & 1.6  & \cite{Huang2012Improving}       \\
-    SIMLEX & 999   & 7.3  & 3.2  & 9.7  & 4.3  & 1.6 & 2.1 & 5.2  & 2.3  & \cite{hill2014simlex}           \\
-    WS     & 353   & 12.3 & 5.5  & 16.3 & 7.3  & 2.7 & 3.6 & 8.7  & 3.9  & \cite{finkelstein2001placing}   \\
-    MTURK  & 287   & 13.7 & 6.1  & 18.1 & 8.1  & 3.1 & 4   & 9.7  & 4.3  & \cite{Radinsky2011word}         \\
-    WS-REL & 252   & 14.6 & 6.5  & 19.3 & 8.6  & 3.3 & 4.2 & 10.3 & 4.6  & \cite{agirre2009study}          \\
-    WS-SEM & 203   & 16.2 & 7.3  & 21.4 & 9.6  & 3.6 & 4.7 & 11.5 & 5.1  & -Same-As-Above-                 \\
-    RG     & 65    & 28.6 & 12.9 & 37.0 & 16.8 & 6.6 & 8.5 & 20.6 & 9.2  & \cite{Rubenstein1965Contextual} \\
-    MC     & 30    & 41.7 & 19   & 52.4 & 24.3 & 10  & 13  & 30.6 & 13.8 & \cite{miller1991contextual}     \\ \hline
-    T-SYN  & 10675 & 0.95 &      &      &      &     &     & 0.68 &      & \cite{mikolov2013distributed}   \\
-    T-SEM  & 8869  & 1.03 &      &      &      &     &     & 0.74 &      & -Same-As-Above-                 \\ \hline
-    TOEFL  & 80    & 8.13 &      &      &      &     &     & 6.30 &      & \cite{landauer1997solution}
+
+    MEN    & 3000  & 4.2  & 3.2  & 1.8  & 3.0  & 2.3  & 1.3  & \cite{bruni2012distributional}  \\
+    RW     & 2034  & 5.1  & 3.9  & 2.3  & 3.6  & 2.8  & 1.6  & \cite{Luong2013morpho}          \\
+    SCWS   & 2003  & 5.1  & 4.0  & 2.3  & 3.6  & 2.8  & 1.6  & \cite{Huang2012Improving}       \\
+    SIMLEX & 999   & 7.3  & 5.7  & 3.2  & 5.2  & 4.0  & 2.3  & \cite{hill2014simlex}           \\
+    WS     & 353   & 12.3 & 9.5  & 5.5  & 8.7  & 6.7  & 3.9  & \cite{finkelstein2001placing}   \\
+    MTURK  & 287   & 13.7 & 10.6 & 6.1  & 9.7  & 7.5  & 4.3  & \cite{Radinsky2011word}         \\
+    WS-REL & 252   & 14.6 & 11.3 & 6.5  & 10.3 & 8.0  & 4.6  & \cite{agirre2009study}          \\
+    WS-SEM & 203   & 16.2 & 12.6 & 7.3  & 11.5 & 8.9  & 5.1  & -Same-As-Above-                 \\
+    RG     & 65    & 28.6 & 22.3 & 12.9 & 20.6 & 16.0 & 9.2  & \cite{Rubenstein1965Contextual} \\
+    MC     & 30    & 41.7 & 32.7 & 19.0 & 30.6 & 23.9 & 13.8 & \cite{miller1991contextual}     \\ \hline
+    T-SYN  & 10675 & -    & -    & 0.95 & -    & -    & 0.68 & \cite{mikolov2013distributed}   \\
+    T-SEM  & 8869  & -    & -    & 1.03 & -    & -    & 0.74 & -Same-As-Above-                 \\
+    TOEFL  & 80    & -    & -    & 8.13 & -    & -    & 6.30 & \cite{landauer1997solution}
   \end{tabular}
-  }
-  \caption{List of test datasets used. The first 10 datasets contain human
-    judgements of annotations and we would report Spearman correlation
-    of  the human ratings with similarity between the word
-    representations.
-    T-SYN and T-SEM are open vocabulary tasks and TOEFL is a closed
-    vocabulary task and we would report accuracies on
-  those tasks with the full vocabulary.}
+  %}
+  \caption{List of test datasets used. The columns headed $\sigma_{p_0}^r$ contain 
+    \emph{Minimum Required Difference for Significance (MRDS)}
+    values. The rows for accuracy based test sets contain
+    $\sigma_{p_0}$ which does not depend on $r$. See
+    \S~\ref{ssec:mdrs} for details.} 
   %\end{adjustwidth}
 \end{table*}
+
+\subsection{Significance of comparison} \label{ssec:mdrs}
+While surveying the literature
+we found that performance on the word similarity datasets is typically
+reported in terms of the Spearman correlation between the gold ratings
+and the cosine distance between normalized embeddings.
+We also noted that researchers do not report
+measures of significance of the difference between
+the Spearman Correlations even for comparisons on small test sets.
+E.g. the comparative difference between ratings produced by competing
+algorithms reported in \cite{faruqui2014retrofitting}  
+could not be significant for the WordSimilarity test set released by
+\newcite{finkelstein2001placing},
+even if we assume that the correlation between the competing methods was as high as 0.9 and set the
+pval threshold to be 0.05. There are other examples such as the
+comparisons in \cite{hill2014not}. We would also present a simple method to calculate the
+\emph{Minimum Required Difference for Significance (MRDS)} value for a
+dataset which can be used to rule out insignificant differences. We
+also hope that the following discussion would discourage the usage of the smaller
+datasets.
+
+\noindent\textbf{Minimum Required Difference (MRDS)}:
+Imagine that there exist two lists of ratings produced by algorithms $A, B$ and a list of gold
+ratings $T$. Let $r_{AT}$ and $r_{BT}$ and $r_{AB}$ denote the
+spearman correlations between $A, T$ and $B, T$ and $A, B$ respectively. Also let
+$\hat{r}_{AT}, \hat{r}_{BT}, \hat{r}_{AB}$ be their empirical
+estimates. and assume that $\hat{r}_{BT} > \hat{r}_{AT}$.
+
+For word similarity datasets the MRDS $=\sigma_{p_0}^r$ satisfies the following proposition:
+{\small $$ (r_{AB} < r) \land (|\hat{r}_{BT} - \hat{r}_{AT}|{<}\sigma_{p_0}^r)
+  {\implies} \textit{pval} > p_0$$}
+Where $\textit{pval}$ is the probability of test statistic under the
+null hypothesis that $r_{AT} = r_{BT}$ found using the Steiger's test \cite{steiger1980tests}.
+Let $\textit{stest}$
+denote Steiger's test predicate which satisfies the following:
+$\textit{stest}(\hat{r}_{AT}, \hat{r}_{BT}, r_{AB}, p_0, n)
+{\implies} \textit{pval} > p_0$. Then we found
+$\sigma_{p_0}^r$ by solving the following:
+{\small $$\sigma_{p_0}^r = \min\{\sigma | \forall\, 0 {<} r' {<} 1\, \textit{stest}(r',
+\min(r'+\sigma, 1), r, p_0, n) \} $$}
+Note that MRDS is a liberal threshold and it only guarantees that
+differences in correlations below that threshold can never be
+significant. MRDS might still mark differences as significant
+when they are not but it is useful in reducing some of the noise in
+the evaluations.  The values of $\sigma_{p_0}^r$ are shown in
+Table~\ref{tab:testlist}.
+
+For the accuracy based test-sets we found MRDS$=\sigma_{p_0}$ that satisfied
+the following:
+{\small $$ (\hat{\theta}_{B} - \hat{\theta}_{A})<\sigma_{p_0}
+  {\implies} \text{p}(\theta_{B} \le \theta_{A}) > p_0$$}
+Specifically, we calculated the posterior probability
+$\text{p}(\theta_{B} \le \theta_{A})$ with a flat prior of
+$\beta(1,1)$ to solve the following:\footnote{instead of using  McNemar's test
+  \cite{mcnemar1947note} since the bayesian approach is tractable and seems more direct.}
+{\small $\min\{\sigma_{p_0} |\forall\,
+  0{<}\theta{<}1{-}\sigma_{p_0}\,$
+  $\text{p}(\theta_{B}{\le} \theta_{A}| \hat{\theta}_A{=}\theta,
+\hat{\theta}_B{=}\theta+\sigma_{p_0}, n) > p_0\}$}
+Here $\theta_{A}$ and $\theta_{B}$ are probability of correctness of
+algorithm A and B and $\hat{\theta}_{A}$ and $\hat{\theta}_{B}$ are
+observed empirical accuracies.
 
 Unfortunately, there are no widely followed train-test splits of the above
 datasets and we also evaluated the effects of hyper-parameter tuning
 on the entire test set therefore our final comparison could have
-favored us due to ``soft supervision'' on these datasets while
-hyperparameter tuning. However the consistent performance of our
+favored us due to \emph{soft supervision}. %% on these datasets while
+%% hyperparameter tuning
+However the consistent performance of our
 method across the test sets lends hope that the trends we report would
 generalize.
 
-\noindent\textbf{Significance of comparison}: Imagine that there exist
-two sets of  scores produced by algorithms $A, B$ and a set of gold
-test score $T$ and we want to test 
-whether the spearman correlations $r_{AT} < r_{BT}$ are truly different.
-\newcite{steiger1980tests} proposed a test for
-finding the significance of difference between spearman correlations
-which requires $\rho_{AB}$, the spearman correlation between ratings of the two
-algorithms. Since one usually doesn't have access to 
-those scores  we experimented over a range of fixed values for those
-scores and found the \emph{Least Count (LC)} of difference in correlation
-coefficients that would allow us to say with 
-some confidence that the correlations produced by two algorithms are
-truly different. In other words the LC is the smallest number that 
-when added to $r_{AT}$ lowers the probability of null
-hypothesis to acceptable levels over all possible $r_{AT} \in (0,
-1)$. Note that LC is a liberal test and it 
-might mark differences as significant when they are not. The results are shown in
-Table~\ref{tab:testlist}. The LC column contains the
-least counts for significant difference in performance metrics for
-the corresponding datasets. E.g. the value 20.6 in the RG row under the
-LC(0.05, 0.5) column means that if $\rho_{AB} \le 0.5$ and
-$\rho_{B,RG} - \rho_{A,RG} < 20.6$ then the probability that the
-difference would vanish on a larger test set is greater than 0.05.
-For finding the LC for the last three accuracy based tests we
-used the beta-binomial setup.  We estimated posterior
-probability of $\theta_1, \theta_2$ given a $\beta(1,1)$ prior and
-given the data. Then we computed $\tilde{p} = p(\theta_2 - \theta_1 >
-0 | \hat{\theta_1}, \hat{\theta_1} + \textrm{LC})$ and chose
-the smallest value of LC for which $\tilde{p} > 0.95$.
-
-While surveying the literature we found that even while comparing
-competing methods on small test sets researchers do not report
-confidence  measures to judge the significance of difference between
-the Spearman Correlations. 
-E.g. the comparative difference between ratings produced by competing
-algorithms reported in \cite{faruqui2014retrofitting}  
-is not significant for the test set ``WS'', even if we assume that the correlation between Faruqui
-et. al's method and their competitors was as high as 0.9 and set the
-pval threshold to be 0.05. There are other examples such as
-\cite{hill2014not} but the main aim of these examples is only to
-convince researchers to  indicate confidence measures with their reported 
-performance metrics and to discourage the usage of the smaller datasets.
 
 \section{Experiments and Results}
 \label{sec:exp}
-%% We wanted to answer the following questions through our experiments:
-%% (1) How do hyper parameters affect performance? (2) What is the
-%% contribution of the multiple sources of data to performance? (3) How
-%% does the performance of MVLSA compare with other methods?
+We wanted to answer the following questions through our experiments:
+(1) How do hyper parameters affect performance? (2) What is the
+contribution of the multiple sources of data to performance? (3) How
+does the performance of MVLSA compare with other methods? For brevity we would only show
+tuning runs for the larger datasets in this section and distinguish
+the top performing configurations in bold using the small threshold
+values in column~$\sigma_{0.05}^{0.09}$ of Table~\ref{tab:testlist}.
 
 \noindent\textbf{Effect of Hyper parameters}: 
 $f_j$: We modeled the preprocessing function $f_j$ as the composition
@@ -642,26 +662,7 @@ $v$: Recall that in Expression~\ref{eq:gcca3} we described a method to
   words that did not appear in $v$ views before doing
   GCCA. Table~\ref{tab:v} shows that changes in $v$ are largely
   inconsequential for performance. In abscence of clear evidence in favor of regularization we
-  decided to regularize as little as possible and chose $v=16$. We were
-  not able to set $v=0$ since our current implementation of GCCA
-  procedure requires us to load the entire $\tilde{M}$ matrix in
-  memory which is 45*500*500K*8 Bytes = 90GB.
-  %% While this is certainly
-  %% possible with current hardware a more memory efficient approach is
-  %% desirable.
-  This is a drawback of our current implementation and we
-  are working on implementing a more scalable version of this
-  algorithm so that we can run experiments with larger
-  vocabularies. For our current experiments the largest vocabulary we
-  used consisted of 361K words and had 100\% recall on all the test
-  sets except for RW on which the recall was 92\%.
-  %% Also note that though the
-  %% size of $G$ decreases as we increase $v$ (and hence the recall of
-  %% our embeddings) for these experiments the recall of the vocabulary
-  %% over the test sets remained complete except for RW and T-SEM for
-  %% which the recall was 1700 out of 2034 and 8714 out of 8869
-  %% respectively.
-  
+  decided to regularize as little as possible and chose $v=16$.   
   \begin{table}[htbp]
     \centering
   \begin{tabular}{=l | +c +c H +c H +c H +c}
@@ -739,80 +740,74 @@ T-SEM                               & 34.3 & 34.3 & 34.3 & \mb{36.2} & 4.1  & 35
 
 \noindent\textbf{Comparison to other word representation creation methods:}
 There are a large number of methods of creating representations both
-multilingual and monolingual. We directly compare our method to the
-monolingual systems Glove and Word2Vec as their performance is widely
-considered to be the state of the art.
-%% We acknowledge that there 
-%% exist other methods such as the 3CosMul method proposed in
-%% \cite{levy2014dependency} or the Multimodal neural embedding methods
-%% presented recently in \cite{felix2014learning,weston2014hash} 
+multilingual and monolingual. There are many new methods such as
+\newcite{yu2014improving,faruqui2014retrofitting,felix2014learning,weston2014hash}
+that are performing multiview learning and could be considered as
+baselines however it is not straight forward to use those systems to
+handle the variety of data that we are using. Therefore, we directly
+compare our method to the Glove and the SkipGram model of Word2Vec as
+the performance of those systems is considered state of the art.  
 We trained the two systems on the English portion of the
 \textit{Polyglot} Wikipedia dataset.\footnote{More specifically
 we explicitly provided the vocabulary file to Glove and Word2Vec and set the
 truncation threshold for word2Vec to 10. Also Glove was trained for 25
 iterations. Glove was provided a window of 15 previous words and Word2Vec
-used a symmetric window of 10 words.}
+used a symmetric window of 10 words.} We also combined their outputs
+using MVLSA again to create \emph{G-WSG Combo} embeddings.
 
-To make a fair comparison we also provide 
+We trained our best MVLSA system with data from all the views and by
+using the individual best settings of 
+the hyper-parameters. Specifically the configuration we used was as
+follows: $n_j = \text{Count}^\frac{1}{4}, t=12.5K, m=500, k=300,
+v=16$. To make a fair comparison we also provide 
 results where we used only the views derived from the \textit{Polyglot}
-wikipedia corpus. See column ``MVLSA (Monolingual)'' in Table~\ref{tab:c}. 
-We also combined the embeddings created by different methods again
-using GCCA and results are presented in columns titled ``Combined''. The Combined
-models outperform all the three constituent methods which shows that
-the three methods were learning different patterns from the
-data and that pooling these experts by using GCCA was useful. Using GCCA itself for system combination provides closure
-for the MVLSA algorithm since more and more algorithms can now be combined by using the same method.
-
-%% for c in glove glove_0  word2vec; do \
-%%            echo $$c ; $(MAKE) -s ts_extrinsic_"$$c"_mytrain_mycode; done
-%%         echo "monolingMVLSA"; make -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-truncco\
-%% l12500_500~E@mi@bi@ag@fn@mo,300_1e-5_170000.300.1.1 ; \
-%%         echo "MVLSA"; make -s ts_fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol12500_5\
-%% 00~E@mi,300_1e-5_16.300.1.1 ;\
-%%         echo "3combo"; make -s ts_combined_embedding_0; \
-%%         echo "2combo"; make -s ts_combined_embedding_1 \
+wikipedia corpus. See column \emph{MVLSA (All Views)} and \emph{MVLSA
+  (Wiki)} respectively. It is clearly visible that MVLSA on the
+monolingual data itself is competitive with Glove but
+worse than Word2Vec on the word similarity datasets and it is
+substantially worse than both the systems on the T-SYN 
+and T-SEM datasets. However with the addition of multiple views MVLSA
+makes substantial gains, shown in column \emph{MV Gain}, and after consuming the Glove and WSG
+embeddings it again improves performance by some margins, as shown in
+column \emph{G-WSG Gain}, and outperforms the original systems. 
+Using GCCA itself for system combination provides closure
+for the MVLSA algorithm since more and more algorithms can now be
+combined by using the same method. Finally we constrast the spearman
+correlations $r_s$ with Glove and Word2Vec before and after including
+them in the GCCA procedure. The values demonstrate that including Glove and WSG
+  during GCCA actually increased the  correlation between them and the
+  learnt embeddings, which was agrees with our motivation for
+  performing GCCA in the first place.
 
 \begin{table*}[ht]
   \centering
-    \begin{adjustwidth}{-2cm}{}
+    \begin{adjustwidth}{0cm}{}
       \rowcolors{1}{}{lightgray}
-  \setlength\tabcolsep{1.5pt}
-  \begin{tabular}{=l| +c +c +c | +c +c +c +c c H | +c +c c +c +c}
-    Test Set &
-    \specialcell{LC\\(0.05,0.7)} &
-    Glove  &
-    W-SG &
-    \specialcell{MVLSA\\Monolingual} &
-    \specialcell{MVLSA\\All Views}&
-    \specialcell{$\rho$ \\Glove}&
-    \specialcell{$\rho$ \\W-SG}&
-    Increment  &
-    Gap &
-    \specialcell{Glove, W-SG\\Combined} &
-    \specialcell{All\\Combined} &
-    Increment &
-    \specialcell{$\rho$ \\Glove}&
-    \specialcell{$\rho$ \\W-SG}\\\hline
+  \setlength\tabcolsep{2pt}
+  \begin{tabular}{=l| +c +c +c | +c +c +r +c +r | +c +c | +c +c }
+    Test Set & Glove & WSG & G-WSG & MVLSA & MVLSA     & MV   & MV-G-WSG & G-WSG & \multicolumn{2}{c}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
+             &       &     & Combo & Wiki  & All Views & Gain & Combined & Gain  & Glove        & WSG         & Glove       & WSG         \\
+    \hline
     
-MEN                                & 2.3  & 70.4       & \myu{73.9} & 71.4 & 71.2 & 72 & 90 & -0.2      & -2.7  & 76.0 & \myu{75.8} & -0.2      & 84 & 92 \\
-RW                                 & 2.8  & 28.1       & 32.9       & 29.0 & 41.7 & 70 & 71 & \mb{12.7} & 8.8   & 37.2 & \myu{40.5} & \mb{3.3}  & 77 & 73 \\
-SCWS                               & 2.8  & 54.1       & \myu{65.6} & 61.8 & 67.3 & 72 & 86 & \mb{5.5}  & 1.7   & 60.7 & \myu{66.4} & \mb{5.7}  & 78 & 89 \\
-SIMLEX                             & 4    & 33.7       & 36.7       & 34.5 & 42.4 & 61 & 77 & \mb{7.9}  & 5.7   & 41.1 & \myu{43.9} & 2.8       & 77 & 84 \\
-WS                                 & 6.7  & 58.6       & \myu{70.8} & 68.0 & 70.8 & 69 & 87 & 2.8       & 0     & 67.4 & \myu{70.1} & 2.7       & 78 & 90 \\
-MTURK                              & 7.5  & \myu{61.7} & \myu{65.1} & 59.1 & 59.7 & 70 & 77 & 0.6       & -5.4  & 59.8 & \myu{62.9} & 3.1       & 79 & 83 \\
-WS-REL                             & 8    & 53.4       & \myu{63.6} & 60.1 & 65.1 & 58 & 80 & 5         & 1.5   & 59.6 & \myu{63.5} & 3.9       & 69 & 84 \\
-WS-SEM                             & 8.9  & \myu{69.0} & \myu{78.4} & 76.8 & 78.8 & 72 & 89 & 2         & 0.4   & 76.1 & \myu{79.2} & 3.1       & 80 & 92 \\
-\rowstyle{\color{darkergray}}RG    & 16   & \myu{73.8} & \myu{78.2} & 71.2 & 74.4 & 76 & 89 & 3.2       & -3.8  & 80.4 & \myu{80.8} & 0.4       & 89 & 89 \\
-\rowstyle{\color{darkergray}}MC    & 23.9 & \myu{70.5} & \myu{78.5} & 76.6 & 75.9 & 77 & 93 & -0.7      & -2.6  & 82.7 & \myu{77.7} & -5        & 88 & 91 \\
-T-SYN                              & 0.68 & 61.8       & 59.8       & 42.7 & 60.0 &    &    & \mb{17.3} & -1.8  & 51.0 & \myu{64.3} & \mb{13.3} &    &    \\
-T-SEM                              & 0.74 & \myu{80.9} & 73.7       & 36.2 & 38.6 &    &    & \mb{2.4}  & -42.3 & 73.5 & 77.2       & \mb{3.7}  &    &    \\
-\rowstyle{\color{darkergray}}TOEFL & 6.30 & \myu{83.8} & 81.2       & 78.8 & 87.5 &    &    & \mb{8.7}  & 3.7   & 86.2 & \myu{88.8} & 2.6       &    & 
+MEN                                & 70.4       & 73.9       & \myu{76.0} & 71.4       & 71.2       & -0.2      & \myu{75.8} & \ma{4.6}  & 71.9 & 89.1 & 85.8 & 92.3 \\
+RW                                 & 28.1       & 32.9       & 37.2       & 29.0       & \myu{41.7} & \ma{12.7} & \myu{40.5} & -1.2      & 72.3 & 74.2 & 80.2 & 75.6 \\
+SCWS                               & 54.1       & 65.6       & 60.7       & 61.8       & \myu{67.3} & \ma{5.5}  & \myu{66.4} & -0.9      & 87.1 & 94.5 & 91.3 & 96.3 \\
+SIMLEX                             & 33.7       & 36.7       & 41.1       & 34.5       & \myu{42.4} & \ma{7.9}  & \myu{43.9} & 1.5       & 62.4 & 78.2 & 79.3 & 86.0 \\
+WS                                 & 58.6       & \myu{70.8} & \myu{67.4} & \myu{68.0} & \myu{70.8} & \ma{2.8}  & \myu{70.1} & -0.7      & 72.3 & 88.1 & 81.8 & 91.8 \\
+MTURK                              & \myu{61.7} & \myu{65.1} & 59.8       & 59.1       & 59.7       & 0.6       & \myu{62.9} & 3.2       & 80.0 & 87.7 & 87.3 & 92.5 \\
+WS-REL                             & 53.4       & \myu{63.6} & 59.6       & 60.1       & \myu{65.1} & \ma{5.0}  & \myu{63.5} & -1.6      & 58.2 & 81.0 & 69.6 & 85.3 \\
+WS-SEM                             & 69.0       & \myu{78.4} & \myu{76.1} & \myu{76.8} & \myu{78.8} & 2.0       & \myu{79.2} & 0.4       & 74.4 & 90.6 & 83.9 & 94.0 \\
+\rowstyle{\color{darkergray}}RG    & \myu{73.8} & \myu{78.2} & \myu{80.4} & 71.2       & \myu{74.4} & 3.2       & \myu{80.8} & \ma{6.4}  & 80.3 & 90.6 & 91.8 & 92.9 \\
+\rowstyle{\color{darkergray}}MC    & \myu{70.5} & \myu{78.5} & \myu{82.7} & \myu{76.6} & \myu{75.9} & -0.7      & \myu{77.7} & 2.8       & 80.1 & 94.1 & 91.4 & 95.8 \\
+T-SYN                              & 61.8       & 59.8       & 51.0       & 42.7       & 60.0       & \ma{17.3} & \myu{64.3} & \ma{4.3}  &      &      &      &      \\
+T-SEM                              & \myu{80.9} & 73.7       & 73.5       & 36.2       & 38.6       & \ma{2.4}  & 77.2       & \ma{38.6} &      &      &      &      \\
+\rowstyle{\color{darkergray}}TOEFL & \myu{83.8} & 81.2       & \myu{86.2} & 78.8       & \myu{87.5} & \ma{8.7}  & \myu{88.8} & 1.3       &      &      &      & 
   \end{tabular}
-  \caption{Comparison of W-SG(Word2Vec Skip Gram), Glove and Multiview LSA. Change in
-    accuracy from the use of multiple views that is higher than LC is
-    in bold and the top scoring entries from the Glove, Word2Vec and Combined(All)
-  columns are underlined when the difference in their scores from the
-  top one is less than LC.}
+  \caption{Comparison of Multiview LSA against Glove and WSG(Word2Vec
+    Skip Gram) algorithms. We use $\sigma_{0.05}^{0.9}$ as the
+  threshold for highlighting the top performing systems in bold and for
+  marking significant increments due to use of additional views with
+  asterisk. }
   \label{tab:c}
   \end{adjustwidth}
 \end{table*}
@@ -835,26 +830,19 @@ Vector space representations of words have been created using diverse
  or using multi-modal data
  \cite{felix2014learning,bruni2012distributional}.
  
-\cite{faruqui2014improving} demonstrated that bilingual
-representations extracted using CCA outperformed their monolingual 
-counterparts.
-%% and clearly their method could be extended to
-%% multiple languages by merging the representations a pair at a time,
-%% though they did not do so in the paper.
-More recently \cite{hill2014not} demonstrated this same
-phenomenon through their experiments over neural representations learnt from MT
-systems. Also \cite{dhillon2011multi,dhillon2012two} used
-CCA as the primary method to learn vector representations. Our work
-takes all these threads to work to a logical extreme and uses GCCA to learn distributed
-representations using data from multiple languages.
+\cite{dhillon2011multi,dhillon2012two} were the first to use
+CCA as the primary method to learn vector representations and
+\cite{faruqui2014improving} further demonstrated incorporating bilingual
+data through CCA improved performance. More recently this same
+phenomenon was reported by \newcite{hill2014not} through their
+experiments over neural representations learnt from MT systems.
 %% Outside of the NLP
 %% community \cite{sun2013generalized,tripathi2011data} are two
 %% publications 
 %% that we are aware of that have used GCCA for ``data fusion''.
-
-While various researchers have tried to improve the
+And various other researchers have tried to improve the
 performance of their paraphrase systems or vector space models by using
-multiple sources of information such as bilingual
+diverse sources of information such as bilingual
 corpora~\cite{bannard2005paraphrasing,Huang2012Improving,zou2013bilingual}, 
 structured datasets~\cite{yu2014improving,faruqui2014retrofitting} or even
 tagged images~\cite{bruni2012distributional}; 
@@ -868,20 +856,21 @@ However, the previous
 work did not adopt the general, simplifying view that 
 all of these sources of data are just cooccurrence 
 statistics coming from different sources with underlying latent
-factors.\footnote{Though \cite{faruqui2014retrofitting} use
+factors.\footnote{Though \cite{faruqui2014retrofitting} used
   the sophisticated technique of belief propagation the graph that
-  they use it on is a single undirected weighted information. That
-  information can be perfectly captured in an adjacency matrix which is another type of
-cooccurrence matrix. Also they do not fuse arbitrary views such as
-other vector representations which we are performing.}
-
-%% In the sense of being an application of multiview
-%% learning methods to NLP our work is an addition to the long chain which
-%% started from the work of \cite{yarowsky1995unsupervised} and continued
-%% with Co-Training~\cite{blum1998combining}, CoBoosting~\cite{collins1999unsupervised} and ``2 view
-%% perceptrons''~\cite{brefeld2006efficient}.  CCA is also an algorithm
-%% for multi view learning \cite{kakade2007multi,ganchevuai08}, and it
-%% has a probabilistic interpretation \cite{bach2005probabilistic} as well.
+  they used it on was an undirected weighted graph that can be
+  perfectly represented as an adjacency matrix which is another type of
+cooccurrence matrix. Also their framework could not fuse arbitrary views such as
+other vector representations.}
+\remove{
+In the sense of being an application of multiview
+learning methods to NLP our work is an addition to the long chain which
+started from the work of \cite{yarowsky1995unsupervised} and continued
+with Co-Training~\cite{blum1998combining}, CoBoosting~\cite{collins1999unsupervised} and ``2 view
+perceptrons''~\cite{brefeld2006efficient}.  CCA is also an algorithm
+for multi view learning \cite{kakade2007multi,ganchevuai08}, and it
+has a probabilistic interpretation \cite{bach2005probabilistic} as
+well.
 
 \section{Future Work}
 \label{sec:futurework}
@@ -889,6 +878,25 @@ In a rough order of importance we believe we could improve our method in the fol
 \begin{itemize}[leftmargin=*]
   \itemsep-0.1em
   \renewcommand\labelitemi{--}
+  \item We were
+  not able to set $v=0$ since our current implementation of GCCA
+  procedure requires us to load the entire $\tilde{M}$ matrix in
+  memory which is 45*500*500K*8 Bytes = 90GB.
+  %% While this is certainly
+  %% possible with current hardware a more memory efficient approach is
+  %% desirable.
+  This is a drawback of our current implementation and we
+  are working on implementing a more scalable version of this
+  algorithm so that we can run experiments with larger
+  vocabularies. For our current experiments the largest vocabulary we
+  used consisted of 361K words and had 100\% recall on all the test
+  sets except for RW on which the recall was 92\%.
+  %% Also note that though the
+  %% size of $G$ decreases as we increase $v$ (and hence the recall of
+  %% our embeddings) for these experiments the recall of the vocabulary
+  %% over the test sets remained complete except for RW and T-SEM for
+  %% which the recall was 1700 out of 2034 and 8714 out of 8869
+  %% respectively.
 \item By implementing the probabilistic version of GCCA which would
   allow us to create generative models which could be trained in an
   online fashion. We conjectured that ``MAXVAR'' formulation of GCCA is closely related to a probabilistic interpretation of GCCA. We are not aware of any work
@@ -919,31 +927,40 @@ that has made this connection before and we are working on proving this where th
   %% we could calculate gradient of the gram matrix between words in a
   %% dataset versus the multiplicative factor.
 \end{itemize}
+}
 
 \section{Conclusion}
-Through the results in Table~\ref{tab:c} we demonstrated that fusing
-multiple data sources through the procedure of GCCA is an effective
-method to improve the performance of word representations. We also
-demonstrated that GCCA could be used even over a monolingual dataset
-thereby giving a more principled alternative of LSA which removed the
-need for manually fusing the word-word coccurrence matrices through
-reciprocal weighted averaging \cite{pennington2014glove}. We also
-provided least counts of significant changes for the commonly used
-datasets used to evalue word embeddings. 
+While previous work had already demonstrated that incorporating two views
+was beneficial this work leveraged that intuition to a
+logical extreme and used GCCA to learn distributed 
+representations using data from 46 views! Through the results in
+Table~\ref{tab:c} we demonstrated that fusing 
+multiple data sources through the procedure of MVLSA was effective
+in improving the performance of word representations on a
+comprehensive set of test datasets. In order to
+ perform GCCA over vocabularies with upto 500K words
+we presented a new fast algorithm, and also showed that a close
+variant of the Glove objective proposed by 
+\newcite{pennington2014glove} could be derived as a heuristic for
+handling missing data under the MVLSA framework. We also
+demonstrated that MVLSA could be used even over a monolingual
+dataset thereby providing a more principled alternative of LSA that
+removes the need for heuristically combining word-word coccurrence 
+matrices into a single matrix. Finally, while surveying the literature
+we noticed that not enough emphasis was being given towards
+establishing the significance of 
+comparative results and proposed a simple statistic \emph{(MRDS)}
+to filter out non-significant comparative gains between competing
+algorithms.
 
-%% The inter algorithm pearson correlation before and after performing
-%% GCCA showed  we see that the
-%% systems (word2vec and the Multiview LSA) are making the same types of
-%% predictions so the systems are producing a very similar representation
-%% even though the absolute performance on the extrinsic metrics differs
-%% by a lot sometimes.  
-%% \section*{Acknowledgments}
-%% This material is based on research sponsored by Defense Advanced Research
-%% Projects Agency (DARPA) under the Deep Exploration and
-%% Filtering of Text (DEFT) Program (Agreement number
-%% FA8750-13-2-0017). We also thank Juri Ganitkevitch for 
-%% providing the word aligned bitext corpus used in this paper.
-
+\remove{
+\section*{Acknowledgments}
+This material is based on research sponsored by Defense Advanced Research
+Projects Agency (DARPA) under the Deep Exploration and
+Filtering of Text (DEFT) Program (Agreement number
+FA8750-13-2-0017). We also thank Juri Ganitkevitch for 
+providing the word aligned bitext corpus.
+}
 \bibliographystyle{naaclhlt2015}
 \bibliography{references}
 \end{document}
