@@ -132,4 +132,4 @@ if __name__ == "__main__":
                 break
         if done:
             break
-    print lc
+    print "%0.3f"%lc

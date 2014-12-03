@@ -68,9 +68,10 @@ VOCAB_500K_FILE := $(VOCABWITHCOUNT_500K_FILE)_word
 # TARGET: This finds the least counts for all the datasets by using the
 # The first argument is the maximum LC from start, then number of data points, then assumed 3rd correlation then the required confidence level.
 find_lcs_datasets:
-	for n in 3000 2034 2003 999 353 287 252 203 ; do python src/find_lc_spearman_significance.py 0.1 $$n 0.7 0.05; done 
+	for n in 3000 2034 2003 999 353 287 252 203 ; do python src/find_lc_spearman_significance.py 0.1 $$n 0.7 0.05; done \
 	for n in 3000 2034 2003 999 353 287 252 203 65 30 ; do python src/find_lc_spearman_significance.py 0.6 $$n 0.5 0.01; done ; \
-	for n in 3000 2034 2003 999 353 287 252 203 65 30 ; do python src/find_lc_spearman_significance.py 0.6 $$n 0.5 0.001; done ;
+	for n in 3000 2034 2003 999 353 287 252 203 65 30 ; do python src/find_lc_spearman_significance.py 0.6 $$n 0.5 0.001; done ;\
+	matlab -nojvm -r "find_prob_of_difference_of_two_beta_dist"
 
 # TARGET: This finds the 3 way correlation between glove, w2v and me for all the similarity test sets
 # make find_all_3way_spearman_corr
@@ -83,7 +84,7 @@ find_all_3way_%_corr:
 	done
 get_%_3waycorr:
 	$(MAKE) TYPE=$(word 2,$(subst ., ,$*)) get_$(word 1,$(subst ., ,$*))_3waycorr_generic
-get_%_3waycorr_generic: log/combined_embedding_0 # log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1
+get_%_3waycorr_generic: log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1 # log/combined_embedding_0 # log/fullgcca_extrinsic_test_v5_embedding_mc_CountPow025-trunccol100000_500~E@mi,300_1e-5_20.300.1.1
 	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$3};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_glove_mytrain_mycode |sort -k1,1 > tmpg ;\
 	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$3};if($$4=="$*_FILENAME"){a=1};}' log/extrinsic_word2vec_mytrain_mycode |sort -k1,1 > tmpw ;\
 	awk 'BEGIN{a=0;b=1;}{if($$2=="$*"){b=0};if(a==1 && b==1){printf "%s-%s %s\n", $$1, $$2, $$3};if($$4=="$*_FILENAME"){a=1};}' $< |sort -k1,1 > tmpme; \

@@ -23,5 +23,5 @@ else:
 
 for i in range(3):
     for j in range(3):
-        sys.stdout.write("%0.2f, "%b[i,j])
+        sys.stdout.write("%0.3f, "%b[i,j])
     sys.stdout.write("\n")
