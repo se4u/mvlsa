@@ -89,10 +89,12 @@ vector-space models \cite{turney2010frequency}, where we say that
 expressions in language are paraphrases if
 their representations are \emph{close} under some distance measure.
 
+% Raman: Such a distance can be learned directly from natural language text data by first embedding words in a vector space. This is precisely what Latent Semantic Analysis (LSA), one of the earliest linguistic vector space models attempts to achieve. 
+
 One of the earliest linguistic vector space model is Latent
 Semantic Analysis (LSA).  LSA has been used widely in fields such
 as Information Retrieval and Cognitive Science, but is limited in its
-reliance on a single matrix, or \emph{view} of term co-occurrences.
+reliance on a single matrix, or \emph{view}, of term co-occurrences.
 
 %% Many recent efforts since the introduction of LSA are similarly
 %% restricted to a single view of terms, focusing on some combination of
@@ -103,83 +105,106 @@ Here we address the single-view limitation of LSA by demonstrating
 that the framework of Generalized Canonical Correlation Analysis
 (GCCA) can be used to perform Multiview LSA (MVLSA). This
 approach allows for the use of an arbitrary number of views in the
-induction process, including embeddings
-induced using other algorithms. We also present a fast approximate method
-for performing GCCA and approximately recover the objective of
-\cite{pennington2014glove} while accounting for missing values.
+induction process, including embeddings induced using other algorithms. We also present a fast approximate method for performing GCCA and approximately recover the objective of \cite{pennington2014glove} while accounting for missing values.
 
 Our experiments show that MVLSA is competitive with recent approaches.
 As a methodological aside, we discuss the (in-)appropriateness of
-various datasets being used as the basis for comparison within the community.
+various datasets being used as the basis for comparison within the community. 
+% \raman{Perhaps you want to comment on the inappropriateness of conclusions people make on such small datasets. I am sure people do realize that some of the datasets are too small.}
 
-\section{Background: LSA, PCA and CCA}
-LSA is a dimensionality reduction method based on
-eigen-decomposition. The term-paragraph, or term-document 
-statistics are collected into a matrix and the top
-principal components of that matrix are then found using a Singular
-Value Decomposition (SVD). Subsequently these eigenvectors form 
-the basis in vector-space for representing the input terms
-\cite{landauer1997solution}. Since LSA is simply an application of PCA
-therefore all the theoretical results for PCA apply to LSA as well.
+% \section{Motivating LSA, CCA and GCCA}
+\section{Motivation} 
 
-CCA is another dimensionality reduction method that finds two vector-space basis such that
-once we project two datasets X and Y to those basis then the
-correlation between corresponding projections gets
-maximized\cite{hotelling1935the}. CCA has recently been applied by
-\cite{dhillon2011multi,dhillon2012two,faruqui2014improving} for
-learning embeddings of words. Note that CCA is a special case of
-\emph{MAX-VAR GCCA}, see \cite{velden2011on} for proof.
+% One of the most important challenges in machine learning is to automate the learning of useful representations from raw data. Unsupervised approaches to representation learning aim to capitalize on unlabeled data which is cheap and abundant compared to labeled data which is expensive, time-consuming and hard to obtain. The success of such data-driven approaches depends not only on how much data we can process but also on how well the representations that we learn correlate with the underlying semantic content in the data. To that end, in this paper, we consider multi-view representation learning. 
 
-\section{Motivation}
-\label{sec:motivation}
-GCCA has been derived in many ways and we would use those derivations
-to motivate our approach. \cite{horst1961generalized} derived GCCA as follows. Assume that you have samples of $J$
-``co-variates''. Horst's goal was to find unit variance linear
-projections $\textrm{Z}$ such that some measure of the inter-projection correlation
-matrix $\Phi$ is maximized. For example one could choose the measure to be
-the spectral-norm of $\Phi$. Note that maximizing the spectral-norm of $\Phi$ is equivalent to
-finding $Z$ that can be best explained by a rank 
-one approximation. In other words we are finding $Z$ that are most
-amenable to rank-one PCA, or that can be best explained by a single
-term factor model. \cite{kettenring1971canonical} called this procedure
-\emph{MAX-VAR GCCA} and showed that this
-objective was equivalent to another one proposed by
-\cite{carroll1968generalization}. Carroll's objective was to maximize the following: $\sum_{j=1}^J
-\textrm{correlation}(G, Z_j)^2$. In
-words this expression tells us to find an orthogonal  
-representation $G$ of the co-variates $Z_j$ that is maximally
-correlated to them. This objective agrees with the intuition that representations
-learnt from multiple views should correlate with all of them as much
-as possible.
+% One of the most popular and almost ubiquitous representation learning technique is principal component analysis (PCA). In natural language processing, PCA on term-document frequency matrix leads to what is known as latent semantic analysis (LSA). 
 
-\cite{bach2005probabilistic} presented a probabilistic
-interpretation for CCA. Though they did not generalize it to
-include GCCA we believe that one could give a probabilistic
-interpretation of \emph{MAX-VAR GCCA} easily and we are working on
-it. We mention it, since a probabilistic
-interpretation would allow us to build an online-generative model and learn
-lexical representations unlike methods like Glove or LSA that rely
-solely on global term cooccurrence matrices and cannot calculate
-perplexity or generate sequences. We also note that
-\cite{via2007learning} presented a neural network model of GCCA and 
-adaptive/incremental GCCA. However, that approach is out of the scope of this work.
+LSA is an unsupervised representation learning technique that consists of performing principal component analysis (PCA) on term-document frequency matrix. % Subsequently, these principal directions form the basis for the vector space which captures maximal variation (amongst all vector spaces of the same size) in the input terms-document statistics~\cite{landauer1997solution}. 
+The principal directions found by LSA form the basis of the vector-space in which to represent the input terms~\cite{landauer1997solution}. LSA can thus be seen as forming a compact word representation that captures as much {\bf{\emph{{variation}}}} in the input term-document statistics as possible.
+% , or equivalently one that is \emph{optimal} for reconstructing the term statistics. 
+% Since LSA is simply an application of PCA therefore all the theoretical results for PCA apply to LSA as well.
+% In other words, LSA learns the subspace that captures maximal variation 
+% Since LSA is simply an application of PCA therefore all the theoretical results for PCA apply to LSA as well.
 
-Often in many applications we have multiple views in data, for
-instance the left and right contexts of words are two views which are both
-present at training time. In such
-settings, LSA, and related techniques, process data as a single
-monolithic object obtained by stacking different views. However, the
-alternative multi-view approaches like CCA have received attention
-recently in semi-supervised learning because multi-view learning reduces the complexity of learning problem by
-restricting hypothesis class in each view to those which tend to
-agree with each other under the assumption that either
-view has sufficient information about the latent semantic content
- \cite{sridharan2008information}. 
-%% Another benefit of using GCCA over vanilla LSA is that since we can
-%% naturally fuse the statistics generated by using different window sizes we
-%% don't have to specify an arbitrary weighting method, like reciprocal
-%% weighting, for creating a single cooccurrence matrix to represent a
-%% corpus. NOT TRUE, NOT TRUE
+% Recently, a richer family of representation learning techniques have emerged that leverage multiple views in the data. 
+While LSA is an effective and computationally efficient representation learning technique, it is inherently limited to a single view in data. Often, we can learn better representations when we have more than one view in data. 
+% multiple views in data. 
+The different % multiple 
+views may be different modalities or sources of information; for instance, text in different languages, or may be derived from given data as natural splits; for instance, the left and right contexts of words. 
+% in many settings, we have more than one view in data; consider for instance, text in different languages, or the left and right contexts of words. 
+% These multiple views may be different modalities or sources of information; for instance, text in different languages, or may be derived from given data as natural splits; for instance, the left and right contexts of words. 
+% ; for instance, text in different languages, or it is natural to consider splits of data as different views; for instance, the left and right contexts of words. 
+In such settings, LSA, and related techniques, would still process data as a single monolithic object obtained by stacking the two views. The alternative ``multi-view'' approach to representation learning that has recently received a lot of attention is based on canonical correlation analysis (CCA). These techniques aim at learning representations that are maximally {\bf{\emph{{correlated}}}} across a pair of views. 
+% Multi-view learning techniques based on CCA/GCCA may be viewed as representation learning techniques with soft supervision and can help learn features that are more interpretable and better correlated with the latent semantic content in data. 
+CCA based techniques have recently been applied by~\cite{dhillon2011multi,dhillon2012two,faruqui2014improving} for
+learning embeddings of words. % Note that CCA is a special case of \emph{MAX-VAR GCCA}, see \cite{velden2011on} for proof.
+
+Much prior work in multi-view learning has focussed on a pair of views (audio+video, acoustic+articulation, bi-text). However, multiple views in data are diverse and abundant. Here, we consider an extension of CCA to more than two views. While there is no standard notion of correlation to more than two sets of covariates, it is natural to consider simple functions of all pairwise correlation such as sum-correlation or max-correlation. These extensions are collectively referred to as Generalized CCA (GCCA); we are in particular interested in the MAX-VAR variant of GCCA as it leads to a tractable and scalable algorithm as we show in the next section. 
+
+
+% While much work in multi-view learning has focussed on a pair of views (audio+video, acoustic+articulation, bi-text), multiple views are diverse and abundant. 
+
+% has received a lot of attention recently in unsupervised representation learning. Under the assumption that either view has sufficient information about the latent semantic content, multi-view learning reduces the complexity of learning problem by restricting hypothesis class in each view to those which tend to ``agree with each other’’ \cite{SridharanKakade:08}. The main insight is that this complexity reduction can happen using unlabeled data which is often plenty, and definitely the case in natural language processing. Furthermore, under the multi-view assumption given above, it was shown that canonical correlation analysis (CCA), a subspace learning technique that looks for representations that are maximally correlated across the two views, is ideal for dimensionality reduction as it loses little predictive power~\cite{Sridharan:08}. CCA can be formulated as follows: given
+
+% leverage additional views by restricting possible representations to those that simultaneously provide a good representation for both views. 
+% \emph{optimal} for reconstructing input statistics in both views. 
+% Furthermore, under the assumption that either view has sufficient information about the latent semantic content, canonical correlation analysis (CCA), a subspace learning technique that looks for representations that are maximally correlated across the two views, yields such a shared representation~\cite{Sridharan:08}. 
+
+% multi-view learning reduces the complexity of learning problem by restricting hypothesis class in each view to those which tend to ``agree with each other’’ \cite{SridharanKakade:08}. The main insight is that this complexity reduction can happen using unlabeled data which is often plenty, and definitely the case in natural language processing. CCA can be formulated as follows: given
+
+
+% CCA is another dimensionality reduction method that finds two vector-space basis such that once we project two datasets X and Y to those basis then the correlation between corresponding projections gets maximized\cite{hotelling1935the}. CCA has recently been applied by \cite{dhillon2011multi,dhillon2012two,faruqui2014improving} for learning embeddings of words. Note that CCA is a special case of \emph{MAX-VAR GCCA}, see \cite{velden2011on} for proof.
+
+%\section{Motivation}
+%\label{sec:motivation}
+%GCCA has been derived in many ways and we would use those derivations
+%to motivate our approach. \cite{horst1961generalized} derived GCCA as follows. Assume that you have samples of $J$
+%``co-variates''. Horst's goal was to find unit variance linear
+%projections $\textrm{Z}$ such that some measure of the inter-projection correlation
+%matrix $\Phi$ is maximized. For example one could choose the measure to be
+%the spectral-norm of $\Phi$. Note that maximizing the spectral-norm of $\Phi$ is equivalent to
+%finding $Z$ that can be best explained by a rank 
+%one approximation. In other words we are finding $Z$ that are most
+%amenable to rank-one PCA, or that can be best explained by a single
+%term factor model. \cite{kettenring1971canonical} called this procedure
+%\emph{MAX-VAR GCCA} and showed that this
+%objective was equivalent to another one proposed by
+%\cite{carroll1968generalization}. Carroll's objective was to maximize the following: $\sum_{j=1}^J
+%\textrm{correlation}(G, Z_j)^2$. In
+%words this expression tells us to find an orthogonal  
+%representation $G$ of the co-variates $Z_j$ that is maximally
+%correlated to them. This objective agrees with the intuition that representations
+%learnt from multiple views should correlate with all of them as much
+%as possible.
+%
+%\cite{bach2005probabilistic} presented a probabilistic
+%interpretation for CCA. Though they did not generalize it to
+%include GCCA we believe that one could give a probabilistic
+%interpretation of \emph{MAX-VAR GCCA} easily and we are working on
+%it. We mention it, since a probabilistic
+%interpretation would allow us to build an online-generative model and learn
+%lexical representations unlike methods like Glove or LSA that rely
+%solely on global term cooccurrence matrices and cannot calculate
+%perplexity or generate sequences. We also note that
+%\cite{via2007learning} presented a neural network model of GCCA and 
+%adaptive/incremental GCCA. However, that approach is out of the scope of this work.
+%
+%Often in many applications we have multiple views in data, for
+%instance the left and right contexts of words are two views which are both
+%present at training time. In such
+%settings, LSA, and related techniques, process data as a single
+%monolithic object obtained by stacking different views. However, the
+%alternative multi-view approaches like CCA have received attention
+%recently in semi-supervised learning because multi-view learning reduces the complexity of learning problem by
+%restricting hypothesis class in each view to those which tend to
+%agree with each other under the assumption that either
+%view has sufficient information about the latent semantic content
+% \cite{sridharan2008information}. 
+%%% Another benefit of using GCCA over vanilla LSA is that since we can
+%%% naturally fuse the statistics generated by using different window sizes we
+%%% don't have to specify an arbitrary weighting method, like reciprocal
+%%% weighting, for creating a single cooccurrence matrix to represent a
+%%% corpus. NOT TRUE, NOT TRUE
 
 \section{Proposed Method: MVLSA}
 \label{sec:gcca}
@@ -862,6 +887,58 @@ factors.\footnote{Though \cite{faruqui2014retrofitting} used
   perfectly represented as an adjacency matrix which is another type of
 cooccurrence matrix. Also their framework could not fuse arbitrary views such as
 other vector representations.}
+
+
+GCCA has been derived in many ways and we would use those derivations
+to motivate our approach. \cite{horst1961generalized} derived GCCA as follows. Assume that you have samples of $J$
+``co-variates''. Horst's goal was to find unit variance linear
+projections $\textrm{Z}$ such that some measure of the inter-projection correlation
+matrix $\Phi$ is maximized. For example one could choose the measure to be
+the spectral-norm of $\Phi$. Note that maximizing the spectral-norm of $\Phi$ is equivalent to
+finding $Z$ that can be best explained by a rank 
+one approximation. In other words we are finding $Z$ that are most
+amenable to rank-one PCA, or that can be best explained by a single
+term factor model. \cite{kettenring1971canonical} called this procedure
+\emph{MAX-VAR GCCA} and showed that this
+objective was equivalent to another one proposed by
+\cite{carroll1968generalization}. Carroll's objective was to maximize the following: $\sum_{j=1}^J
+\textrm{correlation}(G, Z_j)^2$. In
+words this expression tells us to find an orthogonal  
+representation $G$ of the co-variates $Z_j$ that is maximally
+correlated to them. This objective agrees with the intuition that representations
+learnt from multiple views should correlate with all of them as much
+as possible.
+
+\cite{bach2005probabilistic} presented a probabilistic
+interpretation for CCA. Though they did not generalize it to
+include GCCA we believe that one could give a probabilistic
+interpretation of \emph{MAX-VAR GCCA} easily and we are working on
+it. We mention it, since a probabilistic
+interpretation would allow us to build an online-generative model and learn
+lexical representations unlike methods like Glove or LSA that rely
+solely on global term cooccurrence matrices and cannot calculate
+perplexity or generate sequences. We also note that
+\cite{via2007learning} presented a neural network model of GCCA and 
+adaptive/incremental GCCA. However, that approach is out of the scope of this work.
+
+Often in many applications we have multiple views in data, for
+instance the left and right contexts of words are two views which are both
+present at training time. In such
+settings, LSA, and related techniques, process data as a single
+monolithic object obtained by stacking different views. However, the
+alternative multi-view approaches like CCA have received attention
+recently in semi-supervised learning because multi-view learning reduces the complexity of learning problem by
+restricting hypothesis class in each view to those which tend to
+agree with each other under the assumption that either
+view has sufficient information about the latent semantic content
+ \cite{sridharan2008information}. 
+%% Another benefit of using GCCA over vanilla LSA is that since we can
+%% naturally fuse the statistics generated by using different window sizes we
+%% don't have to specify an arbitrary weighting method, like reciprocal
+%% weighting, for creating a single cooccurrence matrix to represent a
+%% corpus. NOT TRUE, NOT TRUE
+
+
 \remove{
 In the sense of being an application of multiview
 learning methods to NLP our work is an addition to the long chain which
@@ -871,6 +948,8 @@ perceptrons}~\cite{brefeld2006efficient}.  CCA is also an algorithm
 for multi view learning \cite{kakade2007multi,ganchevuai08}, and it
 has a probabilistic interpretation \cite{bach2005probabilistic} as
 well.
+
+
 
 \section{Future Work}
 \label{sec:futurework}
