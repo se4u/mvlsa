@@ -10,6 +10,7 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{tabularx}
+\usepackage{bm}
 \usepackage{changepage}
 %\usepackage{booktabs}
 \usepackage{placeins}
@@ -22,18 +23,31 @@
 \newcommand{\xline}[0]{\noindent\underline{\makebox[0.1cm][l]{}}}
 \newcommand{\specialcell}[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
 \newcommand{\mb}[1]{\textbf{#1}}
-\newcommand{\ma}[1]{*#1}
+\newcommand{\ma}[1]{#1^\dagger}
 \newcommand{\mi}[1]{\textbf{#1}}
-\newcommand{\myu}[1]{\textbf{#1}}
+\newcommand{\y}[1]{#1^*}
+
+%% Pretty fragile code to enable boldness and inheritance of separator.
+\let\oldmc\multicolumn
+\makeatletter
+\newcolumntype{B}[3]{>{\boldmath\DC@{#1}{#2}{#3}}c<{\DC@end}}
+\newcommand{\mcinherit}{\renewcommand{\multicolumn}[3]{\oldmc{##1}{##2}{\ifodd\rownum \@oddrowcolor\else\@evenrowcolor\fi ##3}}}
+\makeatother
+
+\newcommand{\m}[1]{\multicolumn{1}{c}{#1}}
+\newcommand{\mm}[1]{\multicolumn{1}{c|}{#1}}
+\newcommand{\my}[1]{\multicolumn{1}{B{.}{.}{-1}}{#1^*}}
+\newcommand{\myy}[1]{\multicolumn{1}{B{.}{.}{-1}|}{#1^*}}
 \usepackage{array}
 \usepackage{enumitem}
+\usepackage{dcolumn}
 \newcolumntype{H}{>{\setbox0=\hbox\bgroup}c<{\egroup}@{}}
+\newcolumntype{d}[1]{D{.}{.}{#1}}
 \newcolumntype{S}{l}
 \makeatletter
 \newcommand{\remove}[1]{}
 \newcommand{\removet}[1]{#1}
 \newcommand*{\@rowstyle}{}
-
 \newcommand*{\rowstyle}[1]{% sets the style of the next row
   \gdef\@rowstyle{#1}%
   \@rowstyle\ignorespaces%
@@ -71,14 +85,16 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-  \emph{Multiview LSA (MVLSA)} is a generalization of Latent Semantic Analysis (LSA) that supports the 
+  \emph{Multiview LSA (MVLSA)} is a generalization of Latent Semantic
+  Analysis (LSA) that supports the  
   fusion of arbitrary views of data and relies on Generalized Canonical Correlation
-  Analysis (GCCA). We present a method
-  for fast approximate computation of GCCA, coupled with a method
-  for handling missing values that is general enough to approximate
-  some other recent algorithms. Experiments across a comprehensive
+  Analysis (GCCA). We present an algorithm
+  for fast approximate computation of GCCA, which when coupled with methods
+  for handling missing values, is general enough to approximate
+  some recent algorithms for inducing vector representations of
+  words. Experiments across a comprehensive 
   collection of test-sets show our approach to be competitive with the
-  state-of-art.   
+  state of the art.   
 \end{abstract}
 
 \section{Introduction}
@@ -314,7 +330,7 @@ matrix $Y_j$ and then update it. See \cite{brand2006fast} for details.
 %% words in the vocabulary and that the rows correspond to each
 %% other.
 With real data it may happen that a word was not observed in a view at
-all. A significant number of 
+all. A large number of 
 missing rows can corrupt the learnt representations since the rows
 in the left singular matrix become zero.
 %% The procedure described above
@@ -367,7 +383,7 @@ approximately recover the objective of \cite{pennington2014glove}:
 
 \section{Data}
 \label{sec:data}
-\noindent\textbf{Training Data}: We used the English portion of the \textit{Polyglot} wikipedia dataset
+\noindent\textbf{Training Data}: We used the English portion of the \textit{Polyglot} Wikipedia dataset
 released by \newcite{al2013polyglot} to create 15 \emph{irredundant} views of
 cooccurrence statistics where element $[z]_{ij}$ of view $Z_k$
 represents that number of times word $w_j$ occurred $k$ words behind
@@ -464,11 +480,11 @@ vocabulary task.
     MC     & 30    & 41.7 & 32.7 & 19.0 & 30.6 & 23.9 & 13.8 & \cite{miller1991contextual}     \\ \hline
     T-SYN  & 10675 & -    & -    & 0.95 & -    & -    & 0.68 & \cite{mikolov2013distributed}   \\
     T-SEM  & 8869  & -    & -    & 1.03 & -    & -    & 0.74 & -Same-As-Above-                 \\
-    TOEFL  & 80    & -    & -    & 8.13 & -    & -    & 6.30 & \cite{landauer1997solution}
+    TOEFL  & 80    & -    & -    & 8.13 & -    & -    & 6.63 & \cite{landauer1997solution}
   \end{tabular}
   %}
   \caption{List of test datasets used. The columns headed $\sigma_{p_0}^r$ contain 
-    \emph{Minimum Required Difference for Significance (MRDS)}
+    \emph{MRDS}
     values. The rows for accuracy based test sets contain
     $\sigma_{p_0}$ which does not depend on $r$. See
     \S~\ref{ssec:mdrs} for details.} 
@@ -490,15 +506,15 @@ could not be significant for the Word Similarity test set released by
 even if we assume that the correlation between the competing methods was as high as 0.9 and set the
 pval threshold to be 0.05. There are other examples such as the
 comparisons in \cite{hill2014not}. We would also present a simple method to calculate the
-\emph{Minimum Required Difference for Significance (MRDS)} value for a
-dataset which can be used to rule out insignificant differences. We
+\emph{Minimum Required Difference for Significance (MRDS)} for a
+dataset which can be used to filter out insignificant differences. We
 also hope that the following discussion would discourage the usage of the smaller
 datasets.
 
-\noindent\textbf{Minimum Required Difference (MRDS)}:
+\noindent\textbf{Minimum Required Difference for Significance (MRDS)}:
 Imagine that there exist two lists of ratings produced by algorithms $A, B$ and a list of gold
 ratings $T$. Let $r_{AT}$ and $r_{BT}$ and $r_{AB}$ denote the
-spearman correlations between $A, T$ and $B, T$ and $A, B$ respectively. Also let
+Spearman correlations between $A, T$ and $B, T$ and $A, B$ respectively. Also let
 $\hat{r}_{AT}, \hat{r}_{BT}, \hat{r}_{AB}$ be their empirical
 estimates. and assume that $\hat{r}_{BT} > \hat{r}_{AT}$.
 
@@ -510,7 +526,7 @@ null hypothesis that $r_{AT} = r_{BT}$ found using the Steiger's test \cite{stei
 Let $\textit{stest}$
 denote Steiger's test predicate which satisfies the following:
 $\textit{stest}(\hat{r}_{AT}, \hat{r}_{BT}, r_{AB}, p_0, n)
-{\implies} \textit{pval} > p_0$. Then we found
+{\implies} \textit{pval} < p_0$. Then we found
 $\sigma_{p_0}^r$ by solving the following:
 {\small $$\sigma_{p_0}^r = \min\{\sigma | \forall\, 0 {<} r' {<} 1\, \textit{stest}(r',
 \min(r'+\sigma, 1), r, p_0, n) \} $$}
@@ -523,16 +539,19 @@ Table~\ref{tab:testlist}.
 
 For the accuracy based test-sets we found MRDS$=\sigma_{p_0}$ that satisfied
 the following:
-{\small $$ (\hat{\theta}_{B} - \hat{\theta}_{A})<\sigma_{p_0}
+{\small $$ 0< (\hat{\theta}_{B} - \hat{\theta}_{A})<\sigma_{p_0}
   {\implies} \text{p}(\theta_{B} \le \theta_{A}) > p_0$$}
 Specifically, we calculated the posterior probability
 $\text{p}(\theta_{B} \le \theta_{A})$ with a flat prior of
 $\beta(1,1)$ to solve the following:\footnote{instead of using  McNemar's test
-  \cite{mcnemar1947note} since the Bayesian approach is tractable and seems more direct.}
-{\small $\min\{\sigma_{p_0} |\forall\,
-  0{<}\theta{<}1{-}\sigma_{p_0}\,$
+  \cite{mcnemar1947note} since the Bayesian approach is tractable and
+  more direct. A calculation with $\beta(0.5, 0.5)$ as the prior
+  changed $\sigma_{0.5}$ from 6.63 to 6.38 for the TOEFL dataset but
+  did not affect MRDS for the T-SEM and T-SYN datasets.}
+{\small $\sigma_{p_0}=\min\{\sigma |\forall\,
+  0{<}\theta{<}\min(1{-}\sigma,0.9)\,$
   $\text{p}(\theta_{B}{\le} \theta_{A}| \hat{\theta}_A{=}\theta,
-\hat{\theta}_B{=}\theta+\sigma_{p_0}, n) > p_0\}$}
+\hat{\theta}_B{=}\theta+\sigma, n) < p_0\}$}
 Here $\theta_{A}$ and $\theta_{B}$ are probability of correctness of
 algorithm A and B and $\hat{\theta}_{A}$ and $\hat{\theta}_{B}$ are
 observed empirical accuracies.
@@ -787,7 +806,7 @@ the hyper-parameters. Specifically the configuration we used was as
 follows: $n_j = \text{Count}^\frac{1}{4}, t=12.5K, m=500, k=300,
 v=16$. To make a fair comparison we also provide 
 results where we used only the views derived from the \textit{Polyglot}
-wikipedia corpus. See column \emph{MVLSA (All Views)} and \emph{MVLSA
+Wikipedia corpus. See column \emph{MVLSA (All Views)} and \emph{MVLSA
   (Wiki)} respectively. It is clearly visible that MVLSA on the
 monolingual data itself is competitive with Glove but
 worse than Word2Vec on the word similarity datasets and it is
@@ -798,7 +817,7 @@ embeddings it again improves performance by some margins, as shown in
 column \emph{G-WSG Gain}, and outperforms the original systems. 
 Using GCCA itself for system combination provides closure
 for the MVLSA algorithm since more and more algorithms can now be
-combined by using the same method. Finally we contrast the spearman
+combined by using the same method. Finally we contrast the Spearman
 correlations $r_s$ with Glove and Word2Vec before and after including
 them in the GCCA procedure. The values demonstrate that including Glove and WSG
   during GCCA actually increased the  correlation between them and the
@@ -807,35 +826,38 @@ them in the GCCA procedure. The values demonstrate that including Glove and WSG
 
 \begin{table*}[ht]
   \centering
-    \begin{adjustwidth}{0cm}{}
-      \rowcolors{1}{}{lightgray}
-  \setlength\tabcolsep{2pt}
-  \begin{tabular}{=l| +c +c +c | +c +c +r +c +r | +c +c | +c +c }
-    Test Set & Glove & WSG & G-WSG & MVLSA & MVLSA     & MV   & MV-G-WSG & G-WSG & \multicolumn{2}{c}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
-             &       &     & Combo & Wiki  & All Views & Gain & Combined & Gain  & Glove        & WSG         & Glove       & WSG         \\
-    \hline
-    
-MEN                                & 70.4       & 73.9       & \myu{76.0} & 71.4       & 71.2       & -0.2      & \myu{75.8} & \ma{4.6}  & 71.9 & 89.1 & 85.8 & 92.3 \\
-RW                                 & 28.1       & 32.9       & 37.2       & 29.0       & \myu{41.7} & \ma{12.7} & \myu{40.5} & -1.2      & 72.3 & 74.2 & 80.2 & 75.6 \\
-SCWS                               & 54.1       & 65.6       & 60.7       & 61.8       & \myu{67.3} & \ma{5.5}  & \myu{66.4} & -0.9      & 87.1 & 94.5 & 91.3 & 96.3 \\
-SIMLEX                             & 33.7       & 36.7       & 41.1       & 34.5       & \myu{42.4} & \ma{7.9}  & \myu{43.9} & 1.5       & 62.4 & 78.2 & 79.3 & 86.0 \\
-WS                                 & 58.6       & \myu{70.8} & \myu{67.4} & \myu{68.0} & \myu{70.8} & \ma{2.8}  & \myu{70.1} & -0.7      & 72.3 & 88.1 & 81.8 & 91.8 \\
-MTURK                              & \myu{61.7} & \myu{65.1} & 59.8       & 59.1       & 59.7       & 0.6       & \myu{62.9} & 3.2       & 80.0 & 87.7 & 87.3 & 92.5 \\
-WS-REL                             & 53.4       & \myu{63.6} & 59.6       & 60.1       & \myu{65.1} & \ma{5.0}  & \myu{63.5} & -1.6      & 58.2 & 81.0 & 69.6 & 85.3 \\
-WS-SEM                             & 69.0       & \myu{78.4} & \myu{76.1} & \myu{76.8} & \myu{78.8} & 2.0       & \myu{79.2} & 0.4       & 74.4 & 90.6 & 83.9 & 94.0 \\
-\rowstyle{\color{darkergray}}RG    & \myu{73.8} & \myu{78.2} & \myu{80.4} & 71.2       & \myu{74.4} & 3.2       & \myu{80.8} & \ma{6.4}  & 80.3 & 90.6 & 91.8 & 92.9 \\
-\rowstyle{\color{darkergray}}MC    & \myu{70.5} & \myu{78.5} & \myu{82.7} & \myu{76.6} & \myu{75.9} & -0.7      & \myu{77.7} & 2.8       & 80.1 & 94.1 & 91.4 & 95.8 \\
-T-SYN                              & 61.8       & 59.8       & 51.0       & 42.7       & 60.0       & \ma{17.3} & \myu{64.3} & \ma{4.3}  &      &      &      &      \\
-T-SEM                              & \myu{80.9} & 73.7       & 73.5       & 36.2       & 38.6       & \ma{2.4}  & 77.2       & \ma{38.6} &      &      &      &      \\
-\rowstyle{\color{darkergray}}TOEFL & \myu{83.8} & 81.2       & \myu{86.2} & 78.8       & \myu{87.5} & \ma{8.7}  & \myu{88.8} & 1.3       &      &      &      & 
+    %\begin{adjustwidth}{0cm}{}
+      \rowcolors{1}{}{lightgray}  \mcinherit
+  \setlength\tabcolsep{2.2pt}
+  \begin{tabular}{=l|                  +d{2.1}     +d{2.1}     +d{2.1}  |   +d{2.1}     +d{2.1}        +d{2.1}     +d{2.1}         +d{2.1}  | +c                                  +c |     +c            +c }
+    \mm{Test Set}                  & \m{Glove} & \m{WSG}   & \mm{G-WSG} & \m{MVLSA} & \m{MVLSA}     & \m{MV}    & \m{MV-G-WSG} & \mm{G-WSG} & \multicolumn{2}{c|}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
+                \mm{}              & \m{}      & \m{}      & \mm{Combo} & \m{Wiki } & \m{All Views} & \m{Gain}  & \m{Combined} & \mm{Gain } & \m{Glove}                        & \mm{WSG} & \m{Glove} & \m{WSG}     \\\hline
+MEN                                & 70.4      & 73.9      & \myy{76.0} & 71.4      & 71.2          & -0.2      & \y{75.8}     & \ma{4.6}   & 71.9                             & 89.1     & 85.8      & 92.3        \\
+RW                                 & 28.1      & 32.9      & 37.2       & 29.0      & \my{41.7}     & \ma{12.7} & \y{40.5}     & -1.2       & 72.3                             & 74.2     & 80.2      & 75.6        \\
+SCWS                               & 54.1      & 65.6      & 60.7       & 61.8      & \my{67.3}     & \ma{5.5}  & \y{66.4}     & -0.9       & 87.1                             & 94.5     & 91.3      & 96.3        \\
+SIMLEX                             & 33.7      & 36.7      & 41.1       & 34.5      & \y{42.4}      & \ma{7.9}  & \my{43.9}    & 1.5        & 62.4                             & 78.2     & 79.3      & 86.0        \\
+WS                                 & 58.6      & \my{70.8} & \y{67.4}   & \y{68.0}  & \my{70.8}     & \ma{2.8}  & \y{70.1}     & -0.7       & 72.3                             & 88.1     & 81.8      & 91.8        \\
+MTURK                              & \y{61.7}  & \my{65.1} & 59.8       & 59.1      & 59.7          & 0.6       & \y{62.9}     & 3.2        & 80.0                             & 87.7     & 87.3      & 92.5        \\
+WS-REL                             & 53.4      & \my{63.6} & 59.6       & 60.1      & \y{65.1}      & \ma{5.0}  & \y{63.5}     & -1.6       & 58.2                             & 81.0     & 69.6      & 85.3        \\
+WS-SEM                             & 69.0      & \y{78.4}  & \y{76.1}   & \y{76.8}  & \y{78.8}      & 2.0       & \my{79.2}    & 0.4        & 74.4                             & 90.6     & 83.9      & 94.0        \\
+\rowstyle{\color{darkergray}}RG    & \y{73.8}  & \y{78.2}  & \y{80.4}   & 71.2      & \y{74.4}      & 3.2       & \my{80.8}    & \ma{6.4}   & 80.3                             & 90.6     & 91.8      & 92.9        \\
+\rowstyle{\color{darkergray}}MC    & \y{70.5}  & \y{78.5}  & \myy{82.7} & \y{76.6}  & \y{75.9}      & -0.7      & \y{77.7}     & 2.8        & 80.1                             & 94.1     & 91.4      & 95.8        \\
+T-SYN                              & 61.8      & 59.8      & 51.0       & 42.7      & 60.0          & \ma{17.3} & \my{64.3}    & \ma{4.3}   &                                  &          &           &             \\
+T-SEM                              & \my{80.9} & 73.7      & 73.5       & 36.2      & 38.6          & \ma{2.4}  & 77.2         & \ma{38.6}  &                                  &          &           &             \\
+\rowstyle{\color{darkergray}}TOEFL & \y{83.8}  & 81.2      & \y{86.2}   & 78.8      & \y{87.5}      & \ma{8.7}  & \my{88.8}    & 1.3        &                                  &          &           & 
   \end{tabular}
   \caption{Comparison of Multiview LSA against Glove and WSG(Word2Vec
-    Skip Gram) algorithms. We use $\sigma_{0.05}^{0.9}$ as the
-  threshold for highlighting the top performing systems in bold and for
-  marking significant increments due to use of additional views with
-  asterisk. }
+    Skip Gram) algorithms. Using $\sigma_{0.05}^{0.9}$ as the
+   threshold we marked the top performing systems with $^*$ and
+   highlighted the absolute best in bold. We also marked significant
+   increments in performance due to use of additional views with $^\dagger$.
+    %%We use $\sigma_{0.05}^{0.9}$ as the
+  %% threshold for highlighting the top performing systems in bold and for
+  %% marking significant increments due to use of additional views with
+  %% asterisk.
+  }
   \label{tab:c}
-  \end{adjustwidth}
+  %\end{adjustwidth}
 \end{table*}
 
 \section{Previous Work}
@@ -1030,7 +1052,7 @@ matrices into a single matrix. Finally, while surveying the literature
 we noticed that not enough emphasis was being given towards
 establishing the significance of 
 comparative results and proposed a simple statistic \emph{(MRDS)}
-to filter out non-significant comparative gains between competing
+to filter out insignificant comparative gains between competing
 algorithms.
 
 \remove{
