@@ -48,6 +48,7 @@
 \newcolumntype{d}[1]{D{.}{.}{#1}}
 \newcolumntype{S}{l}
 \makeatletter
+\newcommand{\R}{\mathbb{R}}
 \newcommand{\remove}[1]{}
 \newcommand{\removet}[1]{#1}
 \newcommand*{\@rowstyle}{}
@@ -191,19 +192,19 @@ The objective of \emph{MAX-VAR GCCA} can be written as the following optimizatio
   \label{eq:gcca}
 \begin{split}
   \operatorname*{\arg\,\min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} G - X_jU_j \end{Vmatrix}^2_F \\
-  \text{subject to } & G^\top G = I
+  \text{subject to } & G^\top G = I.
 \end{split}
 \end{equation}
 % The matrix $G$ that satisfies expression~\ref{eq:gcca} would also be our vector representation of the vocabulary.
 The matrix G that solves problem~(\ref{eq:gcca}) is our vector representation of the vocabulary. Finding $G$ reduces to spectral decomposition of sum of projection matrices of different views: Define
 \begin{align}
-P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top \label{eq:pp}\\
-M =& \sum_{j=1}^J P_j \label{eq:mm}
+P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top, \label{eq:pp}\\
+M =& \sum_{j=1}^J P_j. \label{eq:mm}
 \end{align}
 Then $G$ and $U_j$ satisfy:
 \begin{align}
-M G =& G \Lambda\\
-U_j =& \left(X_j^\top X_j\right)^{-1} X_j^\top G
+M G =& G \Lambda,\\
+U_j =& \left(X_j^\top X_j\right)^{-1} X_j^\top G.
 \end{align}
 
 %% The above expressions tell us that our word representations are the
@@ -225,13 +226,26 @@ $r_j$ is a small constant e.g. $10^{-8}$.
 % Equations~\ref{eq:pp} and \ref{eq:mm} change to
 Projection matrices in~(\ref{eq:pp}) and (\ref{eq:mm}) can then be written as
 \begin{align}
-  \widetilde{P}_{j} =& X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top \label{eq:6}\\
-  M =& \sum_{j=1}^J \widetilde{P}_{j} \label{eq:mmm}
+  \widetilde{P}_{j} =& X_j(X_j^\top X_j+r_jI)^{-1}X_j^\top, \label{eq:6}\\
+  M =& \sum_{j=1}^J \widetilde{P}_{j}. \label{eq:mmm}
 \end{align}
 
 % We can side step the computational difficulties by assuming that only the top $m$ singular values of $X_j$ are non-negligible. Parts of the following method were proposed to us by \cite{savostyanov}. 
-Next, to scale up GCCA to large datasets, we first form a rank-$m$ approximation of projection matrices as in~\cite{arora2012kernel} and then extend it to an eigendecomposition for $M$ following ideas from~\cite{savostyanov}. 
+Next, to scale up GCCA to large datasets, we first form a rank-$m$ approximation of projection matrices as in~\cite{arora2012kernel} and then extend it to an eigendecomposition for $M$ following ideas from~\cite{savostyanov}. Consider rank-$m$ SVD of $X_j$:
+$$X_j = A_{j} S_{j} B^\top_{j},$$
+where $S_j \in \R^{m \times m}$ is the diagonal matrix with $m$-largest singular values of $X_j$ and $A_j \in \R^{N \times m}$ and $B_j \in \R^{m \times d_j}$ are the corresponding left and right singular vectors. Given this SVD, write the $j^{th}$ projection matrix as 
+\begin{eqnarray}
+\widetilde{P}_j &=& A_j S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j A_j^\top, \nonumber \\
+&=& A_j T_j T_j^\top A_j^\top, \nonumber
+\end{eqnarray}
+where $T_j \in \mathbb{R}^{m \times m}$ is a diagonal matrix such that 
+$T_jT_j^\top = S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j$. Finally, it is easy to check that the sum of projection matrices can be expressed as $M = \tilde{M} \tilde{M}^\top$
+where $$\tilde{M} = \left[ A_1T_1 \ldots A_JT_J \right] \in \mathbb{R}^{N
+  \times mJ}$$
+Therefore, eigenvectors of matrix $M$, i.e. the matrix $G$ we are interested in, are the left singular vectors of $\tilde{M}$, i.e. $\tilde{M}=GSV^\top$. 
 
+
+\remove{
 Let $SVD_m$ denote a partial SVD where $S_j$ is a rectangular diagonal
 matrix that contains only the $m$ largest singular values and $A_j, B_j$
 are square, orthonormal, unitary matrices. Defining $SVD_m$ like this
@@ -253,6 +267,7 @@ Do eigen decomposition of $R R^\top \in \mathbb{R}^{mJ \times mJ}$
 to get its eigen vectors $U$ and eigen values $S$.
 $$M = Q U S U^\top Q^\top$$
  which implies $G = QU$. 
+}
 
 \subsection{Computing SVD of mean centered $X_j$}
 \label{ssec:svdmc}
