@@ -35,10 +35,12 @@
 
 \newcommand{\m}[1]{\multicolumn{1}{c}{#1}}
 \newcommand{\mm}[1]{\multicolumn{1}{c|}{#1}}
+\newcommand{\mmm}[1]{\multicolumn{1}{c||}{#1}}
 %\newcommand{\y}[1]{#1^*}
 \newcommand{\y}[1]{\multicolumn{1}{B{.}{.}{-1}}{#1}}
 \newcommand{\my}[1]{\multicolumn{1}{B{.}{.}{-1}}{#1}}
 \newcommand{\myy}[1]{\multicolumn{1}{B{.}{.}{-1}|}{#1}}
+\newcommand{\myyy}[1]{\multicolumn{1}{B{.}{.}{-1}||}{#1}}
 \usepackage{array}
 \usepackage{enumitem}
 \usepackage{dcolumn}
@@ -131,7 +133,7 @@ term-document cooccurrence matrix.
 The principal directions found by PCA form the basis of the
 vector-space in which to represent the input
 terms~\cite{landauer1997solution}. The draw back of PCA is that it can
-only leverage a single source of data.    
+only leverage a single source of data and it is sensitive to scaling.
 
 An arguably better approach to representation
 learning is Canonical Correlation
@@ -780,9 +782,9 @@ them in the GCCA procedure. The values demonstrate that including Glove and WSG
     %\begin{adjustwidth}{0cm}{}
       \rowcolors{1}{}{lightgray}  \mcinherit
   \setlength\tabcolsep{2.2pt}
-  \begin{tabular}{+l |                 +d{2.1}     +d{2.1}     +d{2.1}  |   +d{2.1}     +d{2.1}       +d{2.1}     |   +d{2.1}       +d{2.1}  | +c                                  +c |     +c            +c }
-    \mm{Test Set}                  & \m{Glove} & \m{WSG}   & \mm{G-WSG} & \m{MVLSA} & \m{MVLSA}     & \mm{MV-G-WSG} & \m{MV}    & \mm{G-WSG} & \multicolumn{2}{c|}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
-                \mm{}              & \m{}      & \m{}      & \mm{Combo} & \m{Wiki } & \m{All Views} & \mm{Combined} & \m{Gain}  & \mm{Gain } & \m{Glove}                        & \mm{WSG} & \m{Glove} & \m{WSG}     \\\hline
+  \begin{tabular}{+l |                 +d{2.1}     +d{2.1}     +d{2.1}  |   +d{2.1}     +d{2.1}       +d{2.1}       |   +d{2.1}       +d{2.1}|| +c                                  +c |     +c            +c }
+    \mm{Test Set}                  & \m{Glove} & \m{WSG}   & \mm{G-WSG} & \m{MVLSA} & \m{MVLSA}     & \mm{MV-G-WSG} & \m{MV}    & \mmm{G-WSG} & \multicolumn{2}{c|}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
+                \mm{}              & \m{}      & \m{}      & \mm{Combo} & \m{Wiki } & \m{All Views} & \mm{Combined} & \m{Gain}  & \mmm{Gain } & \m{Glove}                        & \mm{WSG} & \m{Glove} & \m{WSG}     \\\hline
 MEN                                & 70.4      & 73.9      & \myy{76.0} & 71.4      & 71.2          & \myy{75.8}    & -0.2      & \ma{4.6}   & 71.9                             & 89.1     & 85.8      & 92.3        \\
 RW                                 & 28.1      & 32.9      & 37.2       & 29.0      & \my{41.7}     & \myy{40.5}    & \ma{12.7} & -1.2       & 72.3                             & 74.2     & 80.2      & 75.6        \\
 SCWS                               & 54.1      & 65.6      & 60.7       & 61.8      & \my{67.3}     & \myy{66.4}    & \ma{5.5}  & -0.9       & 87.1                             & 94.5     & 91.3      & 96.3        \\
@@ -802,7 +804,7 @@ T-SEM                              & \my{80.9} & 73.7      & 73.5       & 36.2  
    threshold we highlighted the top performing systems in bold
    font. $^\dagger$ marks significant
    increments in performance due to use of multiple views in the
-   \emph{Gain} columns. $r_s$ columns demonstrate that performing GCCA
+   \emph{Gain} columns. The $r_s$ columns demonstrate that GCCA
    increased pearson correlation.\remove{We also considered the best performance of Glove and Word2Vec
    to be our baseline and marked systems that were significantly
    higher than baseline with $^*$ and systems that were significantly
