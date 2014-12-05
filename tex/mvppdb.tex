@@ -558,7 +558,9 @@ of two functions, i.e. $f_j = n_j \circ t_j$.
   \rowstyle{\color{darkergray}}  TOEFL  & 81.2 & 70.0  & \mb{81.2} }
   \end{tabular}
   \caption{Performance versus $n_j$, the non linear processing of
-    cooccurrence counts.$\, t =200K, \; m=500, \; v=16, \; k=300$.}
+    cooccurrence counts.$\, t =200K, \; m=500, \; v=16, \; k=300$. All
+  the top configurations determined by $\sigma_{0.05}^{0.09}$ are in
+  bold font.}
   \label{tab:n}
 \end{table}
 
@@ -653,8 +655,8 @@ $v$: Recall that in Expression~\ref{eq:gcca3} we described a method to
   set $[W_j]_{ii} = (K_{ww} \ge v)$. Essentially we removed all
   words that did not appear in $v$ views before doing
   GCCA. Table~\ref{tab:v} shows that changes in $v$ are largely
-  inconsequential for performance. In absence of clear evidence in favor of regularization we
-  decided to regularize as little as possible and chose $v=16$.   
+  inconsequential for performance. \remove{In absence of clear evidence in favor of regularization we
+  decided to regularize as little as possible and chose $v=16$.}
   \begin{table}[htbp]
     \centering
   \begin{tabular}{=l | +c +c H +c H +c H +c}
@@ -778,31 +780,33 @@ them in the GCCA procedure. The values demonstrate that including Glove and WSG
     %\begin{adjustwidth}{0cm}{}
       \rowcolors{1}{}{lightgray}  \mcinherit
   \setlength\tabcolsep{2.2pt}
-  \begin{tabular}{+l |                 +d{2.1}     +d{2.1}     +d{2.1}  |   +d{2.1}     +d{2.1}        +d{2.1}     +d{2.1}         +d{2.1}  | +c                                  +c |     +c            +c }
-    \mm{Test Set}                  & \m{Glove} & \m{WSG}   & \mm{G-WSG} & \m{MVLSA} & \m{MVLSA}     & \m{MV}    & \m{MV-G-WSG} & \mm{G-WSG} & \multicolumn{2}{c|}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
-                \mm{}              & \m{}      & \m{}      & \mm{Combo} & \m{Wiki } & \m{All Views} & \m{Gain}  & \m{Combined} & \mm{Gain } & \m{Glove}                        & \mm{WSG} & \m{Glove} & \m{WSG}     \\\hline
-MEN                                & 70.4      & 73.9      & \myy{76.0} & 71.4      & 71.2          & -0.2      & \y{75.8}     & \ma{4.6}   & 71.9                             & 89.1     & 85.8      & 92.3        \\
-RW                                 & 28.1      & 32.9      & 37.2       & 29.0      & \my{41.7}     & \ma{12.7} & \y{40.5}     & -1.2       & 72.3                             & 74.2     & 80.2      & 75.6        \\
-SCWS                               & 54.1      & 65.6      & 60.7       & 61.8      & \my{67.3}     & \ma{5.5}  & \y{66.4}     & -0.9       & 87.1                             & 94.5     & 91.3      & 96.3        \\
-SIMLEX                             & 33.7      & 36.7      & 41.1       & 34.5      & \y{42.4}      & \ma{7.9}  & \my{43.9}    & 1.5        & 62.4                             & 78.2     & 79.3      & 86.0        \\
-WS                                 & 58.6      & \my{70.8} & \myy{67.4} & \y{68.0}  & \my{70.8}     & \ma{2.8}  & \y{70.1}     & -0.7       & 72.3                             & 88.1     & 81.8      & 91.8        \\
-MTURK                              & \y{61.7}  & \my{65.1} & 59.8       & 59.1      & 59.7          & 0.6       & \y{62.9}     & 3.2        & 80.0                             & 87.7     & 87.3      & 92.5        \\
-WS-REL                             & 53.4      & \my{63.6} & 59.6       & 60.1      & \y{65.1}      & \ma{5.0}  & \y{63.5}     & -1.6       & 58.2                             & 81.0     & 69.6      & 85.3        \\
-WS-SEM                             & 69.0      & \y{78.4}  & \myy{76.1} & \y{76.8}  & \y{78.8}      & 2.0       & \my{79.2}    & 0.4        & 74.4                             & 90.6     & 83.9      & 94.0        \\
-\rowstyle{\color{darkergray}}RG    & \y{73.8}  & \y{78.2}  & \myy{80.4} & 71.2      & \y{74.4}      & 3.2       & \my{80.8}    & \ma{6.4}   & 80.3                             & 90.6     & 91.8      & 92.9        \\
-\rowstyle{\color{darkergray}}MC    & \y{70.5}  & \y{78.5}  & \myy{82.7} & \y{76.6}  & \y{75.9}      & -0.7      & \y{77.7}     & 2.8        & 80.1                             & 94.1     & 91.4      & 95.8        \\
-T-SYN                              & 61.8      & 59.8      & 51.0       & 42.7      & 60.0          & \ma{17.3} & \my{64.3}    & \ma{4.3}   &                                  &          &           &             \\
-T-SEM                              & \my{80.9} & 73.7      & 73.5       & 36.2      & 38.6          & \ma{2.4}  & 77.2         & \ma{38.6}  &                                  &          &           &             \\
-\rowstyle{\color{darkergray}}TOEFL & \y{83.8}  & 81.2      & \myy{86.2} & 78.8      & \y{87.5}      & \ma{8.7}  & \my{88.8}    & 1.3        &                                  &          &           & 
+  \begin{tabular}{+l |                 +d{2.1}     +d{2.1}     +d{2.1}  |   +d{2.1}     +d{2.1}       +d{2.1}     |   +d{2.1}       +d{2.1}  | +c                                  +c |     +c            +c }
+    \mm{Test Set}                  & \m{Glove} & \m{WSG}   & \mm{G-WSG} & \m{MVLSA} & \m{MVLSA}     & \mm{MV-G-WSG} & \m{MV}    & \mm{G-WSG} & \multicolumn{2}{c|}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
+                \mm{}              & \m{}      & \m{}      & \mm{Combo} & \m{Wiki } & \m{All Views} & \mm{Combined} & \m{Gain}  & \mm{Gain } & \m{Glove}                        & \mm{WSG} & \m{Glove} & \m{WSG}     \\\hline
+MEN                                & 70.4      & 73.9      & \myy{76.0} & 71.4      & 71.2          & \myy{75.8}    & -0.2      & \ma{4.6}   & 71.9                             & 89.1     & 85.8      & 92.3        \\
+RW                                 & 28.1      & 32.9      & 37.2       & 29.0      & \my{41.7}     & \myy{40.5}    & \ma{12.7} & -1.2       & 72.3                             & 74.2     & 80.2      & 75.6        \\
+SCWS                               & 54.1      & 65.6      & 60.7       & 61.8      & \my{67.3}     & \myy{66.4}    & \ma{5.5}  & -0.9       & 87.1                             & 94.5     & 91.3      & 96.3        \\
+SIMLEX                             & 33.7      & 36.7      & 41.1       & 34.5      & \y{42.4}      & \myy{43.9}    & \ma{7.9}  & 1.5        & 62.4                             & 78.2     & 79.3      & 86.0        \\
+WS                                 & 58.6      & \my{70.8} & \myy{67.4} & \y{68.0}  & \my{70.8}     & \myy{70.1}    & \ma{2.8}  & -0.7       & 72.3                             & 88.1     & 81.8      & 91.8        \\
+MTURK                              & \y{61.7}  & \my{65.1} & 59.8       & 59.1      & 59.7          & \myy{62.9}    & 0.6       & 3.2        & 80.0                             & 87.7     & 87.3      & 92.5        \\
+WS-REL                             & 53.4      & \my{63.6} & 59.6       & 60.1      & \y{65.1}      & \myy{63.5}    & \ma{5.0}  & -1.6       & 58.2                             & 81.0     & 69.6      & 85.3        \\
+WS-SEM                             & 69.0      & \y{78.4}  & \myy{76.1} & \y{76.8}  & \y{78.8}      & \myy{79.2}    & 2.0       & 0.4        & 74.4                             & 90.6     & 83.9      & 94.0        \\
+\rowstyle{\color{darkergray}}RG    & \y{73.8}  & \y{78.2}  & \myy{80.4} & 71.2      & \y{74.4}      & \myy{80.8}    & 3.2       & \ma{6.4}   & 80.3                             & 90.6     & 91.8      & 92.9        \\
+\rowstyle{\color{darkergray}}MC    & \y{70.5}  & \y{78.5}  & \myy{82.7} & \y{76.6}  & \y{75.9}      & \myy{77.7}    & -0.7      & 2.8        & 80.1                             & 94.1     & 91.4      & 95.8        \\
+T-SYN                              & 61.8      & 59.8      & 51.0       & 42.7      & 60.0          & \myy{64.3}    & \ma{17.3} & \ma{4.3}   &                                  &          &           &             \\
+T-SEM                              & \my{80.9} & 73.7      & 73.5       & 36.2      & 38.6          & 77.2          & \ma{2.4}  & \ma{38.6}  &                                  &          &           &             \\
+\rowstyle{\color{darkergray}}TOEFL & \y{83.8}  & 81.2      & \myy{86.2} & 78.8      & \y{87.5}      & \myy{88.8}    & \ma{8.7}  & 1.3        &                                  &          &           & 
   \end{tabular}
   \caption{Comparison of Multiview LSA against Glove and WSG(Word2Vec
-    Skip Gram) algorithms. Using $\sigma_{0.05}^{0.9}$ as the
+    Skip Gram). Using $\sigma_{0.05}^{0.9}$ as the
    threshold we highlighted the top performing systems in bold
-   font. \remove{We also considered the best performance of Glove and Word2Vec
+   font. $^\dagger$ marks significant
+   increments in performance due to use of multiple views in the
+   \emph{Gain} columns. $r_s$ columns demonstrate that performing GCCA
+   increased pearson correlation.\remove{We also considered the best performance of Glove and Word2Vec
    to be our baseline and marked systems that were significantly
    higher than baseline with $^*$ and systems that were significantly
-   lower than baseline by $^\downarrow$.} $^\dagger$ marks significant
-   increments in performance due to use of multiple views. }
+   lower than baseline by $^\downarrow$.}  }
   \label{tab:c}
   %\end{adjustwidth}
 \end{table*}
