@@ -3,11 +3,15 @@ x = 0:0.0001:1;
 pb = @(a,b) betapdf(x,a,b);
 for n=[ 10675 8869 80];
 pval_of_null_hypothesis = 5e-2;
-% alpha is the prior belief. Lc is lower at higher values of belief.
-for alpha = [1]
-    for lc = 0.07:0.01:10
+% alpha is the prior belief. Lc is lower at higher values of
+% belief.
+disp('new n');
+disp(n);
+for alpha = [0.5 1]
+    for lc = .06:0.01:10
         done = 0;
-        for ac1 = 75:0.1:min(90, 100-lc)
+        for ac1 = min(100-lc, 90):-1:75
+            %disp(ac1);
             ac2 = ac1+lc;
             sys_1=round(ac1/100*n);
             sys_2=round(ac2/100*n);
@@ -19,6 +23,7 @@ for alpha = [1]
             % precision. 
             pos_sys_1_m_2 = convnfft(pos_sys_1, fliplr(pos_sys_2));
             pos_sys_1_m_2 = pos_sys_1_m_2/sum(pos_sys_1_m_2);
+            % pos_sym_1_m_2 is \theta_1 - \theta_2
             p_ac2_better_than_ac1 = sum(pos_sys_1_m_2(1:floor(end/2)));
             if p_ac2_better_than_ac1 > (1-pval_of_null_hypothesis)
                 done = 1;
