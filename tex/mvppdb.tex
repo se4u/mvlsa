@@ -33,6 +33,15 @@
 \newcommand{\mcinherit}{\renewcommand{\multicolumn}[3]{\oldmc{##1}{##2}{\ifodd\rownum \@oddrowcolor\else\@evenrowcolor\fi ##3}}}
 \makeatother
 
+\newcommand{\minimize}[3]{
+\begin{aligned}
+& \underset{#1}{\textrm{minimize:}}
+& & #2 \\
+& \textrm{subject to:}
+& &  #3
+\end{aligned}
+}
+
 \newcommand{\m}[1]{\multicolumn{1}{c}{#1}}
 \newcommand{\mm}[1]{\multicolumn{1}{c|}{#1}}
 \newcommand{\mmm}[1]{\multicolumn{1}{c||}{#1}}
@@ -241,8 +250,8 @@ where $S_j \in \R^{m \times m}$ is the diagonal matrix with $m$-largest singular
 where $T_j \in \mathbb{R}^{m \times m}$ is a diagonal matrix such that 
 $T_jT_j^\top = S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j$. Finally, it is easy to check that the sum of projection matrices can be expressed as $M = \tilde{M} \tilde{M}^\top$
 where $$\tilde{M} = \left[ A_1T_1 \ldots A_JT_J \right] \in \mathbb{R}^{N
-  \times mJ}$$
-Therefore, eigenvectors of matrix $M$, i.e. the matrix $G$ we are interested in, are the left singular vectors of $\tilde{M}$, i.e. $\tilde{M}=GSV^\top$. 
+  \times mJ}.$$
+Therefore, eigenvectors of matrix $M$, i.e. the matrix $G$ that we are interested in finding, are the left singular vectors of $\tilde{M}$, i.e. $\tilde{M}=GSV^\top$. 
 
 
 \remove{
@@ -274,10 +283,10 @@ $$M = Q U S U^\top Q^\top$$
 Recall that we assumed $X_j$ to be mean centered matrices. Let $Z_j
 \in \mathbb{R}^{N \times d_j}$ be sparse matrices containing
 mean-uncentered cooccurrence counts. Let $f_j = n_j \circ t_j $ be the preprocessing
-function that we apply to $Z_j$. 
+function that we apply to $Z_j$: 
 \begin{align}
-  Y_j =& f_j (Z_j) \\
-  X_j =& Y_j + 1 (1^\top Y_j)
+  Y_j =& f_j (Z_j), \\
+  X_j =& Y_j - 1 (1^\top Y_j).
 \end{align}
 In order to compute the SVD of mean centered matrices $X_j$ we first
 compute the partial SVD of uncentered 
@@ -313,37 +322,51 @@ Specifically, the objective now becomes:
   \label{eq:gcca2}
 \begin{split}
   \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} K_j(G - X_jU_j) \end{Vmatrix}^2_F \\
-  \text{subject to } & G^\top G = I
+  \text{subject to } & G^\top G = I, 
 \end{split}
 \end{equation}
-if row $i$ of view $j$ is observed then $[k_j]_{ii} = 1$ otherwise $0$.
-Essentially $K_j$ is a diagonal row-selection matrix which ensures
+where $[K_j]_{ii} = 1$ if row $i$ of view $j$ is observed and zero otherwise. Essentially $K_j$ is a diagonal row-selection matrix which ensures
 that we optimize our representations only on the observed rows. Note that
 $X_j = K_jX_j$ since the rows that $K_j$ removed were already
 zero. Let, $K =
 \sum_j K_j$ then the optima
-of the objective can be computed by modifying Equation~\ref{eq:mmm} as:
+of the objective can be computed by modifying equation~(\ref{eq:mmm}) as:
 \begin{align}
-  M =& K^{-\frac{1}{2}}(\sum_{j=1}^J P_j)K^{-\frac{1}{2}}
+  M =& K^{-\frac{1}{2}}(\sum_{j=1}^J P_j)K^{-\frac{1}{2}}.
 \end{align}
-Again if we regularize and approximate the GCCA solution, we get
-$G=QU$ where $Q, R$ come from the QR decomposition of
-$K^{-\frac{1}{2}}\tilde{M}$. Also, we mean center the matrices using
-only the observed rows.
+Again, if we regularize and approximate the GCCA solution, we get
+% $G=QU$ where $Q, R$ come from the QR decomposition of $K^{-\frac{1}{2}}\tilde{M}$. Also, we mean center the matrices using only the observed rows.
+$G$ as the left singular vectors of $K^{-\frac{1}{2}}\tilde{M}$. Also, we mean center the matrices using only the observed rows.
 
 Also note that other heuristic weighting schemes could be used
 here. For example if we modify our objective as follows then we would
 approximately recover the objective of \cite{pennington2014glove}:
-\begin{equation}
-  \label{eq:gcca3}
-\begin{split}
-  \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} W_j K_j(G - X_jU_j) \end{Vmatrix}^2_F \\
-  \text{subject to } G^\top G &= I \\
-  \text{where: } [W_j]_{ii} &= \frac{w_i}{w_{\max}}^{\frac{3}{4}} \text{ if } w_i <
-  w_{\max} \text{ else } 1 \\
-  \text{and } w_i &=  \sum_k [X_j]_{ik}
-\end{split}
-\end{equation}
+%\begin{equation}
+%  \label{eq:gcca3}
+%\begin{split}
+%  \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} W_j K_j(G - X_jU_j) \end{Vmatrix}^2_F \\
+%  \text{subject to } G^\top G &= I \\
+%  \text{where: } [W_j]_{ii} &= \frac{w_i}{w_{\max}}^{\frac{3}{4}} \text{ if } w_i <
+%  w_{\max} \text{ else } 1 \\
+%  \text{and } w_i &=  \sum_k [X_j]_{ik}
+%\end{split}
+%\end{equation}
+
+\begin{eqnarray}
+\minimize{G,U_j}{\sum_{j=1}^J \begin{Vmatrix} W_j K_j(G - X_jU_j) \end{Vmatrix}^2_F}{G^\top G = I }
+\end{eqnarray}
+
+%\begin{eqnarray}
+%  \label{eq:gcca3}
+%  \operatorname*{arg\,min}_{G,U_j}: \sum_{j=1}^J \begin{Vmatrix} W_j K_j(G - X_jU_j) \end{Vmatrix}^2_F \\
+%  \text{subject to:} G^\top G = I \\
+%\end{eqnarray}
+where
+\begin{eqnarray}
+[W_j]_{ii} &=& \left(\frac{w_i}{w_{\max}}\right)^{\frac{3}{4}} \text{ if } w_i <
+  w_{\max} \text{ else } 1, \nonumber \\
+  \text{and } w_i &=&  \sum_k [X_j]_{ik}. \nonumber
+\end{eqnarray}
 
 
 \section{Data}
