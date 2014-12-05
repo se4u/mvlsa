@@ -153,8 +153,7 @@ views may be different modalities or sources of information; for instance, text 
 In such settings, LSA, and related techniques, would still process data as a single monolithic object obtained by stacking the two views. The alternative ``multi-view'' approach to representation learning that has recently received a lot of attention is based on canonical correlation analysis (CCA). These techniques aim at learning representations that are maximally {\bf{\emph{{correlated}}}} across a pair of views 
 % Multi-view learning techniques based on CCA/GCCA may be viewed as representation learning techniques with soft supervision and can help learn features that are more interpretable and better correlated with the latent semantic content in data. 
 % CCA based techniques 
-and have recently been applied to 
-learning word embedding~\cite{dhillon2011multi,dhillon2012two,faruqui2014improving} . % Note that CCA is a special case of \emph{MAX-VAR GCCA}, see \cite{velden2011on} for proof.
+and have recently been applied to feature learning in computer vision~\cite{Hardoon:04}, speech recognition~\cite{}, and in NLP to learn word embedding~\cite{dhillon2011multi,dhillon2012two,faruqui2014improving} . % Note that CCA is a special case of \emph{MAX-VAR GCCA}, see \cite{velden2011on} for proof.
 
 Much prior work in multi-view learning has focussed on a pair of views (audio+video, acoustic+articulation, bi-text). However, multiple views in data are diverse and abundant. Here, we consider an extension of CCA to more than two views. While there is no standard notion of correlation to more than two sets of covariates, it is natural to consider simple functions of all pairwise correlation such as sum-correlation or max-correlation. These extensions are collectively referred to as Generalized CCA (GCCA); we are in particular interested in the MAX-VAR variant of GCCA as it leads to a tractable and scalable algorithm as we show in the next section. 
 
