@@ -945,21 +945,22 @@ that has made this connection before and we are working on proving this where th
 \end{itemize}
 }
 
-\section{Conclusion}
+\section{Conclusion and Future Work}
 While previous work had already demonstrated that incorporating two views
-was beneficial this work leveraged that intuition to a
-logical extreme and used GCCA to learn distributed 
-representations using data from 46 views! Through the results in
-Table~\ref{tab:c} we demonstrated that fusing 
-multiple data sources through the procedure of MVLSA was effective
-in improving the performance of word representations on a
-comprehensive set of test datasets. In order to
- perform GCCA over vocabularies with up to 500K words
-we presented a new fast algorithm, and also showed that a close
+is beneficial, We extended that thread of work to a
+logical extreme and created \emph{MVLSA} to learn distributed 
+representations using data from 46 views! Through evaluation of our
+induced representations, shown in Table~\ref{tab:c}, we demonstrated that
+the MVLSA algorithm is able to leverage the information present in  
+multiple data sources to improve performance on a battery of tests
+against state of the art baselines. In order to
+ perform MVLSA on large vocabularies with up to 500K words
+we presented a fast scalable algorithm. We also showed that a close
 variant of the Glove objective proposed by 
 \newcite{pennington2014glove} could be derived as a heuristic for
-handling missing data under the MVLSA framework. We also
-demonstrated that MVLSA could be used even over a monolingual
+handling missing data under the MVLSA framework. In order to better
+understand the benefit of using multiple sources of data We 
+performed  MVLSA using views derived only from the monolingual Wikipedia
 dataset thereby providing a more principled alternative of LSA that
 removes the need for heuristically combining word-word cooccurrence 
 matrices into a single matrix. Finally, while surveying the literature
@@ -979,14 +980,11 @@ mentioned in footnote~\ref{ftn:mis} or by using the heuristic count dependent
 non-linear weighting that mentioned by \newcite{pennington2014glove}
 and that sits well within our framework as exemplified in Expression~\ref{eq:gcca3}
  (2) By using even more views! that
-look at the future words as well as views that contain PMI values. We
-are most confident that providing more information to MVLSA should
-improve its performance.
-
+look at the future words as well as views that contain PMI values. 
 Finally, we note that Table~\ref{tab:jkjk} shows that certain datasets can
 actually degrade performance over certain metrics. Therefore we are
 exploring methods for performing discriminative optimization of weights
-assigned to views. 
+assigned to views.
 
 \remove{
 \section*{Acknowledgments}
