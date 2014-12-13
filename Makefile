@@ -1,3 +1,9 @@
+## TODO
+# I have to do the followng tasks
+# 1. Run glove with symmetric=0, x-max=1 
+# 2. Run glove with symmetric=1, x-max=1
+# 3. 
+
 SHELL := /bin/bash
 .SECONDARY:
 .PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate big_input $(STORE2)/agigastandep
@@ -33,7 +39,7 @@ join-with = $(subst $(space),$1,$(strip $2))
 # LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 addpath('src/kdtree');
 QSDM := 15G
 QSUB1 := qsub
-QSUB2 := -V -j y -l mem_free=$(QSDM),ram_free=$(QSDM),h_vmem=$(QSDM) -r yes #-verify
+QSUB2 := -V -j y -l mem_free=$(QSDM) -r yes #-verify ,ram_free=$(QSDM),h_vmem=$(QSDM)
 QSUBCMD := $(QSUB1) $(QSUB2) 
 QSUBP1CMD := $(QSUB1) -p -1 $(QSUB2)
 CWD_SUBMIT := -cwd submit_grid_stub.sh 
@@ -41,9 +47,10 @@ QSUBMAKE := $(QSUBCMD) $(CWD_SUBMIT)
 QSUBP1MAKE := $(QSUBP1CMD) $(CWD_SUBMIT)
 QSUBPEMAKE := $(QSUBCMD) -pe smp 10 $(CWD_SUBMIT)
 QSUBP1PEMAKE := $(QSUBP1CMD) -pe smp 10 $(CWD_SUBMIT)
-QSUBPEMAKEHOLD = qsub -N $1 -V -hold_jid $2 -l mem_free=$3,ram_free=$3 -r yes -pe smp $4 -cwd submit_grid_stub.sh
+QSUBPEMAKEHOLD = qsub -N $1 -V -hold_jid $2 -l mem_free=$3 -r yes -pe smp $4 -cwd submit_grid_stub.sh
 QSUBPEMAKEHOLD2 = qsub -N $1 -V -hold_jid $2,$3 -l mem_free=$4 -r yes -pe smp $5 -cwd submit_grid_stub.sh
 QSUBPEMAKEHOLD3 = qsub -N $1 -V -hold_jid $2 -l mem_free=$3,ram_free=$4 -r yes -pe smp $5 -cwd submit_grid_stub.sh
+QSUBPEMAKEHOLD4 = qsub -N $1 -V -l hostname=$2 -l mem_free=$3 -r yes -pe smp $4 -cwd submit_grid_stub.sh
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
 STORE := /export/a15/prastog3
@@ -152,27 +159,19 @@ log/extrinsic_word2vec_theirtrain_theircode: $(STORE)/word2vec_theirtrain.bin $(
 	$(EXTRINSIC_TEST_WORD2VEC_THEIRCODE_CMD)
 
 log/extrinsic_%_mycode:
-	if [ $* == word2vec_theirtrain ]; then \
+	if   [[ $* == word2vec_theirtrain ]]; then \
 	  export VOCAB_FILE=$(STORE)/$*.txt_word;\
 	  export EMB_FILE=$(STORE)/$*.txt; \
 	  export ROW_SKIP=1; \
-	elif [ $* == word2vec_mytrain ]; then \
+	elif [[ $* == word2vec_mytrain ]]; then \
 	  export VOCAB_FILE=$(STORE2)/$*.txt_word;\
 	  export EMB_FILE=$(STORE2)/$*.txt; \
 	  export ROW_SKIP=1 ;\
-	elif [ $* == glove_theirtrain ]; then \
+	elif [[ $* == glove_theirtrain ]]; then \
 	  export VOCAB_FILE=$(STORE2)/$*.txt_word ;\
 	  export EMB_FILE=$(STORE2)/$*.txt; \
 	  export ROW_SKIP=0 ;\
-	elif [ $* == glove_mytrain ]; then \
-	  export VOCAB_FILE=$(VOCAB_500K_FILE);\
-	  export EMB_FILE=$(STORE2)/$*.txt; \
-	  export ROW_SKIP=0 ;\
-	elif [ $* == glove_0_mytrain ]; then \
-	  export VOCAB_FILE=$(VOCAB_500K_FILE);\
-	  export EMB_FILE=$(STORE2)/$*.txt; \
-	  export ROW_SKIP=0 ;\
-	elif [ $* == glove_1_mytrain ]; then \
+	elif [[ $* =~ glove_.+_mytrain ]] ; then \
 	  export VOCAB_FILE=$(VOCAB_500K_FILE);\
 	  export EMB_FILE=$(STORE2)/$*.txt; \
 	  export ROW_SKIP=0 ;\
@@ -202,9 +201,19 @@ combined_embedding_generic: $(STORE2)/v5_embedding_mc_CountPow025-trunccol12500_
 GM_MEM := 20
 $(STORE2)/glove_theirtrain.txt: $(STORE2)/glove.6B.300d.txt
 	cp $< $@
-# qsub -V -j y -l mem_free=15G -r yes -pe smp 10 -cwd submit_grid_stub.sh $(STORE2)/glove_mytrain.bin
-$(STORE2)/glove_%_mytrain.bin $(STORE2)/glove_%_mytrain.txt: $(STORE2)/glove_%_cooccurence_shuf_file $(VOCABWITHCOUNT_500K_FILE)
-	$(GLOVEDIR)/glove -save-file $(subst .bin,,$@) -threads 20 -input-file $< -x-max 100 -iter 25 -vector-size 300 -binary 2 -vocab-file $(word 2,$+) -verbose 2 -model 2
+# Your job 9894541 ("glove_0.1_mytrain") has been submitted
+# Your job 9894542 ("submit_grid_stub.sh.glove_0.1_mytrain") has been submitted
+# Your job 9894543 ("glove_1.1_mytrain") has been submitted
+# Your job 9894545 ("submit_grid_stub.sh.glove_1.1_mytrain") has been submitted
+qsub_glove:
+	for SYMASYM in 0 1; do \
+	  $(call QSUBPEMAKEHOLD4,glove_"$$SYMASYM".1_mytrain,a1[1238],10G,10) $(STORE2)/glove_"$$SYMASYM".1_mytrain.bin; sleep 5; \
+	  $(call QSUBPEMAKEHOLD,submit_grid_stub.sh.glove_"$$SYMASYM".1_mytrain,glove_"$$SYMASYM".1_mytrain,1G,10) log/extrinsic_glove_"$$SYMASYM".1_mytrain_mycode; done
+
+$(STORE2)/glove_%_mytrain.bin $(STORE2)/glove_%_mytrain.txt:
+	$(MAKE) SYM_ASYM=$(word 1,$(subst ., ,$*)) X_MAX=$(word 2,$(subst ., ,$*)) TARGET=$@ glove_mytrain_generic
+glove_mytrain_generic: $(STORE2)/glove_$(SYM_ASYM)_cooccurence_shuf_file $(VOCABWITHCOUNT_500K_FILE)
+	$(GLOVEDIR)/glove -save-file $(subst .bin,,$(TARGET)) -threads 20 -input-file $< -x-max $(X_MAX) -iter 25 -vector-size 300 -binary 2 -vocab-file $(word 2,$+) -verbose 2 -model 2
 $(STORE2)/glove_%_cooccurence_shuf_file: $(STORE2)/glove_%_cooccurence_file
 	$(GLOVEDIR)/shuffle -memory $(GM_MEM) -verbose 2 < $< > $@
 $(STORE2)/glove_%_cooccurence_file: $(VOCABWITHCOUNT_500K_FILE) $(STORE)/polyglot_wikitxt/en/full.txt_lowercase
@@ -639,122 +648,6 @@ $(STORE2)/ppdb-input-simplified-%: $(STORE2)/ppdb-input-%
 $(STORE2)/ppdb-input-%:
 	cat /home/juri/ppdb-input/*-$*-* > $@
 
-align_europarlv1_%:
-	java -jar /home/prastog3/tools/berkeleyaligner.jar  -trainSources /export/a15/prastog3/europarlv1/$*-en -foreignSuffix $* -englishSuffix en -execDir /export/a15/prastog3/europarlv1/$*-en-aligned  -saveParams false -numThreads 16 -msPerLine 10000 -alignTraining -create true -overwriteExecDir true
-
-# MORE PREPROCESSING STUFF
-# for file in *-en.aligned.tgz ; do tar -xzf $file ; done
-# for corpus in de es fr ; do 
-#     for file in $corpus-en/$corpus/* ; do mv $file $corpus-en/${file:9}.$corpus ; done && 
-#     for file in $corpus-en/en/* ; do mv $file $corpus-en/${file:9}.en ; done ; 
-# done
-# rmdir de-en/de de-en/en es-en/es es-en/en fr-en/fr fr-en/en
-/export/a15/prastog3/europarlv1/%-en.aligned.tgz:
-	cd $(@D) && wget http://www.statmt.org/europarl/v1/$*-en.aligned.tgz && cd -
-
-tabulate_extrinsic_test: log/extrinsic_test_s_0 log/extrinsic_test_l_0   log/extrinsic_test_s_1 log/extrinsic_test_l_1
-	python src/tabulate_extrinsic_test.py $+
-
-# TARGET: pr2xy means pushpendre to xuchen, ppdb_l and ppdb_s refer to
-# the ppdb sizes used for doing CCA, word2vec contains the original
-# embeddings that google provided. There are 82841 words in these
-# files 
-extrinsic_test: log/extrinsic_test_s_1 log/extrinsic_test_s_0 log/extrinsic_test_l_1 log/extrinsic_test_l_0
-
-pr2xy: pr2xy_cca_ppdb_l_embedding.bin pr2xy_cca_ppdb_s_embedding.bin pr2xy_word2vec_embedding.bin
-
-$(STORE)/pr2xy_%_embedding.bin: $(STORE)/pr2xy_%_embedding.txt
-	./res/convertvec txt2bin $<  $@
-
-# $(STORE)/pr2xy_word2vec_embedding.txt is also made automatically
-# TARGET : Save the embeddings as a txt file.
-$(STORE)/pr2xy_cca_ppdb_%_embedding.txt: $(STORE)/gn_intersect_ppdb_embeddings.mat 
-	$(MATCMD)"load('$<'); word=textread('res/gn_intersect_ppdb_word', '%s'); ppdb_size='$*'; mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); dimension_after_cca=150; distance_method='cosine'; w2v_file_name='$(STORE)/pr2xy_word2vec_embedding.txt'; cca_file_name='$@'; save_embedding_to_txt_file;exit;"
-
-# After all the previous experimentation now I am ready to pick a
-# configuration and to do the pre and pos test on that particular
-# confiugration. By looking at all the data I decided to use 150 as
-# the optimal number of CCA dimensions to keep. By doing this I am
-# doing a dimensionality reduction of exactly half which is great. 
-# Note that the cosine distance does not do any mean centralization
-# which is fine because the embeddings are any way mean centered.
-# Also note that cosine distance does divide by the norm of the
-# embeddings.
-# So the settings are: 
-# db = s l xxl
-# Uniquify or not before CCA (For Baseline)
-# # No longer I need knnK, dim2keep, doavgk. do_knn_only_over_original_embedding (because I do over both all the time), dist (dist = cosine)
-# I also checked use_unique_mapping
-# log/large_scale_cca_[sl]_cosine_1_0_0_1_170_1_[10]
-#     large_scale_cca_[sl]_cosine_1_0_(170|90)_0_0_1_[10]
-#     large_scale_cca_[sl]_cosine_1_1_0_0_0_1_[10]
-log/extrinsic_test_%: $(STORE)/gn_intersect_ppdb_embeddings.mat res/filtered_paraphrase_list_wordnet.mat res/ppdb_paraphrase_rating_filtered.mat res/gn_intersect_ppdb_word # res/topvocablist.100000
-	$(MATCMD)"load('$<'); load('$(word 2,$^)'); load('$(word 3,$^)'); word=textread('$(word 4,$^)', '%s'); options=strsplit('$*', '_'); ppdb_size=options{1}; use_unique_mapping=str2num(options{2}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); dimension_after_cca=150; distance_method='cosine'; conduct_extrinsic_test; exit;" | tee $@
-
-res/ppdb_paraphrase_rating_filtered.mat: res/ppdb_paraphrase_rating
-	$(MATCMD)"ppdb_paraphrase_rating=create_ppdb_paraphrase_rating('$<', textread('res/gn_intersect_ppdb_word', '%s')); save('$@', 'ppdb_paraphrase_rating'); exit;"
-
-res/ppdb_paraphrase_rating: res/pred-scored-human-ppdb.txt
-	python src/preprocess-pred-scored-human-ppdb.py $< | sort > $@
-
-res/filtered_paraphrase_list_wordnet.mat: res/wordnet.test
-	$(MATCMD)"golden_paraphrase_map=create_golden_paraphrase_map('$<', textread('res/gn_intersect_ppdb_word', '%s')); save('$@', 'golden_paraphrase_map'); exit;"
-
-data_eyeball_%:
-	$(MATCMD)"load('/export/a15/prastog3/gn_intersect_ppdb_embeddings.mat'); mapping=dlmread('res/gn_ppdb_lex_$*_paraphrase','', 0, 2); word=textread('res/gn_intersect_ppdb_word', '%s'); cd src; debug=1; data_eyeball; exit;"
-
-log/gridrun_log_tabulate: log/gridrun 
-	python src/gridrun_log_tabulate.py | tee $@
-
-
-# TARGET : Now do CCA over embeddings. The second file contains the
-# mapping. Currently it has 660584 rows. There are 2 arrays each with
-# 660584 rows and 300 columns. So the total memory requirement is
-# 497,046,000 (doubles 8 Bytes) == 3GB. (4 GB for xxl) After running
-# CCA. I get new embeddings and then I need to run KNN.
-
-# EXAMPLE: $(STORE)/large_scale_cca_xxl_euclidean_1_10_1
-# The first is size of ppdb, then the distance method then knnK then the
-# dimensions to keep and then whether to do it over
-# original embedding or the CCA ones. You only need to do CCA over
-# original embeddings once. 
-log/large_scale_cca_%: $(STORE)/gn_intersect_ppdb_embeddings.mat # res/gn_ppdb_lex_s_paraphrase res/gn_ppdb_lex_l_paraphrase res/gn_ppdb_lex_xl_paraphrase res/gn_ppdb_lex_xxl_paraphrase
-	$(MATCMD)"load('$<'); options=strsplit('$*', '_'); ppdb_size=options{1}; distance_method=options{2}; knnK=str2num(options{3}); do_knn_only_over_original_embedding=str2num(options{4}); dimension_after_cca=str2num(options{5}); do_append=str2num(options{6}); dim2append=str2num(options{7}); use_unique_mapping=str2num(options{8}); do_average_knn=str2num(options{9}); mapping=dlmread(sprintf('res/gn_ppdb_lex_%s_paraphrase', ppdb_size),'', 0, 2); large_scale_cca; exit" | tee $@
-
-# $(STORE)/gn_intersect_ppdb_embeddings.mat : $(STORE)/gn_intersect_ppdb_embeddings
-# 	$(MATCMD)"embeddingdlmread('$<', ,'', 0, 1); save('$<.mat','embedding');exit;"
-
-src/top.mexa64: src/top.cpp
-	mex -o src/top.mexa64 src/top.cpp
-
-# TARGET : Contains paraphrases for the words that were in SOURCE. The
-# paraphrases themselves must also be in the SOURCE.
-# The output file is source, index, paraphrase, index
-# and the indexing starts with 1.
-# The sampling scheme itself is coded in java. (I dont do uniform
-# because I want to bring the information that PPDB is providing to
-# the embeddings.)
-res/gn_ppdb_lex_%_paraphrase: res/gn_intersect_ppdb_word 
-	python src/get_paraphrase.py $< 10 $* > $@
-
-# TARGET : Just the words from the gn_intersect_ppdb file
-res/gn_intersect_ppdb_word: $(STORE)/gn_intersect_ppdb_embeddings
-	awk '{print $$1}' $+ > $@
-
-$(STORE)/gn_intersect_ppdb_embeddings : $(STORE)/gn_intersect_ppdb_embeddings.gz
-	zcat $+ > $@
-
-# TARGET : Contains embeddings of overlapping words in Google News
-# Vectors and the PPDB lexical words. The first column is the
-# word. currently the number of common words is 56870. zcat TARGET | wc -l
-# In Both  82841
-# In Google not in PPDB 2917159 (Skewed because contains phrases)
-# In PPDB not in Google 42406
-# PPDB has 125,247 words
-# Google has 3 Million Phrases and roughly 300k words.
-# This also builds res/in_google_not_in_ppdb res/in_ppdb_not_in_google
-$(STORE)/gn_intersect_ppdb_embeddings.gz : $(STORE)/gn300.txt $(STORE)/PPDB_Lexical_Data/ppdb-1.0-xxxl-lexical-words-uniq 
-	python src/overlap_between_google_and_ppdb.py $+ $@
 
 # $(STORE)/gn300.txt.gz : $(STORE)/gn300.txt
 # 	gzip -c $+ > $@
@@ -767,44 +660,3 @@ $(STORE)/GoogleNews-vectors-negative300.bin: $(STORE)/GoogleNews-vectors-negativ
 
 res/convertvec : src/convertvec.c
 	$(CC) $+ -o $@ $(CFLAGS)
-
-optimal_cca_dimension_table: optimal_cca_dimension.log
-	awk '{if( (NR - 3)%13==0 || (NR - 5)%13==0 ||(NR - 6)%13==0 ||(NR - 8)%13==0){printf "%s  ", $$1} else if((NR - 11)%13==0 ){print $$0}}' $^ | tee $@
-
-optimal_cca_dimension.log:
-	for i in 1 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70; do  make cca_over_rnnlm_knn_$$i | awk '{if(NR == 1 || NR > 34){print $$0}}' >> $@ ; done
-
-cca_over_rnnlm_knn_%: res/rnnlm_synonym_embedding res/rnnlm_synonym_embedding_word
-	$(MATCMD)"filename='res/rnnlm_synonym_embedding'; columns=1; dimension_after_cca=$*; cca_and_f_pushpendre ;exit"
-
-cca_over_lsh_embeddings_%: res/ben_synonym_embedding res/ben_synonym_embedding_word
-	$(MATCMD)"filename='res/ben_synonym_embedding'; columns= $*; dimension_after_cca=2; cca_and_f_pushpendre;exit"
-
-# Random Embedding and Random partition Baselines. The purpose of
-# these two sorts of experiments is always to find out what is the
-# absolute baseline for the metric that you are using to test your
-# technique. 
-random_partition_rnnlm_cca.png: res/rnnlm_synonym_embedding res/rnnlm_synonym_embedding_word
-	$(MATCMD);"filename='res/rnnlm_synonym_embedding'; columns=1; dimension_after_cca=2; random_embedding_cca;exit;"
-
-random_embedding_cca.png:
-	$(MATCMD)"filename='res/rnnlm_synonym_embedding'; columns=1; dimension_after_cca=2; random_embedding_cca;exit;"
-
-##############################################################################################
-# TARGET : This file contains synonyms on the even and odd lines like 1-2 and 3-4 are synonyms.
-#          Its length is decided below.
-# SOURCE : It uses the synonyms pairs and locations and the original embeddings file.
-CMD2 = python src/properly_arrange_synonym_embedding_to_feed_matlab.py $+
-res/ben_synonym_embedding: res/ben_synonym_pair_and_location res/ben_lsh_projection_of_rnnlm_vocab
-	$(CMD2) explode > $@
-
-res/rnnlm_synonym_embedding:  res/rnnlm_synonym_pair_and_location res/rnnlm_word_projection-80
-	$(CMD2) > $@
-###############################################################################################
-# TARGET : Contains 1 pair of synonyms per line and their line location in the source file
-# SOURCE : Table of embeddings where the first column is the word and the rest are the embedding.
-CMD1 = python src/get_synonym_pair_and_location.py $+ 2>/dev/null | head -n 2000 > $@
-res/ben_synonym_pair_and_location: res/ben_lsh_projection_of_rnnlm_vocab_word
-	$(CMD1)
-res/rnnlm_synonym_pair_and_location:  res/rnnlm_word_projection-80_word
-	$(CMD1)
