@@ -1,0 +1,295 @@
+\documentclass[11pt]{article}
+\usepackage{mathtools}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{color, colortbl}
+\setlength{\parskip}{\baselineskip}
+\renewcommand{\det}[1]{|#1|}
+\newcommand{\mf}{-\frac{1}{2}}
+\newcommand{\Mu}{M}
+\newcommand{\hp}{\circ}
+\newcommand{\fc}{\frac{1}{\sqrt{(2\pi)^{d+m}(\sigma^2)^m }}}
+\newcommand{\todo}[1]{\textbf{\textcolor{red}{TODO: #1}}}
+\begin{document}
+\raggedright
+\section{Probabilistic PCA}
+
+When I observe data then the best k orthogonal basis of a projection
+space are the eigenvectors of the covariance matrix.
+
+\begin{align}
+&\arg\min ||X - UU^\top X ||^@_F \\
+=&tr(M^\top M)\\
+=&tr(X^TX + X^TUU^TUU^TX - zX^TUU^TX)\\
+=& \max tr(X^TUU^TX) \\
+=& tr(U^TXX^TU)
+\end{align}
+Now I can also try and solve the following problem.
+
+I observe data x and I assume that it was generated in the following way:
+\begin{align}
+z \sim & \mathcal{N}(0, I_d)\\
+x \sim & \mathcal{N}(Wz+\mu, \sigma^2 I_m)  
+\end{align}
+And I need to find $W, \mu, \sigma^2$ so that $p(x)$ is maximized. $W
+\in \mathcal{R}^{m\times d}$.
+
+\begin{align}
+  p(x) &= \prod_{i=1}^n \int p(x_i | z_i) p(z_i)\\
+  l(x) &= \sum_{i=1}^n \log(\int p(x_i|z_i) p(z_i)) \label{obj}\\
+\end{align}
+For simplicity lets drop subscripts and derive $p(x) = \int p(x|z) p(z)$.
+\begin{align}
+  p(z) &= \frac{1}{\sqrt{(2\pi)^d\det{I_d}}} \exp(-\frac{1}{2} z^T  I_d^{-1} z)\\
+  p(x|z) &= \frac{1}{\sqrt{(2\pi)^m(\sigma^2)^m \det{I_m}}}
+  \exp(-\frac{1}{2}(x-Wz-u)^T(\sigma^2I_m)^{-1}(x-Wz-\mu))
+\end{align}
+
+What is $\int p(x|z) p(z)$. I know it is a guassian. I also can use
+mathematica. I can also use the fact that its solution is given in
+kevin murphy's book. But lets derive it.
+\begin{align}
+  \int p(x|z)p(z) &= \fc \int
+  \exp{\mf (z^Tz + (x-\mu - Wz)^T(\sigma^{-2})(x-\mu-Wz))}
+\end{align}
+Let $(x-\mu)/\sigma = y,\; W/\sigma=V$
+\begin{align}
+  \int p(x|z)p(z) &= \fc \int \exp(\mf (z^Tz + (y - Vz)^T(y-Vz)))\\
+  &= \fc\exp(\mf y^Ty) \int \exp(\mf (z^T (I+V^TV) z  - 2z^TV^Ty))
+\end{align}
+Let $U = (I+V^TV)^{-1}$
+\begin{align}
+  &= \fc \exp(\mf y^Ty) \int \exp(\mf ( \left(z^TU^{-1}z -2z^TU^{-1}a + a^TU^{-1}a\right) - a^TU^{-1}a  ))
+\end{align}
+This means that $V^Ty = U^{-1}a \implies a = UV^Ty$
+\begin{align}
+  &= \fc \exp(\mf (y^Ty - a^TU^{-1}a) ) \int \exp(\mf ((z-a)^T U^{-1}(z-a)))\\
+  &= \fc \sqrt{(2\pi)^d \det{U}} \exp(\mf (y^Ty - a^TU^{-1}a) )\\
+  &= \fc \sqrt{(2\pi)^d \det{U}} \exp(\mf (y^Ty - y^TVU^TU^{-1}UV^Ty))\\
+  &= \fc \sqrt{(2\pi)^d \det{U}} \exp(\mf (y^Ty - y^TVU^TV^Ty) )\\
+  &= \fc \sqrt{(2\pi)^d \det{U}} \exp(\mf (y^T(I-VU^TV^T)y)
+\end{align}
+
+Just substitute back $y$ and $V$ and $U$ to get the answer
+\begin{align}
+  \int p(x|z)p(z) &= \frac{\sqrt{(2\pi)^d \det{U}}}{\sqrt{(2\pi)^{d+m}(\sigma^2)^m }} \exp(\mf ((x-\mu)^T\frac{(I-V(I+V^TV)^{-1}V^T)}{\sigma^2}(x-\mu))
+\end{align}
+
+Interestingly, $(I-V(I+V^TV)^{-1}V^T) = (I+VV^T)^{-1}$
+This means that
+\begin{align}
+  p(z) = \int p(x|z)p(z) &= \frac{1}{\sqrt{(2\pi)^{m}(\sigma^2)^m \det{U}^{-1}}}  \exp(\mf ((x-\mu)^T (\sigma^2 (I+VV^T))^{-1}  (x-\mu)))
+\end{align}
+Also note that by Sylvester's theorem $\det{U} = \det{I+V^TV}^{-1} = \det{I+VV^T}^{-1} $.
+
+So finally we have proven that $p(x) = \mathcal{N}(\mu,
+\sigma^2I+WW^T)$
+
+Now substitute this results back into \ref{obj} to get
+
+\begin{align}
+  l(x) &= \sum_{i=1}^n \log(\frac{1}{\sqrt{(2\pi)^{m}(\sigma^2)^m \det{I+VV^T}}}  \exp(\mf ((x_i-\mu)^T (\sigma^2 (I+VV^T))^{-1}  (x_i-\mu))))\\
+  &= \mf \sum_{i=1}^n ((x_i-\mu)^T (\sigma^2I+WW^T))^{-1}  (x_i-\mu)) + \log((2\pi)^{m} \det{\sigma^2I+WW^T})
+\end{align}
+Now get rid of constant terms like $m\log(2\pi)$ and the constant
+multipliers which don't affect the optimization (However now I have to
+minimize the quantity since I removed $\mf$)
+\begin{align}
+  &= \sum_{i=1}^n ((x_i-\mu)^T (\sigma^2I+WW^T)^{-1}  (x_i-\mu)) + \log(\det{\sigma^2I+WW^T})
+\end{align}
+Now minimize this quantity wrt $\mu, W, \sigma$ to get the MLE
+parameters
+
+Wrt $\mu$\\
+Let $Y=(\sigma^2I+WW^T))^{-1}$, then wrt $\mu$ the derivative is
+\begin{align}
+  =& \sum_{i=1}^n \frac{\partial}{\partial \mu}  ((x_i-\mu)^T Y  (x_i-\mu)) \\
+  =& \sum_{i=1}^n \frac{\partial}{\partial \mu}  (\mu^T Y\mu -
+  2x_i^TY\mu + x_i^TYx_i)) \\
+  =& \sum_{i=1}^n  (Y+Y^T)\mu -  (2x_i^TY)^T )) \\
+\end{align}
+However $Y$ is symmetric, therefore $Y+Y^T = 2Y^T$, which means
+$$\mu = \frac{1}{n}{\sum_{i=1}^n x_i}$$
+
+
+Let $y_i = x_i - \mu$ then wrt $\sigma$ and $W$ the objective to
+minimize is: where $\sum y_i = 0$
+\begin{align}
+  =& \sum_{i=1}^n \left(  (y_i^T
+  (\sigma^2I+WW^T)^{-1}  y_i) + \log(\det{\sigma^2I+WW^T}) \right)\\
+\end{align}
+Let's level up and concatenate all the $y_i$ into a matric $Y$, then
+the objective becomes
+\begin{align}
+  tr(Y^T (\sigma^2I+WW^T)^{-1}Y) + n\log(\det{\sigma^2I+WW^T})
+\end{align}
+Interestingly $\sigma^2I+WW^T$ are inseparable, replace them by $V = (\sigma^2I+WW^T)^{-1}$ to
+get the new objective
+\begin{align}
+  \arg\min_V tr(Y^TVY) - n\log(\det{V})
+\end{align}
+
+\begin{align}
+  \frac{\partial}{\partial V} tr(Y^TVY) - n\log(\det{V}) &= YY^T - n
+  V^{-1} = 0\\
+  V^{-1} = (\sigma^2I+WW^T) &= \frac{1}{n}YY^T
+\end{align}
+
+Now to solve this equation we would have to let $\sigma$ equal the
+last $d-m$ eigenvalues so they would equal each other and then we can
+ do an eigen decomposition
+of $C = YY^T/n - \sigma^2I = U\sqrt{S}MM^T\sqrt{S^T}U^T \in \mathcal{R}^{d \times
+  d}$ then we derive the PCA solution assuming that we had perfect
+knowledge of the ppopulation means.
+
+But if instead of taking derivative wrt $V$ we take derivative wrt $W$
+and actually recognize the constraint that $W$ would not be able to
+perfectly match $C=YY^T/n$  then we would get: \todo{COMPLETE THIS}
+\begin{align}
+  (YY^T/n(\sigma^2I+WW^T))W &= W
+\end{align}
+
+\section{Probabilistic CCA}
+I will use the following objective as my starting point for CCA.
+Let $A=\Sigma_{xx}, B=\Sigma_{YY}, C=\Sigma_{XY}$
+\begin{align}
+  \arg\max_{U,V} \;& tr(U^T C V)\\
+  \text{subject to } & U^TAU=I,\; V^TBV=I
+\end{align}
+We can solve this in two ways.
+\subsection{Approach 1}
+The usual approach is to first find a single direction and then show
+that the remaining directions follow as the remaining eigen-vectors of
+a matrix all of which would follow the required constraints. Let's
+recap that approach first.
+
+Let $u,\; v$ be two directions, then the lagrangian of the objective
+becomes
+\begin{align}
+  \mathcal{L} &=u^TCv + \lambda (u^tAu-1 ) + \mu (v^TBv-1)\\
+  \frac{\partial \mathcal{L}}{\partial u} &= v^TC^T + u^T(2\lambda A)  =0 = Cv + 2\lambda A^Tu\\
+  \frac{\partial \mathcal{L}}{\partial v} &= u^TC + v^T(2\mu B)  =0=C^Tu+2\mu B^T v\\
+  u &= -\frac{1}{2\lambda}A^{-T}Cv\\
+  -C^T (-\frac{1}{2\lambda}A^{-T}Cv) &= 2\mu B^Tv\\
+  B^{-T}C^TA^{-T}Cv &=4\lambda \mu v
+\end{align}
+Now use $B=B^T,\; A=A^T,\; 4\lambda \mu = \kappa$, also use the fact that B can be decomposed
+into its cholesky factors $B=DD^T \implies B^{-1}=D^{-T}D^{-1}$ to simplify the objective:
+\begin{align}
+  D^{-T}D^{-1}C^TA^{-1}CD^{-T}D^Tv &=\kappa v  \\
+  D^{-1}C^TA^{-1}CD^{-T}D^Tv &=\kappa D^Tv  
+\end{align}
+Let $v'=D^Tv$ to get
+\begin{align}
+  D^{-1}C^TA^{-1}CD^{-T}v' &=\kappa v'  \\
+  \text{Let } M &= D^{-1}C^TA^{-1}CD^{-T}
+\end{align}
+Now we claim that the successive orthogonal eigen vectors $v'$ of the
+symmateric matrix $M$ would give us the
+solutions as $v=D^{-T}v', \; u = -\frac{1}{2\lambda}A^{-T}CD^{-T}v'$.
+
+It is easy to see that $v^TBv = v'^T D^{-1}BD^{-T}v' = 1$ and all
+subsequent vectors would also obey this.
+
+We can check that $u^TAu =
+\frac{1}{4\lambda^2}v'^TD^{-1}C^TA^{-1}AA^{-T}CD^{-T}v' =
+\frac{1}{4\lambda^2}v'^TMv'=\frac{\mu}{\lambda}$
+We are free to choose $\lambda, \mu$ so to satisfy the constraints we
+should choose $\mu=\lambda$.
+\subsection{Approach 2}
+This approach adds one lagrange multiplier per constraint
+and uses hard algebra to grind through. Specifically the lagrangian becomes
+\begin{align}
+  L &= tr(U^TCV) + \sum \lambda_{ij}(u_i^TAu_j - \delta_{ij}) + \sum
+  \mu_{ij}(v_i^TBv_j - \delta_{ij})\\
+  &= tr(U^TCV) + 1^T U^T(A\hp \Lambda)U 1 - tr(\Lambda) + 1^T V^T(B\hp \Mu)V 1 - tr(\Mu) \\
+  &= tr(U^TCV + 1^T U^T(A\hp \Lambda)U 1 - \Lambda + 1^T V^T(B\hp  \Mu)V 1 - \Mu)\\
+  \frac{\partial L}{\partial U}&= V^TC^T + 11^TU^T(A\hp (\Lambda + \Lambda)^T) = 0
+\end{align}
+\todo{Confirm that this method would work}
+\subsection{Probabilistic CCA}
+Basically we have to find the MLE estimates of the parameters of a two
+observed, one hidden variable model defined with the following
+generative story. 
+
+I observe data coming in two pairs and I assume that it was generated
+in the following way
+\begin{align}
+  z &\sim \mathcal{N}(0, I_d)\\
+  x &\sim \mathcal{N}(W_1z + u_1, \psi_1)\\
+  y &\sim \mathcal{N}(W_2z + u_2, \psi_2)
+\end{align}
+Now I want to estimate the parameters $W_1, W_2, \psi_1, \psi_2,
+u_1, u_2$ on the basis of the data. So basically I need to
+maximize the likelihood of the parameters.
+\begin{align}
+  \mathcal{L} &= \prod_i \int_z p(x_i|z) p(y_i|z) p(z)\\
+  \log(\mathcal{L}) &= \sum_i \log(\int_z p(x_i|z) p(y_i|z) p(z))
+\end{align}
+Lets focus on $I = \int_z p(x|z) p(y|z) p(z)$. Let $\dim(x)=m\; \dim(y)=q$
+\begin{align}
+  p(z)&= \frac{1}{\sqrt{(2\pi)^d}} \exp(\mf z^Tz)\\
+  p(x|z)&= \frac{1}{\sqrt{(2\pi)^m\det{\psi_1}}}  \exp( \mf (x-W_1z-u_1)^T\psi_1^{-1}(x-W_1z-u_1))\\
+  p(y|z)&= \frac{1}{\sqrt{(2\pi)^q\det{\psi_2}}}  \exp( \mf (y-W_2z-u_2)^T\psi_2^{-1}(y-W_2z-u_2))\\
+  I &= \int_z p(x|z) p(y|z) p(z)\\
+  &= \frac{1}{\sqrt{(2\pi)^{d+m+q} \det{\psi_1}\det{\psi_2} }}\exp(\mf
+  \big( z^Tz + (x-W_1z-u_1)^T\psi_1^{-1}(x-W_1z-u_1) + \notag\\
+  & \qquad (y-W_2z-u_2)^T\psi_2^{-1}(y-W_2z-u_2) \big) ) 
+\end{align}
+Now the basic idea is the same as probabilistic PCA, the final
+probability distribution is joint guassian over $x, y$, and then we
+want to maximize the likelihood of parameters.
+
+Let $a = x-u_1, \; b = y-u_2$ and focus only on the quadratic term $T$.
+\begin{align}
+  T &= z^Tz + (a-W_1z)^T\psi_1^{-1}(a-W_1z) +
+  (b-W_2z)^T\psi_2^{-1}(b-W_2z)\\
+  (a-W_1z)^T\psi_1^{-1}(a-W_1z) &= (a^T\psi_1^{-1}a)+  (z^TW_1^T\psi_1^{-1}W_1z) - 2z^TW_1^T\psi_1^{-1}a\\
+  (b-W_2z)^T\psi_2^{-1}(b-W_2z) &= (b^T\psi_2^{-1}b)+  (z^TW_2^T\psi_2^{-1}W_2z) - 2z^TW_2^T\psi_2^{-1}b\\
+  T &= z^T(I+W_1^T\psi_1^{-1}W_1+W_2^T\psi_2^{-1}W_2)z -2z^T(W_1^T\psi_1^{-1}a + W_2^T\psi_2^{-1}b) + \notag\\
+  & \qquad ((a^T\psi_1^{-1}a) + (b^T\psi_2^{-1}b))
+\end{align}
+Once again we have to complete the squares which means that we'd have to match $T$ above to an expression like the following
+\begin{align}
+  (z-\mu)^T V^{-1}(z-\mu)=  (z^T V^{-1}z) -2z^TV^{-1}\mu + (\mu^T V^{-1}\mu)
+\end{align}
+Which means that $V = (I+W_1^T\psi_1^{-1}W_1+W_2^T\psi_2^{-1}W_2)^{-1}$ and $V^{-1}\mu = (W_1^T\psi_1^{-1}a + W_2^T\psi_2^{-1}b) \implies \mu = V(W_1^T\psi_1^{-1}a + W_2^T\psi_2^{-1}b)$.
+
+Let $c = ((a^T\psi_1^{-1}a) + (b^T\psi_2^{-1}b)) - (\mu^T V^{-1}\mu)$, then basically the integral $I$ becomes the following:
+\begin{align}
+  I &= \frac{1}{\sqrt{(2\pi)^{d+m+q} \det{\psi_1}\det{\psi_2} }} \exp(\mf c)\\
+  &= \frac{\sqrt{\det{V}}}{\sqrt{(2\pi)^{m+q} \det{\psi_1}\det{\psi_2} }} \exp(\mf c)\\
+  &= ((2\pi)^{m+q} \det{\psi_1}\det{\psi_2}\det{V}^{-1})^{-1/2}\exp(\mf c)
+\end{align}
+Of course we only want to maximize the real likelihood.
+\begin{align}
+  \log(\mathcal{L})&= \sum \log(I_i) \\
+  &= \mf (\sum_i c_i + n \log((2\pi)^{m+q} \det{\psi_1}\det{\psi_2}\det{V}^{-1}))
+\end{align}
+After removing constants we get the following objective
+\begin{align}
+  & \arg\min (\sum_i c_i + n \log(\det{\psi_1}\det{\psi_2}\det{I+W_1^T\psi_1^{-1}W_1+W_2^T\psi_2^{-1}W_2}))\\
+  c_i &= ((a_i^T\psi_1^{-1}a_i) + (b_i^T\psi_2^{-1}b_i)) - (\mu_i^T V^{-1}\mu_i)\\
+  \mu_i &= V(W_1^T\psi_1^{-1}a_i + W_2^T\psi_2^{-1}b_i)\\
+  V &= (I+W_1^T\psi_1^{-1}W_1+W_2^T\psi_2^{-1}W_2)^{-1}\\
+  \implies c_i &= a_i^T\psi_1^{-1}a_i + b_i^T\psi_2^{-1}b_i - (W_1^T\psi_1^{-1}a_i + W_2^T\psi_2^{-1}b_i)^T V^T(W_1^T\psi_1^{-1}a_i + W_2^T\psi_2^{-1}b_i)
+\end{align}
+\todo{Simplify by recognizing higher forms using Jordan.}
+\subsection{Using PCCA as a language model}
+\todo{Anything that I can do with PGCCA I can do with PCCA. It makes sense to derive those things in the easier case and then to forge ahead, Think about complexity, performance, advantages etc. at this point.}
+Basically I want to derive p(y|x) and ensure that it can be computed efficiently. p(y|x) would become the guassian language model.
+So basically
+\begin{align}
+  p(y|x) &= \frac{p(y,x)}{p(x)} \\
+  &= \frac{\int p(y,x,z)}{p(x)}\\
+  &= \frac{\int p(y,x|z)p(z)}{p(x)}\\
+  &= \frac{\int p(y|z)p(x|z)p(z)}{p(x)}\\
+\end{align}
+Both the numerator and the denominator I have calculated before so plug those values in to get $p(y|x)$ in closed form.
+\section{Probabilistic GCCA}
+We want to derive probabilistic GCCA because then we can give a generative semantics to my embeddings and use them for language modelling.
+\todo{TODO}
+\end{document}
