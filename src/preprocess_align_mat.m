@@ -1,4 +1,4 @@
-function [arr, mu1, mu2, nonmissing_rows, column_picked_logical]=...
+function [arr, mu1, mu2, nonmissing_rows, column_picked_logical, sum2]=...
     preprocess_align_mat(arr, opt)
 % USAGE:
 % opt = logCount, CountPow075, logCountPow075, Freq, logFreq, FreqPow075
@@ -17,6 +17,11 @@ get_freq=@(x) diag(sum(x,2).^-1)*x;
 [opt, column_picked_logical]=process_opt_and_get_column_logical(opt, ...
                                                   arr);
 arr=arr(:, column_picked_logical);
+
+%% Calculate statistics that can later be used to estimate how
+%% over-powering or noisy this word or context was ?
+sum1 = sum(arr,1);
+sum2 = sum(arr,2);
 %% Now that the columns to process have been fixed we would
 %% do non-linear element-wise preprocessing.
 disp(['Now opt is ', opt]);
@@ -57,4 +62,3 @@ mu1=mean(arr(nonmissing_rows, :), 1);
 mu2=mean(arr, 2);
 assert(any(isnan(mu1))~=1);
 end
-

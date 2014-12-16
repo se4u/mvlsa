@@ -1,9 +1,68 @@
 ## TODO
 # I have to do the followng tasks
-# 1. Run glove with symmetric=0, x-max=1 
-# 2. Run glove with symmetric=1, x-max=1
-# 3. 
-
+# 1. Run glove with symmetric=0, x-max=1  # 0.1 tells me the importance of x-max(It is really important but only for the semantic task. The performance on the other tasks is really not affected or even imporves with decreasing x-max)
+# m ts_extrinsic_glove_"0.1"_mytrain_mycode ts_extrinsic_glove_"1.100"_mytrain_mycode
+# 71.2 MEN
+# 31.9 RW
+# 54.9 SCWS
+# 32.9 SIMLEX
+# 61.0 EN_WS_353_ALL
+# 62.8 EN_MTURK_287
+# 54.2 EN_WS_353_REL
+# 71.5 EN_WS_353_SIM
+# 73.5 EN_RG_65
+# 73.7 EN_MC_30
+# 60.7 EN_TOM_ICLR13_SYN
+# 66.7 EN_TOM_ICLR13_SEM
+# 2. Run glove with symmetric=1, x-max=100 # 1.100 tells me the importance of additional views
+# 71.2 MEN
+# 29.7 RW
+# 54.4 SCWS
+# 32.9 SIMLEX
+# 59.1 EN_WS_353_ALL
+# 62.4 EN_MTURK_287
+# 53.7 EN_WS_353_REL
+# 68.1 EN_WS_353_SIM
+# 73.8 EN_RG_65
+# 67.7 EN_MC_30
+# 61.3 EN_TOM_ICLR13_SYN
+# 81.1 EN_TOM_ICLR13_SEM
+qsub_glove:  
+	for SYMASYM in 0.1 1.100 ; do \
+	  $(call QSUBPEMAKEHOLD4,glove_"$$SYMASYM"_mytrain,a1[1238]*,10G,1) $(STORE2)/glove_"$$SYMASYM"_mytrain.bin; sleep 5; \
+	  $(call QSUBPEMAKEHOLD5,submit_grid_stub.sh.glove_"$$SYMASYM"_mytrain,a*,1G,glove_"$$SYMASYM"_mytrain) log/extrinsic_glove_"$$SYMASYM"_mytrain_mycode; done
+# 3. Use log(Count) Preprocessing with the best settings to find out
+#    the performance.
+# 65.9 MEN
+# 22.6 RW
+# 56.9 SCWS
+# 29.7 SIMLEX
+# 68.0 EN_WS_353_ALL
+# 50.5 EN_MTURK_287
+# 62.8 EN_WS_353_REL
+# 72.3 EN_WS_353_SIM
+# 64.8 EN_RG_65
+# 66.0 EN_MC_30
+# 31.8 EN_TOM_ICLR13_SYN
+# 24.1 EN_TOM_ICLR13_SEM
+# 70.0 TOEFL
+check_log_perf: log/fullgcca_extrinsic_test_v5_embedding_mc_logCount-trunccol12500_500~E@mi@bi@ag@fn@mo,300_1e-5_170000.300.1.1
+# i should just wait for the above experiments to finish and then
+# decide the exact weighting strategy to use. It seems that setting x-max really benefits the Semantic dataset However I can do a lot better in terms of weighting. Also I didn't really get any benefits from logarithmic preprocessing again even with the best settings. . The point is that I can
+# either premultiply or postmultiply and then get basically a factored
+# weighting. Also I checked the importance of symmetric views and it TODO/TODO the performance.
+# Also it seems that I can process the PMI
+# matrices directly, though the problem is that PMI matrices are not
+# really properly regularized. So I need to take care of the
+# regularization.
+# Also it turns out that one of the points that Levy et al. made in
+# their papeer about symmetric SVD doing better than asymmetric SVD is
+# already answered using our framework.
+# 3. Code Glove's Data dependent preprocessing and use that on
+#    Count^1/4 on my 15 Wikipedia views. The really important thing is
+#    to count exactly what I reweight by (The word or the context ?)
+# 4. Use Gloves Data dependent preprocessing on log(Count) on my 15 Wikipedia views.
+# 5. Tune Weights over the views discriminatively.
 SHELL := /bin/bash
 .SECONDARY:
 .PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate big_input $(STORE2)/agigastandep
@@ -47,10 +106,11 @@ QSUBMAKE := $(QSUBCMD) $(CWD_SUBMIT)
 QSUBP1MAKE := $(QSUBP1CMD) $(CWD_SUBMIT)
 QSUBPEMAKE := $(QSUBCMD) -pe smp 10 $(CWD_SUBMIT)
 QSUBP1PEMAKE := $(QSUBP1CMD) -pe smp 10 $(CWD_SUBMIT)
-QSUBPEMAKEHOLD = qsub -N $1 -V -hold_jid $2 -l mem_free=$3 -r yes -pe smp $4 -cwd submit_grid_stub.sh
-QSUBPEMAKEHOLD2 = qsub -N $1 -V -hold_jid $2,$3 -l mem_free=$4 -r yes -pe smp $5 -cwd submit_grid_stub.sh
-QSUBPEMAKEHOLD3 = qsub -N $1 -V -hold_jid $2 -l mem_free=$3,ram_free=$4 -r yes -pe smp $5 -cwd submit_grid_stub.sh
-QSUBPEMAKEHOLD4 = qsub -N $1 -V -l hostname=$2 -l mem_free=$3 -r yes -pe smp $4 -cwd submit_grid_stub.sh
+QSUBPEMAKEHOLD = qsub -N $1 -V -hold_jid $2 -l mem_free=$3 -r yes -cwd submit_grid_stub.sh # -pe smp $4 
+QSUBPEMAKEHOLD2 = qsub -N $1 -V -hold_jid $2,$3 -l mem_free=$4 -r yes  -cwd submit_grid_stub.sh # -pe smp $5
+QSUBPEMAKEHOLD3 = qsub -N $1 -V -hold_jid $2 -l mem_free=$3 -r yes  -cwd submit_grid_stub.sh # ,ram_free=$4 -pe smp $5
+QSUBPEMAKEHOLD4 = qsub -N $1 -V -l hostname=$2 -l mem_free=$3 -r yes -cwd submit_grid_stub.sh # -pe smp $4
+QSUBPEMAKEHOLD5 = qsub -N $1 -V -hold_jid $4 -l hostname=$2 -l mem_free=$3 -r yes -cwd submit_grid_stub.sh # -pe smp $4 
 CC := gcc
 CFLAGS := -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
 STORE := /export/a15/prastog3
@@ -199,17 +259,9 @@ combined_embedding_generic: $(STORE2)/v5_embedding_mc_CountPow025-trunccol12500_
 #################################################################################
 ## TRAIN MIKOLOV/GLOVE ON MY DATA AND PREPARE THEIR EMBEDDINGS FOR MY EVAL SCRIPT
 GM_MEM := 20
+
 $(STORE2)/glove_theirtrain.txt: $(STORE2)/glove.6B.300d.txt
 	cp $< $@
-# Your job 9894541 ("glove_0.1_mytrain") has been submitted
-# Your job 9894542 ("submit_grid_stub.sh.glove_0.1_mytrain") has been submitted
-# Your job 9894543 ("glove_1.1_mytrain") has been submitted
-# Your job 9894545 ("submit_grid_stub.sh.glove_1.1_mytrain") has been submitted
-qsub_glove:
-	for SYMASYM in 0 1; do \
-	  $(call QSUBPEMAKEHOLD4,glove_"$$SYMASYM".1_mytrain,a1[1238],10G,10) $(STORE2)/glove_"$$SYMASYM".1_mytrain.bin; sleep 5; \
-	  $(call QSUBPEMAKEHOLD,submit_grid_stub.sh.glove_"$$SYMASYM".1_mytrain,glove_"$$SYMASYM".1_mytrain,1G,10) log/extrinsic_glove_"$$SYMASYM".1_mytrain_mycode; done
-
 $(STORE2)/glove_%_mytrain.bin $(STORE2)/glove_%_mytrain.txt:
 	$(MAKE) SYM_ASYM=$(word 1,$(subst ., ,$*)) X_MAX=$(word 2,$(subst ., ,$*)) TARGET=$@ glove_mytrain_generic
 glove_mytrain_generic: $(STORE2)/glove_$(SYM_ASYM)_cooccurence_shuf_file $(VOCABWITHCOUNT_500K_FILE)
@@ -232,14 +284,14 @@ $(STORE)/word2vec_theirtrain.txt: $(STORE)/gn300.txt
 	 awk '{if(!index($$1, "_")){print $$0}}' $< > $@
 ##############################
 ## TABULATION CODE
-TABCMD = cat $$F | sed "s%original embedding%O%g" | sed -e "s%The EN_TOM_ICLR13_S\([EY]\)\([MN]\) dataset score over \([0-9A-Za-z_-]*\) \[\([0-9]*\), \([0-9]*\), \([0-9]*\), [0-9]*\] is \([0-9.]*\), \([0-9.]*\)%The EN_TOM_ICLR13_S\1\2 $$corrtype score over \3 (\5 out of \4) is \7%g" -e "s%The EN_TOM_ICLR13_S\([EY]\)\([MN]\) dataset score over \([0-9A-Za-z_-]*\) \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The EN_TOM_ICLR13_S\1\2 $$corrtype score over \3 (\5 out of \4) is \7%g" -e "s%The TOEFL score over \([0-9A-Za-z_-]*\) with bare \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The TOEFL $$corrtype score over \1 (\3 out of \2) is \5%g" -e "s%The $$corrtype Corr over \([0-9A-Za-z_-]*\) is%The JURI $$corrtype correlation over \1 (0 out of 0) is%g" | grep -E "The .* $$corrtype"  
+TABCMD = cat $$F | sed "s%original embedding%O%g" | sed -e "s%The EN_TOM_ICLR13_S\([EY]\)\([MN]\) dataset score over \([0-9A-Za-z_.-]*\) \[\([0-9]*\), \([0-9]*\), \([0-9]*\), [0-9]*\] is \([0-9.]*\), \([0-9.]*\)%The EN_TOM_ICLR13_S\1\2 $$corrtype score over \3 (\5 out of \4) is \7%g" -e "s%The EN_TOM_ICLR13_S\([EY]\)\([MN]\) dataset score over \([0-9A-Za-z_-]*\) \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The EN_TOM_ICLR13_S\1\2 $$corrtype score over \3 (\5 out of \4) is \7%g" -e "s%The TOEFL score over \([0-9A-Za-z_-]*\) with bare \[\([0-9]*\), \([0-9]*\), \([0-9]*\)\] is \([0-9.]*\)%The TOEFL $$corrtype score over \1 (\3 out of \2) is \5%g" -e "s%The $$corrtype Corr over \([0-9A-Za-z_-]*\) is%The JURI $$corrtype correlation over \1 (0 out of 0) is%g" | grep -E "The .* $$corrtype"  
 TAB_SPEARMAN = export F=log/$* && export corrtype=Spearman &&
 TAB_PEARSON = export F=log/$* && export corrtype=Pearson && 
 TABCMD1 =  | grep "over G" | awk '{printf "%s\n", $$NF}'
 TABCMDA =  | awk '{printf "%s %s out of %s \t %s \t %s\n", $$2, $$7, $$10, $$6, $$NF}' | python src/tabulation_script.py
 # TARGET: Call tab_Spearman when you want results only over G
 ts_%: #log/%
-	$(TAB_SPEARMAN) $(TABCMD) | python src/rearrange_tabs.py MEN RW SCWS SIMLEX  EN_WS_353_ALL EN_MTURK_287 EN_WS_353_REL EN_WS_353_SIM EN_RG_65 EN_MC_30 EN_TOM_ICLR13_SYN EN_TOM_ICLR13_SEM TOEFL | awk '{printf "%0.1f\n", 100*$$NF}' 
+	$(TAB_SPEARMAN) $(TABCMD) | python src/rearrange_tabs.py MEN RW SCWS SIMLEX  EN_WS_353_ALL EN_MTURK_287 EN_WS_353_REL EN_WS_353_SIM EN_RG_65 EN_MC_30 EN_TOM_ICLR13_SYN EN_TOM_ICLR13_SEM TOEFL | awk '{printf "%0.1f %s\n", 100*$$NF, $$2}' 
 vts_%: #log/%
 	$(TAB_SPEARMAN) $(TABCMD) | python src/rearrange_tabs.py MEN RW SCWS SIMLEX  EN_WS_353_ALL EN_MTURK_287 EN_WS_353_REL EN_WS_353_SIM EN_RG_65 EN_MC_30 EN_TOM_ICLR13_SYN EN_TOM_ICLR13_SEM TOEFL 
 tp_%: #log/%
@@ -362,7 +414,7 @@ $(STORE2)/v5_embedding_%.mat:
 v5_generic_qsub: $(V56_GENERIC_DEP)
 	echo $(V56_GENERIC_DEP) > $(DEP_FILE_NAME) && \
 	sleep 3 &&  \
-	  $(call QSUBPEMAKEHOLD3,$(JOB_NAME),$(HOLD_JID),100G,60G,1) \
+	  $(call QSUBPEMAKEHOLD3,$(JOB_NAME),$(HOLD_JID),57G,60G,1) \
 		TARGET=$(TARGET) \
 		DEP_FILE_NAME=$(DEP_FILE_NAME) \
 		GCCA_OPT=$(GCCA_OPT) \
@@ -392,7 +444,7 @@ v5_generic: $(V56_GENERIC_DEP)
 # With 300 columns it only takes 5 slots and 15G memory
 V5_INDISVD_MEM := 25G
 $(STORE2)/v5_indisvd_%.mat:
-	qsub -N tmp_$* -p -1 -V -j y -l mem_free=$(V5_INDISVD_MEM),h_vmem=$(V5_INDISVD_MEM) -r yes -pe smp 5 -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl 
+	qsub -N tmp_$* -p -1 -V -j y -l mem_free=$(V5_INDISVD_MEM) -r yes -cwd submit_grid_stub.sh $(STORE2)/v5_indisvd_"$*".impl
 
 V5_INDISVD_CMD1 = "options=strsplit('$*', '~'); f2load=['$(STORE2)/' options{1} '.mat']; load(f2load); assert(exist('align_mat')==1); mc_muc=options{2}; if strcmp(f2load, '$(STORE2)/mikolov_cooccurence_intersect.mat') preprocess_option='Count'; else preprocess_option=options{3}; end; svd_size=str2num(options{4}); r=str2num(options{5}); outfile='$(word 1,$(subst ., ,$@)).mat';"
 # The usage for the below targets is as follows
@@ -402,7 +454,7 @@ $(STORE2)/v5_indisvd_%.append_mean:
 $(STORE2)/v5_indisvd_%.append_column_picked:
 	$(MATCMD)$(V5_INDISVD_CMD1)"[~, column_picked_logical]=process_opt_and_get_column_logical(preprocess_option, align_mat); save(outfile, 'column_picked_logical', '-append'); exit;"
 $(STORE2)/v5_indisvd_%.impl:
-	$(MATCMD)$(V5_INDISVD_CMD1)"[ajtj, kj_diag, aj, sj, column_picked_logical, bj]=v5_indisvd_level2(align_mat, mc_muc, preprocess_option, svd_size, r, outfile); save(outfile, 'ajtj', 'kj_diag', 'aj', 'sj', 'r', 'column_picked_logical', 'bj'); exit;"
+	$(MATCMD)$(V5_INDISVD_CMD1)"[ajtj, kj_diag, aj, sj, column_picked_logical, bj, mu2, sum2]=v5_indisvd_level2(align_mat, mc_muc, preprocess_option, svd_size, r, outfile); save(outfile, 'ajtj', 'kj_diag', 'aj', 'sj', 'r', 'column_picked_logical', 'bj', 'mu2', 'sum2'); exit;"
 
 ######################################################################
 ## INPUT PREPARATION CODE 
