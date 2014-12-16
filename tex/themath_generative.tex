@@ -6,6 +6,7 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{color, colortbl}
+\usepackage{amssymb}
 \setlength{\parskip}{\baselineskip}
 \renewcommand{\det}[1]{|#1|}
 \newcommand{\mf}{-\frac{1}{2}}
@@ -13,6 +14,8 @@
 \newcommand{\hp}{\circ}
 \newcommand{\fc}{\frac{1}{\sqrt{(2\pi)^{d+m}(\sigma^2)^m }}}
 \newcommand{\todo}[1]{\textbf{\textcolor{red}{TODO: #1}}}
+\newcommand{\note}[1]{\textbf{\textcolor{red}{NOTE: #1}}}
+\newcommand{\ps}{\begin{bmatrix} \psi_1 & 0 \\ 0 & \psi_2 \end{bmatrix}}
 \begin{document}
 \raggedright
 \section{Probabilistic PCA}
@@ -235,7 +238,7 @@ Lets focus on $I = \int_z p(x|z) p(y|z) p(z)$. Let $\dim(x)=m\; \dim(y)=q$
   p(x|z)&= \frac{1}{\sqrt{(2\pi)^m\det{\psi_1}}}  \exp( \mf (x-W_1z-u_1)^T\psi_1^{-1}(x-W_1z-u_1))\\
   p(y|z)&= \frac{1}{\sqrt{(2\pi)^q\det{\psi_2}}}  \exp( \mf (y-W_2z-u_2)^T\psi_2^{-1}(y-W_2z-u_2))\\
   I &= \int_z p(x|z) p(y|z) p(z)\\
-  &= \frac{1}{\sqrt{(2\pi)^{d+m+q} \det{\psi_1}\det{\psi_2} }}\exp(\mf
+  &= \frac{1}{\sqrt{(2\pi)^{d+m+q} \det{\psi_1}\det{\psi_2} }}\int_z \exp(\mf
   \big( z^Tz + (x-W_1z-u_1)^T\psi_1^{-1}(x-W_1z-u_1) + \notag\\
   & \qquad (y-W_2z-u_2)^T\psi_2^{-1}(y-W_2z-u_2) \big) ) 
 \end{align}
@@ -260,10 +263,13 @@ Which means that $V = (I+W_1^T\psi_1^{-1}W_1+W_2^T\psi_2^{-1}W_2)^{-1}$ and $V^{
 
 Let $c = ((a^T\psi_1^{-1}a) + (b^T\psi_2^{-1}b)) - (\mu^T V^{-1}\mu)$, then basically the integral $I$ becomes the following:
 \begin{align}
-  I &= \frac{1}{\sqrt{(2\pi)^{d+m+q} \det{\psi_1}\det{\psi_2} }} \exp(\mf c)\\
+  I &= \frac{1}{\sqrt{(2\pi)^{d+m+q} \det{\psi_1}\det{\psi_2} }}
+  \exp(\mf c) \int \exp(\mf (z-\mu)^T V^{-1}(z-\mu))\\
   &= \frac{\sqrt{\det{V}}}{\sqrt{(2\pi)^{m+q} \det{\psi_1}\det{\psi_2} }} \exp(\mf c)\\
-  &= ((2\pi)^{m+q} \det{\psi_1}\det{\psi_2}\det{V}^{-1})^{-1/2}\exp(\mf c)
+  &= ((2\pi)^{m+q}
+  \det{\psi_1}\det{\psi_2}\det{V}^{-1})^{-1/2}\exp(\mf c) \label{ccasimple}
 \end{align}
+
 Of course we only want to maximize the real likelihood.
 \begin{align}
   \log(\mathcal{L})&= \sum \log(I_i) \\
@@ -277,10 +283,212 @@ After removing constants we get the following objective
   V &= (I+W_1^T\psi_1^{-1}W_1+W_2^T\psi_2^{-1}W_2)^{-1}\\
   \implies c_i &= a_i^T\psi_1^{-1}a_i + b_i^T\psi_2^{-1}b_i - (W_1^T\psi_1^{-1}a_i + W_2^T\psi_2^{-1}b_i)^T V^T(W_1^T\psi_1^{-1}a_i + W_2^T\psi_2^{-1}b_i)
 \end{align}
-\todo{Simplify by recognizing higher forms using Jordan.}
+
+Now strictly speaking one could muddle his/her way through by computer
+assisted algebra but it would be better to simplify the forms.
+
+The trick is to go back to Expression~\ref{ccasimple} and to then
+view it as a higher dimensional Guassian. Specifically
+\begin{align}
+  I &= \frac{1}{\sqrt{(2\pi)^{m+q}\det{\psi_1}\det{\psi_2}\det{V}^{-1}}}\exp(\mf c)\\
+  &=
+  \frac{1}{\sqrt{(2\pi)^{m+q}\det{\psi_1}\det{\psi_2}\det{V}^{-1}}}\exp(\mf
+  ((a^T\psi_1^{-1}a) + (b^T\psi_2^{-1}b)) - (\mu^T V^{-1}\mu))\\
+  &= \frac{1}{\sqrt{(2\pi)^{m+q}\det{\psi_1}\det{\psi_2}\det{V}^{-1}}}\exp(\mf ((a^T\psi_1^{-1}a) + (b^T\psi_2^{-1}b)) - (W_1^T\psi_1^{-1}a + W_2^T\psi_2^{-1}b)^T V^T(W_1^T\psi_1^{-1}a + W_2^T\psi_2^{-1}b))
+\end{align}
+Now consider just the quadratic term Q
+\begin{align}
+  Q &= a^T\psi_1^{-1}a + b^T\psi_2^{-1}b - (W_1^T\psi_1^{-1}a +
+  W_2^T\psi_2^{-1}b)^T V^T(W_1^T\psi_1^{-1}a + W_2^T\psi_2^{-1}b)\\
+  Q &= a^T(\psi_1^{-1} - \psi_1^{-T}W_1V^TW_1^T \psi_1^{-1}) a +
+  b^T(\psi_2^{-1} - \psi_2^{-T}W_2V^TW_2^T \psi_2^{-1}) b  \notag\\
+  & \qquad - b^T\psi_2^{-T}W_2V^TW_1^T\psi_1^{-1}a -
+  a^T\psi_1^{-T}W_1V^TW_2^T\psi_2^{-1}b\\
+  &= \begin{bmatrix} a^T & b^T \end{bmatrix}
+    \begin{bmatrix}
+       \psi_1^{-1} - \psi_1^{-T}W_1V^TW_1^T \psi_1^{-1} & -\psi_1^{-T}W_1V^TW_2^T\psi_2^{-1} \\
+       -\psi_2^{-T}W_2V^TW_1^T\psi_1^{-1}  & \psi_2^{-1} -\psi_2^{-T}W_2V^TW_2^T\psi_2^{-1}  \end{bmatrix}
+    \begin{bmatrix}a    \\ b \end{bmatrix}\\
+    &= \begin{bmatrix} a^T & b^T \end{bmatrix}
+    (\ps^{-1} - \begin{bmatrix}
+        \psi_1^{-T}W_1V^TW_1^T \psi_1^{-1} & \psi_1^{-T}W_1V^TW_2^T\psi_2^{-1} \\
+       \psi_2^{-T}W_2V^TW_1^T\psi_1^{-1}  & \psi_2^{-T}W_2V^TW_2^T\psi_2^{-1}  \end{bmatrix})
+    \begin{bmatrix}a    \\ b \end{bmatrix}\\
+    &= \begin{bmatrix} a^T & b^T \end{bmatrix}
+    (\ps^{-1} - \ps^{-1} \begin{bmatrix}
+        W_1V^TW_1^T  & W_1V^TW_2^T \\
+       W_2V^TW_1^T  & W_2V^TW_2^T  \end{bmatrix}\ps^{-1})
+    \begin{bmatrix}a    \\ b \end{bmatrix} \\
+    &= \begin{bmatrix} a^T & b^T \end{bmatrix}
+    (\ps^{-1} - \ps^{-1}
+    \begin{bmatrix} W_1 \\ W_2 \end{bmatrix}
+    V
+    \begin{bmatrix} W_1^T & W_2^T \end{bmatrix}
+    \ps^{-1})
+    \begin{bmatrix}a    \\ b \end{bmatrix}
+\end{align}
+Now note that $\psi$ and $V$ are both symmetric. Also note that
+\begin{align}
+  V &= (I+W_1^T\psi_1^{-1}W_1+W_2^T\psi_2^{-1}W_2)^{-1}\\
+  &= (I + \begin{bmatrix} W_1^T W_2^T \end{bmatrix} \begin{bmatrix}
+    \psi_1 & 0 \\ 0 & \psi_2 \end{bmatrix}^{-1} \begin{bmatrix} W_1
+    \\ W_2 \end{bmatrix})^{-1}
+\end{align}
+Also consider
+\begin{align}
+  \Sigma &= \begin{bmatrix} \psi_1 & 0 \\ 0 &
+    \psi_2 \end{bmatrix} + \begin{bmatrix} W_1 \\ W_2 \end{bmatrix}  \begin{bmatrix} W_1^T & W_2^T \end{bmatrix}
+\end{align}
+By the woodbury identity we know its inverse is as follows
+\begin{align}
+  \Sigma^{-1} &= \ps^{-1} - \ps^{-1}\begin{bmatrix} W_1
+    \\ W_2 \end{bmatrix}(I+ \begin{bmatrix} W_1^T &
+    W_2^T \end{bmatrix} \ps^{-1} \begin{bmatrix} W_1
+    \\ W_2 \end{bmatrix})^{-1} \begin{bmatrix} W_1^T &
+    W_2^T \end{bmatrix} \ps^{-1}
+\end{align}
+The determinant of $\Sigma$ can also be shown to be equal to the form
+in the square root by using the fact that $$\det{A+UV^T} = \det{I+V^TA^{-1}U}\det{A}$$
+
+Once we have done this derivation then we can move forward by
+calculating the loglikelihood for a general guassian.
+Let $u = [u_1; u_2]$, and $v_i = [x_i; y_i]$
+\begin{align}
+  \mathcal{-L}  &\sim n\log(\det{\Sigma}) + \sum_i tr((v_i-u)^T\Sigma^{-1}(v_i-u))
+\end{align}
+Now we can cycle the things inside the trace and take out constant
+things from the summation and replace $\sum v_i/n = \xi$ and $\sum
+(v_iv_i^T - \xi \xi^T)/n = \Xi$ also replace $v_i - u = v_i - \xi +
+\xi - u$
+
+\begin{align}
+  \mathcal{-L}  &\sim \log(\det{\Sigma}) + tr(\Sigma^{-1}\Xi)+(\xi -
+  u)^T\Sigma^{-1}(\xi - u) \label{ccal}
+\end{align}
+
+Now again we have to minimize Expression~\ref{ccal} and $\xi, \Xi$ are
+given to us through the data. It is easy to set $u$ but $\Sigma$ needs
+to be chosen more carefully because it is constrained to be of the
+form
+\begin{align}
+  \Sigma &= \begin{bmatrix} \psi_1 & 0 \\ 0 & \psi_2 \end{bmatrix} + \begin{bmatrix} W_1 \\ W_2 \end{bmatrix}  \begin{bmatrix} W_1^T &    W_2^T \end{bmatrix}\\
+  \Sigma &= \begin{bmatrix} \psi_1 & 0 \\ 0 &
+    \psi_2 \end{bmatrix} + W W^T
+\end{align}
+
+I repeat that the problem only occurs because $\Sigma$ needs to be of
+a certain form. If it could have been a general matrix then I wouldn't
+have any problems. I'd just take the derivative of
+expression~\ref{ccal} and set it to 0. In any case the term
+$(\xi - u)^T\Sigma^{-1}(\xi - u)$ is zero so we dont need to worry
+about its derivative.
+
+Now let's take derivative of $-\mathcal{L}$ wrt to $\psi_1,
+\psi_2, W=[W_1; W_2]$. We must work with $\det{\Sigma}\ne 0$
+
+Wrt $\psi_1$:
+\begin{align}
+  \partial \mathcal{L} &= tr(\Sigma^{-1} \partial \Sigma - \Xi\Sigma^{-1}\partial\Sigma\Sigma^{-1})\\
+  &=  tr((\Sigma^{-1}  - \Sigma^{-1}\Xi\Sigma^{-1})\partial\Sigma)\\
+  &\implies (\Sigma^{-1}  - \Sigma^{-1}\Xi\Sigma^{-1}) \begin{bmatrix}I & 0\\ 0 & 0\end{bmatrix} = 0
+\end{align}
+
+Wrt $\psi_2$:
+\begin{align}
+  \partial \mathcal{L} &= tr(\Sigma^{-1} \partial \Sigma - \Xi\Sigma^{-1}\partial\Sigma\Sigma^{-1}) = 0\\
+  &=  tr((\Sigma^{-1}  - \Sigma^{-1}\Xi\Sigma^{-1})\partial\Sigma)\\
+  &\implies (\Sigma^{-1}  - \Sigma^{-1}\Xi\Sigma^{-1}) \begin{bmatrix}0 & 0\\ 0 & I\end{bmatrix} = 0
+\end{align}
+
+Wrt $W$:
+\begin{align}
+ \partial \mathcal{L} &= (\Sigma^{-1}  - \Sigma^{-1}\Xi\Sigma^{-1})W = 0
+\end{align}
+
+Now we need to find $\psi, W$ that satisfy these three constraints and
+later check which of those is the minima ? 
+In order to find the solutions Bach first studies the solutions. He
+says that assume you that such poins exist. Then those points 
+first satisfy some conditions. 
+\begin{enumerate}
+\item $WW^T \preccurlyeq \Xi$
+\item $\Psi = \Sigma\Xi^{-1}(\Xi - WW^T)$
+\item $\psi_1 = \Xi_{11} - W_1 W_1^T$ and $\psi_1 = \Xi_{22} - W_1 W_1^T$
+\end{enumerate}
+
+But of course he didnt come up with these relations from thin air. It
+is conceivable that he did try to study the solution but the
+conditions themselves would have come as a results of search. Anyway
+let's derive some of the lemmas to get comfortable with them
+
+\begin{align}
+           & (\Sigma^{-1}  - \Sigma^{-1}\Xi\Sigma^{-1})W = 0           \\
+  \implies & W = \Xi\Sigma^{-1}W \\
+  \implies & W = \Xi(\Psi + WW^T)^{-1}W \\
+  \implies & W = \Xi(\Psi^{-1} - \Psi^{-1} W(I+W^T\Psi^{-1}W)^{-1}W^T\Psi^{-1})W \label{eq1}\\
+  \implies & W = \Xi(\Psi^{-1}W - \Psi^{-1} W(I+W^T\Psi^{-1}W)^{-1}W^T\Psi^{-1}W) \label{eq2}\\
+\end{align}
+Now let $W^T\Psi^{-1}W = V$, then Expression~\ref{eq2}
+\begin{align}
+  W &= \Xi(\Psi^{-1}W - \Psi^{-1} W(I+V)^{-1}V) \\
+  W &= \Xi\Psi^{-1}W(I - (I+V)^{-1}V)\\
+  W &= \Xi\Psi^{-1}W(I + V)^{-1}\\
+  W +WV &= \Xi \Psi^{-1}W\\
+  W + WW^T\Psi^{-1}W &= \Xi \Psi^{-1}W\\
+  W &= (\Xi - WW^T) \Psi^{-1}W\\
+  \implies \Psi &= \Xi - WW^T \;\text{\todo{If we assume that $WW^T$ is invertible}}\\
+\end{align}
+Now do the cholesky decomposition $\Psi^{-1} = M^TM$ and apply to Expression!\ref{eq1}
+\begin{align}
+  W &= \Xi(M^TM - M^T M W(I+W^T M^T MW)^{-1}W^T M^T M)W \\
+\end{align}
+Let $V = MW$ to get
+\begin{align}
+  W &= \Xi M^TMW - \Xi M^T M W(I+W^T M^T MW)^{-1}W^T M^T MW \\
+  &= \Xi M^TV - \Xi M^T V(I+V^TV)^{-1}V^T V \\
+  V &= M\Xi M^TV(I - (I+V^TV)^{-1}V^TV)
+\end{align}
+Since $\Psi$ is invertible so $M$ is invertible.
+\begin{align}
+  M^{-1}V &= \Xi M^TV(I - (I+V^TV)^{-1}V^TV)
+\end{align}
+
+No strike this he derivation goes as follows
+\begin{align}
+  W &= \Xi(\Psi + WW^T)^{-1}W \\
+  W &= \Xi(\Psi^{1/2}\Psi^{1/2} + \Psi^{1/2}\Psi^{-1/2}WW^T\Psi^{-1/2}\Psi^{1/2})^{-1}W \\
+  W &= \Xi\Psi^{-1/2}(I + \Psi^{-1/2}WW^T\Psi^{-1/2})^{-1}\Psi^{-1/2}W \\
+  \Psi^{-1/2}W &= \Psi^{-1/2}\Xi\Psi^{-1/2}(I + \Psi^{-1/2}WW^T\Psi^{-1/2})^{-1}\Psi^{-1/2}W \\
+  \Psi^{-1/2}WW^T\Psi^{-1/2} &= \Psi^{-1/2}\Xi\Psi^{-1/2}(I + \Psi^{-1/2}WW^T\Psi^{-1/2})^{-1}\Psi^{-1/2}WW^T\Psi^{-1/2} \\
+\end{align}
+Now note that $\Psi^{-1/2}WW^T\Psi^{-1/2}$ is psd therefore it has a eigen-decomposition $USU^T$.
+If we ASSUME that it is pd then we can say that 
+\begin{align}
+  I &= \Psi^{-1/2}\Xi\Psi^{-1/2}(I+USU^T)^{-1}\\
+  (I+USU^T) &= \Psi^{-1/2}\Xi\Psi^{-1/2} \\
+  \implies \Xi  &\succcurlyeq \Psi^{1/2}USU^T\Psi^{1/2} = WW^T
+\end{align}
+
+\todo{It is not clear why we can assume that $WW^T$ which is a psd matrix is spd, but go ahead.}
+ 
+\todo{Actually complete the derivation.}
+
+\section{Incremental Statistical language models}
+\subsection{PPCA as a language model}
+It is not possible since it only has one view of data. and I do not
+want to model the next word as the hidden state rather I want to say
+that the next word is a view that is hidden from us and it is
+connected to the visible view through a latent state.  
+
 \subsection{Using PCCA as a language model}
-\todo{Anything that I can do with PGCCA I can do with PCCA. It makes sense to derive those things in the easier case and then to forge ahead, Think about complexity, performance, advantages etc. at this point.}
-Basically I want to derive p(y|x) and ensure that it can be computed efficiently. p(y|x) would become the guassian language model.
+\todo{Anything that I can do with PGCCA I can do with PCCA. It makes
+  sense to derive those things in the easier case and then to forge
+  ahead, Think about complexity, performance, advantages etc. at this
+  point.}
+
+To do this I need to derive p(view 2| view 1) and ensure that it can
+be computed efficiently. p(view 2 | view 1) would become the guassian
+language model. 
 So basically
 \begin{align}
   p(y|x) &= \frac{p(y,x)}{p(x)} \\
@@ -288,7 +496,42 @@ So basically
   &= \frac{\int p(y,x|z)p(z)}{p(x)}\\
   &= \frac{\int p(y|z)p(x|z)p(z)}{p(x)}\\
 \end{align}
-Both the numerator and the denominator I have calculated before so plug those values in to get $p(y|x)$ in closed form.
+Both the numerator and the denominator I have calculated before so
+plug those values in to get $p(y|x)$ in closed form.
+
+Now the joint pdf of (view-1, view-2) that we calculated was joint normal with
+the following multivariate normal distribution.
+
+\pagebreak
+Under probabilistic interpretation of CCA two views have the joint pdf as follows
+\begin{align}
+  \mu &= [\tilde{\mu}_1; \tilde{\mu}_2]\; \text{The sample mean.}\\
+  \Sigma &= \begin{bmatrix} W_1 W_1^T + \Psi_1 & W_1 W_2^T \\ W_2 W_1^T & W_2 W_2^T + \Psi_2\end{bmatrix}\\
+  \Psi_1 &= \tilde{\Sigma}_{11} - W_1 W_1^T\\
+  \Psi_2 &= \tilde{\Sigma}_{22} - W_2 W_2^T\\
+  W_1 &= \tilde{\Sigma}_{11}U_{1d}\\
+  W_2 &= \tilde{\Sigma}_{22}U_{2d}\\
+  U_{1d} &= \tilde{\Sigma}_{11}^{-1/2} \text{lsv}_d(\tilde{\Sigma}_{11}^{-1/2}\tilde{\Sigma}_{12}\tilde{\Sigma}_{22}^{-1/2})\text{lsv=left singular vector}\\
+  U_{2d} &= \tilde{\Sigma}_{22}^{-1/2} \text{rsv}_d(\tilde{\Sigma}_{11}^{-1/2}\tilde{\Sigma}_{12}\tilde{\Sigma}_{22}^{-1/2})\\
+  \text{Sample Covariance} &= \begin{bmatrix} \tilde{\Sigma}_{11} &
+    \tilde{\Sigma}_{12} \\ \tilde{\Sigma}_{21} & \tilde{\Sigma}_{22} \end{bmatrix}
+\end{align}
+We know that $E[V_2 | V_1]$ is the following:
+$$E[V_2 | V_1] = \tilde{\mu}_2 + (W_2W_1^T)(W_1W_1^T+\Psi_1)^{-1}(V_1 - \mu_2)$$
+$$p(V_2 | V_1) = \mathcal{N}(E[V_2 | V_1], W_2W_2^T+\Psi_2 - W_2W_1^T(W_1W_1^T+\Psi_1)^{-1}W_1W_2^T)$$
+So now if we want to get a probability then we can explicitly calculate it.
+
+So assume that I observe the following two views \note{Both k and n are hyper-param}
+\begin{align}
+  \text{View-1: }\begin{bmatrix}1 0 1 0 0 0 1 \ldots\end{bmatrix}\\
+  \text{View 1 contains words 1 to n-1}\\
+  \text{View-2: }\begin{bmatrix}0 0 0 0 1 0 0 \ldots\end{bmatrix}\\
+  \text{View 2 contains the nth word}
+\end{align}
+%% Then we can estimate $\alpha = E[\text{View 2} | \text{View 1}]$ and
+%% $\beta = \max(\alpha - \text{View 1})$.
+So at test time my observations are encoded in view 1, which are encoded into a
+V-long count vector. Now I want to do prediction of view 2 which can then be used for  
 \section{Probabilistic GCCA}
 We want to derive probabilistic GCCA because then we can give a generative semantics to my embeddings and use them for language modelling.
 \todo{TODO}
