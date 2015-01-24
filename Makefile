@@ -1,68 +1,22 @@
-## TODO
-# I have to do the followng tasks
-# 1. Run glove with symmetric=0, x-max=1  # 0.1 tells me the importance of x-max(It is really important but only for the semantic task. The performance on the other tasks is really not affected or even imporves with decreasing x-max)
-# m ts_extrinsic_glove_"0.1"_mytrain_mycode ts_extrinsic_glove_"1.100"_mytrain_mycode
-# 71.2 MEN
-# 31.9 RW
-# 54.9 SCWS
-# 32.9 SIMLEX
-# 61.0 EN_WS_353_ALL
-# 62.8 EN_MTURK_287
-# 54.2 EN_WS_353_REL
-# 71.5 EN_WS_353_SIM
-# 73.5 EN_RG_65
-# 73.7 EN_MC_30
-# 60.7 EN_TOM_ICLR13_SYN
-# 66.7 EN_TOM_ICLR13_SEM
-# 2. Run glove with symmetric=1, x-max=100 # 1.100 tells me the importance of additional views
-# 71.2 MEN
-# 29.7 RW
-# 54.4 SCWS
-# 32.9 SIMLEX
-# 59.1 EN_WS_353_ALL
-# 62.4 EN_MTURK_287
-# 53.7 EN_WS_353_REL
-# 68.1 EN_WS_353_SIM
-# 73.8 EN_RG_65
-# 67.7 EN_MC_30
-# 61.3 EN_TOM_ICLR13_SYN
-# 81.1 EN_TOM_ICLR13_SEM
-qsub_glove:  
-	for SYMASYM in 0.1 1.100 ; do \
-	  $(call QSUBPEMAKEHOLD4,glove_"$$SYMASYM"_mytrain,a1[1238]*,10G,1) $(STORE2)/glove_"$$SYMASYM"_mytrain.bin; sleep 5; \
-	  $(call QSUBPEMAKEHOLD5,submit_grid_stub.sh.glove_"$$SYMASYM"_mytrain,a*,1G,glove_"$$SYMASYM"_mytrain) log/extrinsic_glove_"$$SYMASYM"_mytrain_mycode; done
-# 3. Use log(Count) Preprocessing with the best settings to find out
-#    the performance.
-# 65.9 MEN
-# 22.6 RW
-# 56.9 SCWS
-# 29.7 SIMLEX
-# 68.0 EN_WS_353_ALL
-# 50.5 EN_MTURK_287
-# 62.8 EN_WS_353_REL
-# 72.3 EN_WS_353_SIM
-# 64.8 EN_RG_65
-# 66.0 EN_MC_30
-# 31.8 EN_TOM_ICLR13_SYN
-# 24.1 EN_TOM_ICLR13_SEM
-# 70.0 TOEFL
-check_log_perf: log/fullgcca_extrinsic_test_v5_embedding_mc_logCount-trunccol12500_500~E@mi@bi@ag@fn@mo,300_1e-5_170000.300.1.1
-# i should just wait for the above experiments to finish and then
-# decide the exact weighting strategy to use. It seems that setting x-max really benefits the Semantic dataset However I can do a lot better in terms of weighting. Also I didn't really get any benefits from logarithmic preprocessing again even with the best settings. . The point is that I can
-# either premultiply or postmultiply and then get basically a factored
-# weighting. Also I checked the importance of symmetric views and it TODO/TODO the performance.
-# Also it seems that I can process the PMI
-# matrices directly, though the problem is that PMI matrices are not
-# really properly regularized. So I need to take care of the
-# regularization.
-# Also it turns out that one of the points that Levy et al. made in
-# their papeer about symmetric SVD doing better than asymmetric SVD is
-# already answered using our framework.
-# 3. Code Glove's Data dependent preprocessing and use that on
-#    Count^1/4 on my 15 Wikipedia views. The really important thing is
-#    to count exactly what I reweight by (The word or the context ?)
-# 4. Use Gloves Data dependent preprocessing on log(Count) on my 15 Wikipedia views.
-# 5. Tune Weights over the views discriminatively.
+## MOTIVATION
+# 1) Scalability (Code first, basically given any number of views
+#    first store their symmetric svds, then perform pca on the symmetric svds)
+# 2) Task specific representation learning through feedback guided weights (once
+#    representation learning becomes online, then all we need to do is
+#    train representations, the representations can be 
+# 3) Which contexts give a boost (this is part of analysis)
+#    Basically I code PMI, PPMI, Glove's Data dependent preprocessing as
+#    different views and then find which views get a high weight.
+#    i should decide the exact weighting strategy to use. Setting
+#    x-max really benefits the Semantic dataset however I can do a lot
+#    better in terms of weighting by carefully either 
+#    either premultiply or postmultiply and then get basically a factored
+#    weighting. 
+# 4) Application : PPDB ?
+# 5) Finally do humans really break the performance intro matrices of
+#    statistics that are called views ? 
+# 6) Tension between thresholding for noise removal and "missing value imputation for svd"
+
 SHELL := /bin/bash
 .SECONDARY:
 .PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate big_input $(STORE2)/agigastandep
@@ -199,6 +153,11 @@ table_nj:
 	echo $$nj ; $(MAKE) -s ts_fullgcca_extrinsic_test_v5_embedding_mc_"$$nj"-trunccol200000_500~E@mi,300_1e-5_16.300.1.1 ; done | pr -3 -l 27
 ###################################################
 ## EXHAUSTIVELY TEST MIKOLOV AND GLOVE
+qsub_glove:  
+	for SYMASYM in 0.1 1.100 ; do \
+	  $(call QSUBPEMAKEHOLD4,glove_"$$SYMASYM"_mytrain,a1[1238]*,10G,1) $(STORE2)/glove_"$$SYMASYM"_mytrain.bin; sleep 5; \
+	  $(call QSUBPEMAKEHOLD5,submit_grid_stub.sh.glove_"$$SYMASYM"_mytrain,a*,1G,glove_"$$SYMASYM"_mytrain) log/extrinsic_glove_"$$SYMASYM"_mytrain_mycode; done
+
 eval_extr:
 	for t in glove_theirtrain_mycode glove_mytrain_mycode \
 	word2vec_theirtrain_theircode word2vec_theirtrain_mycode word2vec_mytrain_mycode word2vec_mytrain_theircode  ; do \
@@ -342,6 +301,11 @@ gcca_extrinsic_test_gen1: $(MYDEP)
 
 gcca_extrinsic_test_generic:  
 	$(MATCMDENV)"word=textread('$(VOCAB_500K_FILE)', '%s'); load('$(MYDEP)'); if size(G, 1) < size(G, 2); G=G'; end; word=word(sort_idx); do_only_g=$(DO_ONLY_G); if do_only_g word2vec_emb=nan; emb_word=nan; else word2vec_emb=dlmread('$(STORE2)/word2vec_theirtrain.txt', '', 1, 1); emb_word=textread('$(STORE2)/word2vec_theirtrain.txt_word', '%s', 'headerlines', 1); end; bitext_true_extrinsic_test(G, word2vec_emb, $(DIM_AFTER_CCA), word, $(DOMIKOLOV), do_only_g, emb_word); exit;" | tee $(TARGET)
+
+# 3. Use log(Count) Preprocessing with the best settings to find out
+#    the performance.
+check_log_perf: log/fullgcca_extrinsic_test_v5_embedding_mc_logCount-trunccol12500_500~E@mi@bi@ag@fn@mo,300_1e-5_170000.300.1.1
+
 ########################################
 ## MSR TESTING CODE
 check_msr_performance:
@@ -359,6 +323,7 @@ log/gcca_msr_test_%: $(STORE2)/v5_embedding_%.mat
 
 ########################################
 ## PROJECTION CREATION CODE
+# This target was made for the Microsoft Sentence Completion task
 # TARGET: for m in 300 500; do for h in {1..15};
 # $STORE2/projection_polyglotwiki_cooccurence_"$h".mc_CountPow025-trunccol100000_"$m"~E@mi,300_1e-5_25.mat;
 $(STORE2)/projection_%.mat:
