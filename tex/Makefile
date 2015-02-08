@@ -1,8 +1,16 @@
-all:
-	pdflatex mvppdb; bibtex mvppdb; pdflatex mvppdb; bibtex mvppdb
+NAME := mvppdb
+PDFCMD := pdflatex \\nonstopmode\\input
+.PHONY: $(NAME).pdf
+pdf $(NAME).pdf: $(NAME).tex $(NAME).aux $(NAME).bib $(NAME).blg
+	$(PDFCMD)  $<
 
-c:
-	rm -f *.aux *.bbl *.blg *.log *.out *~
+$(NAME).blg $(NAME).bib: $(NAME).aux
+	bibtex $(NAME)
 
-v:
-	open mvppdb.pdf
+$(NAME).aux: $(NAME).tex
+	$(PDFCMD) $(NAME).tex
+
+o_%:
+	open $(NAME).$*
+cl:
+	rm $(NAME).[abol][oubl]* $(NAME).tex~

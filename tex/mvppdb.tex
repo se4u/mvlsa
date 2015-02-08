@@ -1,3 +1,23 @@
+%% **REVISION THAT WE WILL MAKE TO THE PAPER ON THE BASIS OF FEEDBACK**
+%% - Add example/diagram of the views to clear up the exposition.
+%% - Correct the attribution of Neural Networks from Mikolov 2013a to
+%% Mikolov,
+%% Yih and Zweig.
+%% - Add a note to be more clear on the differences between our
+%% motivation and
+%% the original authors of LSA to ensure there's no confusion in context
+%% of
+%% that prior work.
+%% - Release our matlab implementation with the paper, so that it is easy
+%% to
+%% replicate our work and to use this method on other datasets.
+%% - Expand our overview of Multi-View learning in the background
+%% section.
+%% - Make the subsection on MRDS more clear and provide a more
+%% verbose/friendly
+%% definition.
+%% - Comment on our testing methodology and the lack of standard test/dev
+%% splits more explicitly.
 \documentclass[11pt]{article}
 \usepackage[ruled,]{algorithm2e}
 \usepackage{naaclhlt2015}
@@ -163,7 +183,7 @@ data have also received strong theoretical backing
 due to the work by \newcite{sridharan2008information} who showed that learning
 with multiple views is beneficial since it reduces the complexity of
 learning problem by restricting the search space and the work by
-\newcite{anandkumar2012tensor} who showed that at least three views
+\newcite{anandkumar2014tensor} who showed that at least three views
 are necessary for recovering hidden variable models.
 
 Note that there exist different variants of GCCA depending on the
@@ -451,11 +471,11 @@ vocabulary task.
     \emph{MRDS}
     values. The rows for accuracy based test sets contain
     $\sigma_{p_0}$ which does not depend on $r$. See
-    \S~\ref{ssec:mdrs} for details.}
+    \S~\ref{ssec:mrds} for details.}
    \label{tab:testlist}
 \end{table*}
 
-\subsection{Significance of comparison} \label{ssec:mdrs}
+\subsection{Significance of comparison} \label{ssec:mrds}
 While surveying the literature
 we found that performance on the word similarity datasets is typically
 reported in terms of the Spearman correlation between the gold ratings
