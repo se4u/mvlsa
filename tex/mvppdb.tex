@@ -397,7 +397,7 @@ construct a \textit{FrameNet} view. Element $[z]_{ij}$ of the
 \textit{FrameNet} view represents whether word $w_i$ was present in
 frame $f_j$. Similarly we combined the knowledge of morphology present
 in the \textit{CatVar} database released by \newcite{habash2003catvar}
-and \textit{morpha, morphg} released by \newcite{minnen2001applied}.
+and \textit{morpha} released by \newcite{minnen2001applied} along with \textit{morphy} that is a part of WordNet.
 The morphological views and the frame semantic views were especially
 sparse with densities of 0.0003\% and 0.03\%. While the approach
 allows for an arbitrary number of distinct sources of semantic
@@ -476,7 +476,7 @@ for comparisons on small evaluation sets.\footnote{For example, the
   \newcite{faruqui2014retrofitting} could not be significant for the
   Word Similarity test set released by
   \newcite{finkelstein2001placing}, even if we assumed a correlation
-  between competing methods as high as 0.9, with a pval threshold of
+  between competing methods as high as 0.9, with a p value threshold of
   0.05.  Similar such comparisons on small datasets are
   performed by \newcite{hill2014not}.} This motivated our defining a
 method for calculating the \emph{Minimum Required Difference for
@@ -494,7 +494,7 @@ of generality.
 For word similarity datasets we define $\sigma_{p_0}^r$ as the MRDS,
 such that it satisfies the following proposition: {\small $$ (r_{AB} <
   r) \land (|\hat{r}_{BT} - \hat{r}_{AT}|{<}\sigma_{p_0}^r) {\implies}
-  \textit{pval} > p_0$$} Where $\textit{pval}$ is the probability of
+  \textit{pval} > p_0$$}. Here $\textit{pval}$ is the probability of
 the test statistic under the null hypothesis that $r_{AT} = r_{BT}$
 found using the Steiger's test \cite{steiger1980tests}. The above
 constraint ensures that as long as the correlation between the
@@ -917,8 +917,7 @@ probabilistic interpretation would allow for an online-generative model of
 lexical representations, which unlike methods like Glove or LSA would
 allows us to naturally perplexity or generate sequences. We also note
 that \newcite{via2007learning} presented a neural network model of GCCA
-and adaptive/incremental GCCA. However, that approach is out of the
-scope of this work.
+and adaptive/incremental GCCA.  Both of these approaches are out of the scope of this work.
 
 When we view our work as an application of multiview learning to NLP,
 this follows a long chain of effort started by
