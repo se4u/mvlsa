@@ -91,10 +91,11 @@
 
 \title{Multiview LSA: Representation Learning via Generalized CCA}
 
-\author{{Pushpendre Rastogi$^1$, Benjamin Van Durme$^{1,2}$, Raman Arora$^{1}$}\\
-  {$^1$Center for Language and Speech Processing, JHU}\\
-  {$^2$Human Language Technology Center of Excellence}
-}
+\author{Pushpendre Rastogi$^1$ \and Benjamin Van Durme$^{1,2}$ \and Raman Arora$^{1}$\\
+  $^1$Center for Language and Speech Processing\\
+    $^2$Human Language Technology Center of Excellence\\
+    Johns Hopkins University}
+
 \date{} 
 
 \begin{document}
@@ -120,7 +121,7 @@ vector-space models \cite{turney2010frequency}, where we say that
 expressions in language are paraphrases if
 their representations are \emph{close} under some distance measure.
 
-One of the earliest linguistic vector space model was Latent
+One of the earliest linguistic vector space models was Latent
 Semantic Analysis (LSA). LSA has been successfully used 
 for Information Retrieval but it is limited in its
 reliance on a single matrix, or \emph{view}, of term co-occurrences.
@@ -134,54 +135,51 @@ GCCA and approximately recover the objective of
 \cite{pennington2014glove} while accounting for missing values. 
 
 Our experiments show that MVLSA is competitive with state of the art
-approached for inducing vector representations of lexical items.
+approached for inducing vector representations of words and phrases.
 As a methodological aside, we discuss the (in-)significance of
 conclusions being drawn from comparisons done on small sized datasets.
 
 \section{Motivation} 
-LSA is simply an application of, Principal Component Analysis (PCA), to the
-term-document cooccurrence matrix.  
-The principal directions found by PCA form the basis of the
-vector-space in which to represent the input
-terms~\cite{landauer1997solution}. The draw back of PCA is that it can
-only leverage a single source of data and it is sensitive to scaling.
+LSA is an application of Principal Component Analysis (PCA) to a
+term-document cooccurrence matrix.  The principal directions found by
+PCA form the basis of the vector-space in which to represent the input
+terms~\cite{landauer1997solution}. A drawback of PCA is that it can
+leverage only a single source of data and it is sensitive to scaling.
 
-An arguably better approach to representation
-learning is Canonical Correlation
-Analysis (CCA) that induces representations that are maximally
-\emph{correlated} across two views. By doing so it can utilize two
-sources of data. However being limited to using only two views seems
-to be unnecessarily constricting in light of the fact that
-more than two sources of data are frequently available in real
-problems. In such cases it seems natural to extend CCA's original objective of maximizing
-correlation between two views by maximizing some measure
-of the matrix $\Phi$ that contains all the pairwise correlations between
-linear projections of the \emph{covariates}. This was
-exactly how Generalized Canonical Correlation Analysis (GCCA) was
-first derived by~\newcite{horst1961generalized}. Recently
-these intuitive ideas about benefits of leveraging multiple sources of
-data have also received strong theoretical backing
-due to the work by \newcite{sridharan2008information} who showed that learning
-with multiple views is beneficial since it reduces the complexity of
-learning problem by restricting the search space and the work by
-\newcite{anandkumar2014tensor} who showed that at least three views
-are necessary for recovering hidden variable models.
+An arguably better approach to representation learning is Canonical
+Correlation Analysis (CCA) that induces representations that are
+maximally \emph{correlated} across two views, allowing the utilization
+of two distinct sources of data. While an improvement over PCA, being
+limited to only two views is unfortunate in light of the fact that
+many sources of data (perspectives) are frequently available in
+practice.  In such cases it is natural to extend CCA's original
+objective of maximizing correlation between two views by maximizing
+some measure of the matrix $\Phi$ that contains all the pairwise
+correlations between linear projections of the \emph{covariates}. This
+is how Generalized Canonical Correlation Analysis (GCCA) was first
+derived by~\newcite{horst1961generalized}. Recently these intuitive
+ideas about benefits of leveraging multiple sources of data have 
+received strong theoretical backing due to the work by
+\newcite{sridharan2008information} who showed that learning with
+multiple views is beneficial since it reduces the complexity of the
+learning problem by restricting the search space.  Recent work by
+\newcite{anandkumar2014tensor} showed that at least three views are
+necessary for recovering hidden variable models.
 
 Note that there exist different variants of GCCA depending on the
-measure of $\Phi$ that we choose to maximize. For example, one could choose the measure to be
-the spectral-norm of $\Phi$. \cite{kettenring1971canonical} listed a
-number of them and further noted that
-maximizing the spectral-norm of $\Phi$ is equivalent to 
-finding linear projections of the \emph{covariates} that are most
-amenable to rank-one PCA, or that can be best explained by a single
-term factor model. He called that variant of GCCA the 
-\emph{MAX-VAR GCCA} and showed that \emph{MAX-VAR GCCA} was equivalent to another one proposed by
-\cite{carroll1968generalization} that searched for an auxiliary orthogonal  
-representation $G$ that was maximally correlated to the linear
-projections of the \emph{covariates}.  Carroll's objective agrees with another
- intuition that representations 
-that leverage multiple views should correlate with all of the views as much
-as possible.
+measure of $\Phi$ that we choose to
+maximize. \newcite{kettenring1971canonical} enumerated a variety of
+possible measures, such as the spectral-norm of $\Phi$. Kettenring
+noted that maximizing this spectral-norm is equivalent to finding
+linear projections of the \emph{covariates} that are most amenable to
+rank-one PCA, or that can be best explained by a single term factor
+model. This variant was named \emph{MAX-VAR GCCA} and was shown to be
+equivalent to a proposal by \newcite{carroll1968generalization}, which
+searched for an auxiliary orthogonal representation $G$ that was
+maximally correlated to the linear projections of the
+covariates.  Carroll's objective targets the intuition
+that representations leveraging multiple views should correlate with
+all provided views as much as possible.
 
 \section{Proposed Method: MVLSA}
 \label{sec:gcca}
@@ -206,7 +204,7 @@ The objective of \emph{MAX-VAR GCCA} can be written as the following optimizatio
 \end{split}
 \end{equation}
 % The matrix $G$ that satisfies expression~\ref{eq:gcca} would also be our vector representation of the vocabulary.
-The matrix G that solves problem~(\ref{eq:gcca}) is our vector representation of the vocabulary. Finding $G$ reduces to spectral decomposition of sum of projection matrices of different views: Define
+The matrix $G$ that solves problem~(\ref{eq:gcca}) is our vector representation of the vocabulary. Finding $G$ reduces to spectral decomposition of sum of projection matrices of different views: Define
 \begin{align}
 P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top, \label{eq:pp}\\
 M =& \sum_{j=1}^J P_j. \label{eq:mm}
@@ -223,12 +221,11 @@ U_j =& \left(X_j^\top X_j\right)^{-1} X_j^\top G.
 %% representations is a nice property that we 
 %% will discuss later.
 
-We can immediately see that we can not store
- $P_j \in \mathbb{R}^{N \times N}$ because of memory constraints.
-Also the scatter matrices may be non-singular so the procedure may become
-ill-posed. 
+Computationally storing $P_j \in \mathbb{R}^{N \times N}$ is
+problematic owing to memory constraints.  Further, the scatter
+matrices may be non-singular leading to an ill-posed procedure.
 % Let us now describe a method to overcome these problems.
-We now describe a novel scalable GCCA with $\ell_2$-regularization to address these computational issues. 
+We now describe a novel scalable GCCA with $\ell_2$-regularization to address these issues. 
 
 \noindent\textbf{Approximate Regularized GCCA}: GCCA can be regularized by adding $r_jI$ to 
 scatter matrix $X_j^\top X_j$ before doing the inversion where
@@ -241,7 +238,7 @@ Projection matrices in~(\ref{eq:pp}) and (\ref{eq:mm}) can then be written as
 \end{align}
 
 % We can side step the computational difficulties by assuming that only the top $m$ singular values of $X_j$ are non-negligible. Parts of the following method were proposed to us by \cite{savostyanov}. 
-Next, to scale up GCCA to large datasets, we first form a rank-$m$ approximation of projection matrices as in~\cite{arora2012kernel} and then extend it to an eigendecomposition for $M$ following ideas from~\cite{savostyanov}. Consider rank-$m$ SVD of $X_j$:
+Next, to scale up GCCA to large datasets, we first form a rank-$m$ approximation of projection matrices~\cite{arora2012kernel} and then extend it to an eigendecomposition for $M$ following ideas by~\newcite{savostyanov}. Consider the rank-$m$ SVD of $X_j$:
 $$X_j = A_{j} S_{j} B^\top_{j},$$
 where $S_j \in \R^{m \times m}$ is the diagonal matrix with $m$-largest singular values of $X_j$ and $A_j \in \R^{N \times m}$ and $B_j \in \R^{m \times d_j}$ are the corresponding left and right singular vectors. Given this SVD, write the $j^{th}$ projection matrix as 
 \begin{eqnarray}
@@ -249,7 +246,7 @@ where $S_j \in \R^{m \times m}$ is the diagonal matrix with $m$-largest singular
 &=& A_j T_j T_j^\top A_j^\top, \nonumber
 \end{eqnarray}
 where $T_j \in \mathbb{R}^{m \times m}$ is a diagonal matrix such that 
-$T_jT_j^\top = S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j$. Finally, it is easy to check that the sum of projection matrices can be expressed as $M = \tilde{M} \tilde{M}^\top$
+$T_jT_j^\top = S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j$. Finally, we note that the sum of projection matrices can be expressed as $M = \tilde{M} \tilde{M}^\top$
 where $$\tilde{M} = \left[ A_1T_1 \ldots A_JT_J \right] \in \mathbb{R}^{N
   \times mJ}.$$
 Therefore, eigenvectors of matrix $M$, i.e. the matrix $G$ that we are interested in finding, are the left singular vectors of $\tilde{M}$, i.e. $\tilde{M}=GSV^\top$. 
@@ -259,21 +256,20 @@ Let $SVD_m$ denote a partial SVD where $S_j$ is a rectangular diagonal
 matrix that contains only the $m$ largest singular values and $A_j, B_j$
 are square, orthonormal, unitary matrices. Defining $SVD_m$ like this
 ensures correctness but in practice we only need to compute $m$
-columns of $A_j$. Take the SVD of $X_j$.
+columns of $A_j$. Take the SVD of $X_j$:
 $$A_{j} S_{j} B^\top_{j} \xleftarrow{SVD_{m}} X_j$$
- Substitute the above in equation~\ref{eq:6} to get 
-$$\widetilde{P}_j = A_j S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j A_j^\top$$ 
-Define, $T_j \in \mathbb{R}^{m \times m}$ to be the diagonal matrix such that
+and substitute the above in equation~\ref{eq:6} to get 
+$$\widetilde{P}_j = A_j S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j A_j^\top$$. 
+Define $T_j \in \mathbb{R}^{m \times m}$ to be the diagonal matrix such that
 $T_jT_j^\top = S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j $ then
-$$\widetilde{P}_j = A_j T_j T_j^\top A_j^\top$$
-Define, $\tilde{M} = \left[ A_1T_1 \ldots A_JT_J \right] \in \mathbb{R}^{N
-  \times mJ}$
-Then 
-$$M = \tilde{M} \tilde{M}^\top$$
-Perform QR decomposition of $\tilde{M}$ to get
-$$M = Q R R^\top Q$$
-Do eigen decomposition of $R R^\top \in \mathbb{R}^{mJ \times mJ}$
-to get its eigen vectors $U$ and eigen values $S$.
+$$\widetilde{P}_j = A_j T_j T_j^\top A_j^\top$$.
+Now $\tilde{M} = \left[ A_1T_1 \ldots A_JT_J \right] \in \mathbb{R}^{N
+  \times mJ}$, then 
+$$M = \tilde{M} \tilde{M}^\top$$.
+Performing QR decomposition of $\tilde{M}$ gives
+$$M = Q R R^\top Q$$.
+Eigen decomposition of $R R^\top \in \mathbb{R}^{mJ \times mJ}$
+results in eigen vectors $U$ and eigen values $S$.
 $$M = Q U S U^\top Q^\top$$
  which implies $G = QU$. 
 
@@ -290,7 +286,7 @@ function that we apply to $Z_j$:
 \end{align}
 In order to compute the SVD of mean centered matrices $X_j$ we first
 compute the partial SVD of uncentered 
-matrix $Y_j$ and then update it. See \cite{brand2006fast} for details.
+matrix $Y_j$ and then update it (\newcite{brand2006fast} provides details).
 \remove{We experimented with representations created from the
 uncentered matrices $Y_j$ and found that they performed as well as 
 the mean centered versions but we would not mention them further since
@@ -300,21 +296,21 @@ produces an approximation.}
 
 \subsection{Handling missing rows across views}
 \label{ssec:missing}
-With real data it may happen that a word was not observed in a view at
+With real data it may happen that a term was not observed in a view at
 all. A large number of 
 missing rows can corrupt the learnt representations since the rows
 in the left singular matrix become zero.
 \remove{The procedure described above
 can not recover from this and the representation for those words may become a
 one hot vector. }
-To counter this problem we adopted a variant of the ``missing-data
-passive'' algorithm from \cite{van2006generalized} who modified the
+To counter this problem we adopt a variant of the ``missing-data
+passive'' algorithm from \newcite{van2006generalized} who modified the
 GCCA objective to counter the problem of missing 
-rows.\footnote{A more recent paper, \cite{van2012generalized},
-  describes newer iterative and non-iterative(Test-Equating Method)
+rows.\footnote{A more recent effort, by \newcite{van2012generalized},
+  describes newer iterative and non-iterative (Test-Equating Method)
   approaches for handling missing values. It is possible that using
   one of those methods could improve performance. \label{ftn:mis}}
-Specifically, the objective now becomes:
+The objective now becomes:
 \begin{equation}
   \label{eq:gcca2}
 \begin{split}
@@ -331,12 +327,12 @@ of the objective can be computed by modifying equation~(\ref{eq:mmm}) as:
 \begin{align}
   M =& K^{-\frac{1}{2}}(\sum_{j=1}^J P_j)K^{-\frac{1}{2}}.
 \end{align}
-Again, if we regularize and approximate the GCCA solution, we get
-$G$ as the left singular vectors of $K^{-\frac{1}{2}}\tilde{M}$. Also, we mean center the matrices using only the observed rows.
+Again, if we regularize and approximate the GCCA solution we get
+$G$ as the left singular vectors of $K^{-\frac{1}{2}}\tilde{M}$. We mean center the matrices using only the observed rows.
 
 Also note that other heuristic weighting schemes could be used
 here. For example if we modify our objective as follows then we would
-approximately recover the objective of \cite{pennington2014glove}:
+approximately recover the objective of \newcite{pennington2014glove}:
 
 \begin{eqnarray}
   \label{eq:gcca3}
@@ -354,22 +350,26 @@ where
 \section{Data}
 \label{sec:data}
 
-\noindent\textbf{Training Data}: We used the English portion of the \textit{Polyglot} Wikipedia dataset
-released by \newcite{al2013polyglot} to create 15 \emph{irredundant} views of
+\noindent\textbf{Training Data} We used the English portion of the
+\textit{Polyglot} Wikipedia dataset released by
+\newcite{al2013polyglot} to create 15 \emph{irredundant} views of
 cooccurrence statistics where element $[z]_{ij}$ of view $Z_k$
 represents that number of times word $w_j$ occurred $k$ words behind
-$w_i$. \remove{We lowercased all the words and discarded all
-words which were longer than 5 characters and contained more than 3 non
-alphabetical symbols. This was done to preserves years and smaller
-numbers.}
-We selected the top 500K words by occurrence to 
-create our vocabulary for the rest of the paper.
+$w_i$. We selected the top 500K words by occurrence to create our
+vocabulary for the rest of the paper.
 
-We extracted cooccurrence statistics from a large bitext corpus that was made by combining a
-number of parallel bilingual corpora. See \cite{ganitkevitch2013ppdb} for details and
-Table~\ref{tab:dataperlang} for a summary. The Berkeley aligner was used for word alignment. Element
-$[z]_{ij}$ of the \textit{bitext} matrix represents the number of times English
-word $w_i$ was aligned to the foreign word $w_j$.
+%% \remove{We lowercased all the words and discarded all
+%% words which were longer than 5 characters and contained more than 3 non
+%% alphabetical symbols. This was done to preserves years and smaller
+%% numbers.}
+
+We extracted cooccurrence statistics from a large bitext corpus that
+was made by combining a number of parallel bilingual corpora as part
+of the ParaPhrase DataBase (PPDB) project: Table~\ref{tab:dataperlang}
+gives a summary, \newcite{ganitkevitch2013ppdb} provides further
+details. Element $[z]_{ij}$ of the \textit{bitext} matrix represents
+the number of times English word $w_i$ was automatically aligned to
+the foreign word $w_j$.
 
 We also used the dependency relations in the \textit{Annotated
   Gigaword Corpus}~\cite{annotatedGigaword12} to create 21
@@ -391,18 +391,20 @@ as the governor of word $w_i$ under dependency relation $d$.
   \end{figure}
 
 
-We combined the knowledge of paraphrases present in FrameNet and PPDB by
-using the dataset created by \newcite{rastogi2014augmenting} to create a
-\textit{FrameNet} view. Element $[z]_{ij}$ of the \textit{FrameNet}
-view represents whether word $w_i$ was present in frame
-$f_j$. Similarly we combined the knowledge of morphology present in
-the \textit{CatVar} database released by \newcite{habash2003catvar} and
-\textit{morpha, morphg} released by \newcite{minnen2001applied}.
+We combined the knowledge of paraphrases present in FrameNet and PPDB
+by using the dataset created by \newcite{rastogi2014augmenting} to
+construct a \textit{FrameNet} view. Element $[z]_{ij}$ of the
+\textit{FrameNet} view represents whether word $w_i$ was present in
+frame $f_j$. Similarly we combined the knowledge of morphology present
+in the \textit{CatVar} database released by \newcite{habash2003catvar}
+and \textit{morpha, morphg} released by \newcite{minnen2001applied}.
 The morphological views and the frame semantic views were especially
-sparse with densities of 0.0003\% and 0.03\%. While we could have utilized more sources of semantic data like
-Cooccurrence in WordNet Synsets or Narrative Chains etc, we decided
-that the above set would be representative enough to inform us of the
-merits or demerits of the MVLSA method and stopped collecting more data. Figure~\ref{fig:cartoon} summarizes the description above.
+sparse with densities of 0.0003\% and 0.03\%. While the approach
+allows for an arbitrary number of distinct sources of semantic
+information, such as going further to include cooccurrence in WordNet
+synsets, we considered the described views to be representative, with
+further improvements possible as future work.
+Figure~\ref{fig:cartoon} summarizes the description above.
 
 \begin{table}[htbp]
   \centering
@@ -418,12 +420,11 @@ merits or demerits of the MVLSA method and stopped collecting more data. Figure~
     Bitext-Chinese  & 10.3M  & 215M  \\
     Monotext-En-Wiki& 75M    & 1700M 
   \end{tabular}  
-  \caption{Portion of data used to create GCCA representations. All
-    numbers have unit of Million.}
+  \caption{Portion of data used to create GCCA representations (in millions).}
   \label{tab:dataperlang}
 \end{table}
 
-\noindent\textbf{Test Data}: We evaluated the representations on the
+\noindent\textbf{Test Data} We evaluated the representations on the
 word similarity datasets listed in Table~\ref{tab:testlist}. The first
 10 datasets in Table~\ref{tab:testlist} were annotated with different
 rubrics and rated on different scales. But broadly they all
@@ -465,34 +466,49 @@ vocabulary task.
 \end{table*}
 
 \subsection{Significance of comparison} \label{ssec:mrds}
-While surveying the literature
-we found that performance on the word similarity datasets is typically
-reported in terms of the Spearman correlation between the gold ratings
-and the cosine distance between normalized embeddings.
-We also noted that researchers do not report
-measures of significance of the difference between
-the Spearman Correlations even for comparisons on small test sets.
-E.g. the comparative difference between ratings produced by competing
-algorithms reported in \cite{faruqui2014retrofitting}  
-could not be significant for the Word Similarity test set released by
-\newcite{finkelstein2001placing},
-even if we assume that the correlation between the competing methods was as high as 0.9 and set the
-pval threshold to be 0.05. There are other examples such as the
-comparisons in \cite{hill2014not}. We now present a method for calculating the
-\emph{Minimum Required Difference for Significance (MRDS)}. 
+While surveying the literature we found that performance on word
+similarity datasets is typically reported in terms of the Spearman
+correlation between the gold ratings and the cosine distance between
+normalized embeddings.  However researchers do not report measures of
+significance of the difference between the Spearman Correlations even
+for comparisons on small evaluation sets.\footnote{For example, the
+  comparative difference by competing algorithms reported by
+  \newcite{faruqui2014retrofitting} could not be significant for the
+  Word Similarity test set released by
+  \newcite{finkelstein2001placing}, even if we assumed a correlation
+  between competing methods as high as 0.9, with a pval threshold of
+  0.05.  Similar such comparisons on small datasets are
+  performed by \newcite{hill2014not}.} This motivated our defining a
+method for calculating the \emph{Minimum Required Difference for
+  Significance (MRDS)}.
 
 \noindent\textbf{Minimum Required Difference for Significance (MRDS)}:
-Imagine that there exist two lists of ratings produced by algorithms $A, B$ and a list of gold
-ratings $T$. Let $r_{AT}$ and $r_{BT}$ and $r_{AB}$ denote the
-Spearman correlations between $A, T$ and $B, T$ and $A, B$ respectively. Let
+Imagine two lists of ratings over the same items, produced
+respectively by algorithms $A$ and $B$, and then a list of gold
+ratings $T$. Let $r_{AT}$, $r_{BT}$ and $r_{AB}$ denote the Spearman
+correlations between $A:T$, $B:T$ and $A:B$ respectively. Let
 $\hat{r}_{AT}, \hat{r}_{BT}, \hat{r}_{AB}$ be their empirical
-estimates and assume that $\hat{r}_{BT} > \hat{r}_{AT}$ without loss of generality.
+estimates and assume that $\hat{r}_{BT} > \hat{r}_{AT}$ without loss
+of generality.
 
-For word similarity datasets we define the MRDS $=\sigma_{p_0}^r$ so that it would satisfy the following proposition:
-{\small $$ (r_{AB} < r) \land (|\hat{r}_{BT} - \hat{r}_{AT}|{<}\sigma_{p_0}^r)
-  {\implies} \textit{pval} > p_0$$}
-Where $\textit{pval}$ is the probability of test statistic under the
-null hypothesis that $r_{AT} = r_{BT}$ found using the Steiger's test \cite{steiger1980tests}. The above constraint ensures that as long as the correlation between the competing methods is less than $r$ and then difference between the correlations of the scores of the competing methods to the gold ratings is less than $\sigma_{p_0}^r$ then the pvalue of the null hypothesis would be greater than $p_0$.  It is reasonable to constrain the agreement in the ratings produced by the competing algorithms to say, some number less than $0.9$ (otherwise the methods are not really different.) That leaves us with the second part of the predicate which ensures that as long as the difference between the correlations of the competing algorithms to the gold scores is less than $\sigma_{p_0}^r$ then the null hypothesis is more likely than $p_0$.
+For word similarity datasets we define $\sigma_{p_0}^r$ as the MRDS,
+such that it satisfies the following proposition: {\small $$ (r_{AB} <
+  r) \land (|\hat{r}_{BT} - \hat{r}_{AT}|{<}\sigma_{p_0}^r) {\implies}
+  \textit{pval} > p_0$$} Where $\textit{pval}$ is the probability of
+the test statistic under the null hypothesis that $r_{AT} = r_{BT}$
+found using the Steiger's test \cite{steiger1980tests}. The above
+constraint ensures that as long as the correlation between the
+competing methods is less than $r$ and the difference between the
+correlations of the scores of the competing methods to the gold
+ratings is less than $\sigma_{p_0}^r$, then the pvalue of the null
+hypothesis will be greater than $p_0$.  We can then ask what we
+consider a reasonable upper bound on the agreement of ratings produced
+by competing algorithms: for instance two algorithms correlating above
+$0.9$ might not be considered meaningfully different.  That leaves us
+with the second part of the predicate which ensures that as long as
+the difference between the correlations of the competing algorithms to
+the gold scores is less than $\sigma_{p_0}^r$ then the null hypothesis
+is more likely than $p_0$.
 
 We can find $\sigma_{p_0}^r$ as follows: Let $\textit{stest}$
 denote Steiger's test predicate which satisfies the following:
@@ -523,34 +539,46 @@ $\beta(1,1)$ to solve the following:\footnote{instead of using  McNemar's test
   $\text{p}(\theta_{B}{\le} \theta_{A}| \hat{\theta}_A{=}\theta,
 \hat{\theta}_B{=}\theta+\sigma, n) < p_0\}$}
 Here $\theta_{A}$ and $\theta_{B}$ are probability of correctness of
-algorithm A and B and $\hat{\theta}_{A}$ and $\hat{\theta}_{B}$ are
+algorithms $A$, $B$ and $\hat{\theta}_{A}$, $\hat{\theta}_{B}$ are
 observed empirical accuracies.
 
-Unfortunately, there are no widely followed train-test splits of the above
-datasets and we also evaluated the effects of hyper-parameter tuning
-on the entire test set therefore our final comparison could have
-favored us due to \emph{soft supervision}. 
-However the consistent performance of our
-method across the test sets lends hope that the trends we report would
-generalize.
+Unfortunately there are no widely reported train-test splits of the
+above datasets, leading to potential concerns of \emph{soft
+  supervision} (hyper-parameter tuning) on these evaluations, both in
+our own work and throughout the existing literature.  We report on the
+resulting impact of various parameterizations, and our final results
+are based on a single set of parameters used across all evaluation
+sets.
+
+%% Here we follow
+%% this accepted practice, but on ongoing work are exploring evaluation
+%% of these learned representations in downstream systems as 
+
+
+%% and we also evaluated the effects of hyper-parameter tuning
+%% on the entire test set therefore our final comparison could have
+%% favored us due to \emph{soft supervision}. 
+%% However the consistent performance of our
+%% method across the test sets lends hope that the trends we report would
+%% generalize.
 
 
 \section{Experiments and Results}
 \label{sec:exp}
 We wanted to answer the following questions through our experiments:
-(1) How do hyper parameters affect performance? (2) What is the
+(1) How do hyper-parameters affect performance? (2) What is the
 contribution of the multiple sources of data to performance? (3) How
-does the performance of MVLSA compare with other methods? For brevity we would only show
-tuning runs for the larger datasets. We also highlight
-the top performing configurations in bold using the small threshold
-values in column~$\sigma_{0.05}^{0.09}$ of Table~\ref{tab:testlist}.
+does the performance of MVLSA compare with other methods? For brevity
+we show tuning runs only on the larger datasets. We also highlight the top
+performing configurations in bold using the small threshold values in
+column~$\sigma_{0.05}^{0.09}$ of Table~\ref{tab:testlist}.
 
-\noindent\textbf{Effect of Hyper parameters}: 
+\noindent\textbf{Effect of Hyper parameters}
 $f_j$: We modeled the preprocessing function $f_j$ as the composition
-of two functions, i.e. $f_j = n_j \circ t_j$.
+of two functions, $f_j = n_j \circ t_j$.
   $n_j$ represents nonlinear preprocessing that is usually
-  employed with LSA. We experimented by setting $n_j$ to be
-  Identity, logarithm of count plus one and the Fourth root of the
+  employed with LSA. We experimented by setting $n_j$ to be:
+  identity; logarithm of count plus one; and the fourth root of the
   count. \remove{  \footnote{We also experimented with other powers of the counts (0.12, 0.5
   and 0.75) on a smaller dataset and found that the fourth root
   performed the best.}}
@@ -673,7 +701,7 @@ AN-SEM                               & 2.5  & 10.8 & 21.8 & 34.8 & \mb{35.8} & 3
 
 $v$: Recall that in Expression~\ref{eq:gcca3} we described a method to
   set $W_j$. We experimented with a different, more global, heuristic to
-  set $[W_j]_{ii} = (K_{ww} \ge v)$. Essentially we removed all
+  set $[W_j]_{ii} = (K_{ww} \ge v)$, essentially removing all
   words that did not appear in $v$ views before doing
   GCCA. Table~\ref{tab:v} shows that changes in $v$ are largely
   inconsequential for performance. \remove{In absence of clear evidence in favor of regularization we
@@ -709,7 +737,7 @@ $r_j$: The regularization parameter ensures that all the
   range from 1 to 1e-10. This was because even the 1000th singular
   value of  our data was much higher than 1.
 
-\noindent\textbf{Contribution of different sources of data}:
+\noindent\textbf{Contribution of different sources of data}
  Table~\ref{tab:jkjk} shows an ablative analysis of performance where we
  remove individual views or some combination of them and measure the
  performance.  It is clear by comparing the last column to the second
@@ -748,46 +776,48 @@ AN-SEM                               & 34.3 & 34.3 & 34.3 & \mb{36.2} & 4.1  & 3
       m=300, \; t=100K, \; v=25, \; k=300$. }
   \label{tab:jkjk}
 \end{table*}
-\noindent\textbf{Comparison to other word representation creation methods:}
-There are a large number of methods of creating representations both
-multilingual and monolingual. There are many new methods such as
-\newcite{yu2014improving,faruqui2014retrofitting,felix2014learning,weston2014hash}
-that are performing multiview learning and could be considered as
-baselines however it is not straight forward to use those systems to
-handle the variety of data that we are using. Therefore, we directly
-compare our method to the Glove and the SkipGram model of Word2Vec as
-the performance of those systems is considered state of the art.  
-We trained the two systems on the English portion of the
-\textit{Polyglot} Wikipedia dataset.\footnote{More specifically
-we explicitly provided the vocabulary file to Glove and Word2Vec and set the
-truncation threshold for word2Vec to 10. Also Glove was trained for 25
-iterations. Glove was provided a window of 15 previous words and Word2Vec
-used a symmetric window of 10 words.} We also combined their outputs
-using MVLSA again to create \emph{G-WSG Combo} embeddings.
+\noindent\textbf{Comparison to other word representation creation
+  methods} There are a large number of methods of creating
+representations both multilingual and monolingual. There are many new
+methods such as by \newcite{yu2014improving},
+\newcite{faruqui2014retrofitting}, \newcite{felix2014learning}, and
+\newcite{weston2014hash} that are performing multiview learning and
+could be considered here as baselines: however it is not
+straight-forward to use those systems to handle the variety of data
+that we are using. Therefore, we directly compare our method to the
+Glove and the SkipGram model of Word2Vec as the performance of those
+systems is considered state of the art.  We trained these two systems
+on the English portion of the \textit{Polyglot} Wikipedia
+dataset.\footnote{More specifically we explicitly provided the
+  vocabulary file to Glove and Word2Vec and set the truncation
+  threshold for word2Vec to 10. Also Glove was trained for 25
+  iterations. Glove was provided a window of 15 previous words and
+  Word2Vec used a symmetric window of 10 words.} We also combined
+their outputs using MVLSA to create \emph{MV-G-WSG)}
+embeddings.
 
-We trained our best MVLSA system with data from all the views and by
-using the individual best settings of 
-the hyper-parameters. Specifically the configuration we used was as
-follows: $n_j = \text{Count}^\frac{1}{4}, t=12.5K, m=500, k=300,
-v=16$. To make a fair comparison we also provide 
-results where we used only the views derived from the \textit{Polyglot}
-Wikipedia corpus. See column \emph{MVLSA (All Views)} and \emph{MVLSA
-  (Wiki)} respectively. It is clearly visible that MVLSA on the
-monolingual data itself is competitive with Glove but
-worse than Word2Vec on the word similarity datasets and it is
-substantially worse than both the systems on the AN-SYN 
-and AN-SEM datasets. However with the addition of multiple views MVLSA
-makes substantial gains, shown in column \emph{MV Gain}, and after consuming the Glove and WSG
-embeddings it again improves performance by some margins, as shown in
-column \emph{G-WSG Gain}, and outperforms the original systems. 
-Using GCCA itself for system combination provides closure
-for the MVLSA algorithm since more and more algorithms can now be
-combined by using the same method. Finally we contrast the Spearman
-correlations $r_s$ with Glove and Word2Vec before and after including
-them in the GCCA procedure. The values demonstrate that including Glove and WSG
-  during GCCA actually increased the  correlation between them and the
-  learnt embeddings, which was agrees with our motivation for
-  performing GCCA in the first place.
+We trained our best MVLSA system with data from all views and by using
+the individual best settings of the hyper-parameters. Specifically the
+configuration we used was as follows: $n_j = \text{Count}^\frac{1}{4},
+t=12.5K, m=500, k=300, v=16$. To make a fair comparison we also
+provide results where we used only the views derived from the
+\textit{Polyglot} Wikipedia corpus. See column \emph{MVLSA (All
+  Views)} and \emph{MVLSA (Wiki)} respectively. It is clearly visible
+that MVLSA on the monolingual data itself is competitive with Glove
+but worse than Word2Vec on the word similarity datasets and it is
+substantially worse than both the systems on the AN-SYN and AN-SEM
+datasets. However with the addition of multiple views MVLSA makes
+substantial gains, shown in column \emph{MV Gain}, and after consuming
+the Glove and WSG embeddings it again improves performance by some
+margins, as shown in column \emph{G-WSG Gain}, and outperforms the
+original systems.  Using GCCA itself for system combination provides
+closure for the MVLSA algorithm since multiple distinct approaches can
+now be simply fused using this method. Finally we contrast the
+Spearman correlations $r_s$ with Glove and Word2Vec before and after
+including them in the GCCA procedure. The values demonstrate that
+including Glove and WSG during GCCA actually increased the correlation
+between them and the learnt embeddings, which supports our motivation
+for performing GCCA in the first place.
 
 
 \begin{table*}[ht]
@@ -796,8 +826,8 @@ them in the GCCA procedure. The values demonstrate that including Glove and WSG
   \setlength\tabcolsep{2.2pt}
   \resizebox{\textwidth}{!}{
   \begin{tabular}{+l |                 +d{2.1}     +d{2.1} |    +d{2.1}     +d{2.1}     +d{2.1}       +d{2.1}       |   +d{2.1}       +d{2.1}|| +c                                  +c |     +c            +c }
-    \mm{Test Set}                  & \m{Glove} & \mm{WSG}   & \m{G-WSG} & \m{MVLSA} & \m{MVLSA}     & \mm{MV-G-WSG} & \m{MV}    & \mmm{G-WSG} & \multicolumn{2}{c|}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
-                \mm{}              & \m{}      & \mm{}      & \m{Combo} & \m{Wiki } & \m{All Views} & \mm{Combined} & \m{Gain}  & \mmm{Gain } & \m{Glove}                        & \mm{WSG} & \m{Glove} & \m{WSG}     \\\hline
+    \mm{Test Set}                  & \m{Glove} & \mm{WSG}   &   \m{MV}          & \m{MVLSA} & \m{MVLSA}     & \mm{MVLSA} & \m{MV}    & \mmm{G-WSG} & \multicolumn{2}{c|}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
+                \mm{}              & \m{}      & \mm{}      & \m{G-WSG} & \m{Wiki } & \m{All Views} & \mm{Combined} & \m{Gain}  & \mmm{Gain } & \m{Glove}                        & \mm{WSG} & \m{Glove} & \m{WSG}     \\\hline
 MEN                                & 70.4      & 73.9      & \my{76.0} & 71.4      & 71.2          & \myy{75.8}    & -0.2      & \ma{4.6}   & 71.9                             & 89.1     & 85.8      & 92.3        \\
 RW                                 & 28.1      & 32.9      & 37.2       & 29.0      & \my{41.7}     & \myy{40.5}    & \ma{12.7} & -1.2       & 72.3                             & 74.2     & 80.2      & 75.6        \\
 SCWS                               & 54.1      & 65.6      & 60.7       & 61.8      & \my{67.3}     & \myy{66.4}    & \ma{5.5}  & -0.9       & 87.1                             & 94.5     & 91.3      & 96.3        \\
@@ -843,9 +873,9 @@ Vector space representations of words have been created using diverse
  or using multi-modal data
  \cite{felix2014learning,bruni2012distributional}.
  
-\cite{dhillon2011multi,dhillon2012two} were the first to use
+\newcite{dhillon2011multi,dhillon2012two} were the first to use
 CCA as the primary method to learn vector representations and
-\cite{faruqui2014improving} further demonstrated incorporating bilingual
+\newcite{faruqui2014improving} further demonstrated that incorporating bilingual
 data through CCA improved performance. More recently this same
 phenomenon was reported by \newcite{hill2014not} through their
 experiments over neural representations learnt from MT systems.
@@ -853,49 +883,48 @@ experiments over neural representations learnt from MT systems.
 %% community \cite{sun2013generalized,tripathi2011data} are two
 %% publications 
 %% that we are aware of that have used GCCA for ``data fusion''.
-And various other researchers have tried to improve the
-performance of their paraphrase systems or vector space models by using
-diverse sources of information such as bilingual
-corpora~\cite{bannard2005paraphrasing,Huang2012Improving,zou2013bilingual}, 
-structured datasets~\cite{yu2014improving,faruqui2014retrofitting} or even
-tagged images~\cite{bruni2012distributional}; 
-\remove{The intuitive reason that using multiple sources of data improves performance is 
-that the views complement each other. For example it was mentioned in
-\cite{ganitkevitch2013ppdb} that monolingual data can't distinguish
-between antonyms but bilingual data can. And bilingual data confounds
-words that occur in the same sentence but monolingual data can
-distinguish them based on their context.}
-However, the previous
-work did not adopt the general, simplifying view that 
-all of these sources of data are just cooccurrence 
-statistics coming from different sources with underlying latent
-factors.\footnote{Though \cite{faruqui2014retrofitting} used
-  the sophisticated technique of belief propagation the graph that
-  they used it on was an undirected weighted graph that can be
-  perfectly represented as an adjacency matrix which is another type of
-cooccurrence matrix. Also their framework could not fuse arbitrary views such as
-other vector representations.}
+Various other researchers have tried to improve the performance of
+their paraphrase systems or vector space models by using diverse
+sources of information such as bilingual
+corpora~\cite{bannard2005paraphrasing,Huang2012Improving,zou2013bilingual},
+structured datasets~\cite{yu2014improving,faruqui2014retrofitting} or
+even tagged images~\cite{bruni2012distributional}; \remove{The
+  intuitive reason that using multiple sources of data improves
+  performance is that the views complement each other. For example it
+  was mentioned in \cite{ganitkevitch2013ppdb} that monolingual data
+  can't distinguish between antonyms but bilingual data can. And
+  bilingual data confounds words that occur in the same sentence but
+  monolingual data can distinguish them based on their context.}
+However, previous work did not adopt the general, simplifying view
+that all of these sources of data are just cooccurrence statistics
+coming from different sources with underlying latent
+factors.\footnote{Note that while \newcite{faruqui2014retrofitting}
+  performed belief propagation over a graph representation of their
+  data, such an undirected weighted graph can be viewed as an
+  adjacency matrix, which is then also a cooccurrence matrix.}
+%% Also
+%%   their framework could not fuse arbitrary views such as other vector
+%%   representations.}
 
 
-\cite{bach2005probabilistic} presented a probabilistic
-interpretation for CCA. Though they did not generalize it to
-include GCCA we believe that one could give a probabilistic
-interpretation of \emph{MAX-VAR GCCA} easily and we are working on
-it. We mention it, since a probabilistic
-interpretation would allow us to build an online-generative model and learn
-lexical representations unlike methods like Glove or LSA that rely
-solely on global term cooccurrence matrices and cannot calculate
-perplexity or generate sequences. We also note that
-\cite{via2007learning} presented a neural network model of GCCA and 
-adaptive/incremental GCCA. However, that approach is out of the scope
-of this work.
+\newcite{bach2005probabilistic} presented a probabilistic
+interpretation for CCA. Though they did not generalize it to include
+GCCA we believe that one could give a probabilistic interpretation of
+\emph{MAX-VAR GCCA}, which we are considering in ongoing work.  Such a
+probabilistic interpretation would allow for an online-generative model of
+lexical representations, which unlike methods like Glove or LSA would
+allows us to naturally perplexity or generate sequences. We also note
+that \newcite{via2007learning} presented a neural network model of GCCA
+and adaptive/incremental GCCA. However, that approach is out of the
+scope of this work.
 
-In the sense of being an application of multiview
-learning methods to NLP our work is an addition to the long chain which
-started from the work of \cite{yarowsky1995unsupervised} and continued
-with \emph{Co-Training}~\cite{blum1998combining}, \emph{CoBoosting}~\cite{collins1999unsupervised} and \emph{2 view
-perceptrons}~\cite{brefeld2006efficient}.  CCA is also an algorithm
-for multi view learning \cite{kakade2007multi,ganchevuai08}, and it
+When we view our work as an application of multiview learning to NLP,
+this follows a long chain of effort started by
+\newcite{yarowsky1995unsupervised} and continued with
+\emph{Co-Training}~\cite{blum1998combining},
+\emph{CoBoosting}~\cite{collins1999unsupervised} and \emph{2 view
+  perceptrons}~\cite{brefeld2006efficient}.  CCA is also an algorithm
+for multi-view learning \cite{kakade2007multi,ganchevuai08}, and it
 has a probabilistic interpretation \cite{bach2005probabilistic} as
 well.
 
@@ -903,7 +932,7 @@ well.
 \remove{
 \section{Future Work}
 \label{sec:futurework}
-In a rough order of importance we believe we could improve our method in the following ways:
+In rough order of importance we believe we could improve our method in the following ways:
 \begin{itemize}[leftmargin=*]
   \itemsep-0.1em
   \renewcommand\labelitemi{--}
@@ -926,30 +955,29 @@ In a rough order of importance we believe we could improve our method in the fol
   %% over the test sets remained complete except for RW and AN-SEM for
   %% which the recall was 1700 out of 2034 and 8714 out of 8869
   %% respectively.
-\item By implementing the probabilistic version of GCCA which would
+\item Implementing the probabilistic version of GCCA would
   allow us to create generative models which could be trained in an
-  online fashion. We conjectured that ``MAXVAR'' formulation of GCCA is closely related to a probabilistic interpretation of GCCA. We are not aware of any work
-that has made this connection before and we are working on proving this where the proof technique and style would closely mirror that in \cite{bach2005probabilistic}.
-\item By using count dependent non-linear weighting as exemplified
-  through Expression~\ref{eq:gcca3}
-\item By implementing procedures for constant memory QR decomposition so that we can scale our method to larger vocabularies. 
-\item By adding more views such as views that derived from successive
+  online fashion. We conjectured that the ``MAXVAR'' formulation of GCCA is closely related to a probabilistic interpretation of GCCA. We are not aware of other work
+making  this connection  and we are working on proving with a technique and style closely mirroring that by \newcite{bach2005probabilistic}.
+\item Using count dependent non-linear weighting as exemplified
+  through Expression~\ref{eq:gcca3}.
+\item Implementing procedures for constant memory QR decomposition so that we can scale our method to larger vocabularies. 
+\item Adding more views such as views that derived from successive
   words instead of  using only the previous words. Since we are not using
-  any PMI-like or frequency like features there is scope for
+  any PMI-like features there is scope for
   improvement on that front.  We note that the performance of our
   method on the ``AN-SEM'' dataset was very low which we believe could
   have been caused due to lack of PMI type features have been reported
-  to work well in \cite{levy2014neural}.  
-\item By using more sophisticated method for handling missing values
+  to work well by \newcite{levy2014neural}.  
+\item Using a more sophisticated method for handling missing values,
   as mentioned earlier.
-\item By performing discriminative optimization of multiplicative
+\item Performing discriminative optimization of multiplicative
   factors over the views. For example we saw that bitext views hurt
   performance on the ``AN-SEM'' task whereas they improved performance
   on all the other tasks in general. A simple technique could be to
   simply assign a multiplicative factor to each view and 
   then to tune the values of that factor by using discriminative
-  techniques. Of course such a method would not remain unsupervised any
-  more. Such a discriminative optimization could help us understand
+  techniques. Of course such a method would not remain unsupervised. Such a discriminative optimization could help us understand
   better the reasons why a particular corpus improves performance on
   certain datasets but decreases performance on another dataset. %% Since
   %% we could calculate gradient of the gram matrix between words in a
@@ -958,46 +986,44 @@ that has made this connection before and we are working on proving this where th
 }
 
 \section{Conclusion and Future Work}
-While previous work had already demonstrated that incorporating two views
-is beneficial, We extended that thread of work to a
-logical extreme and created \emph{MVLSA} to learn distributed 
-representations using data from 46 views!\footnote{Code and data available at \url{www.cs.jhu.edu/~prastog3/mvlsa}}
-Through evaluation of our
-induced representations, shown in Table~\ref{tab:c}, we demonstrated that
-the MVLSA algorithm is able to leverage the information present in  
-multiple data sources to improve performance on a battery of tests
-against state of the art baselines. In order to
- perform MVLSA on large vocabularies with up to 500K words
-we presented a fast scalable algorithm. We also showed that a close
-variant of the Glove objective proposed by 
-\newcite{pennington2014glove} could be derived as a heuristic for
-handling missing data under the MVLSA framework. In order to better
-understand the benefit of using multiple sources of data We 
-performed  MVLSA using views derived only from the monolingual Wikipedia
-dataset thereby providing a more principled alternative of LSA that
-removes the need for heuristically combining word-word cooccurrence 
-matrices into a single matrix. Finally, while surveying the literature
-we noticed that not enough emphasis was being given towards
-establishing the significance of 
-comparative results and proposed a simple statistic \emph{(MRDS)}
-to filter out insignificant comparative gains between competing
-algorithms.
+While previous efforts demonstrated that incorporating two views is
+beneficial in word-representation learning, we extended that thread of
+work to a logical extreme and created \emph{MVLSA} to learn
+distributed representations using data from 46 views!\footnote{Code
+  and data available at \url{www.cs.jhu.edu/~prastog3/mvlsa}} Through
+evaluation of our induced representations, shown in Table~\ref{tab:c},
+we demonstrated that the MVLSA algorithm is able to leverage the
+information present in multiple data sources to improve performance on
+a battery of tests against state of the art baselines. In order to
+perform MVLSA on large vocabularies with up to 500K words we presented
+a fast scalable algorithm. We also showed that a close variant of the
+Glove objective proposed by \newcite{pennington2014glove} could be
+derived as a heuristic for handling missing data under the MVLSA
+framework. In order to better understand the benefit of using multiple
+sources of data we performed MVLSA using views derived only from the
+monolingual Wikipedia dataset thereby providing a more principled
+alternative of LSA that removes the need for heuristically combining
+word-word cooccurrence matrices into a single matrix. Finally, while
+surveying the literature we noticed that not enough emphasis was being
+given towards establishing the significance of comparative results and
+proposed a simple statistic \emph{(MRDS)} to filter out insignificant
+comparative gains between competing algorithms.
 
-\noindent\textbf{Future Work}: Column \emph{MVLSA Wiki} of
+\noindent\textbf{Future Work} Column \emph{MVLSA Wiki} of
 Table~\ref{tab:c} shows us that MVLSA applied to monolingual data has
-a mediocre performance  compared to the baselines of Glove and
+ mediocre performance  compared to the baselines of Glove and
 Word2Vec on word similarity tasks and performs surprisingly worse on
 the AN-SEM dataset. We believe that the results could be improved by (1)
-Either using recent methods for handling missing values
+either using recent methods for handling missing values
 mentioned in footnote~\ref{ftn:mis} or by using the heuristic count dependent
-non-linear weighting that mentioned by \newcite{pennington2014glove}
+non-linear weighting mentioned by \newcite{pennington2014glove}
 and that sits well within our framework as exemplified in Expression~\ref{eq:gcca3}
- (2) By using even more views! that
+ (2) by using even more views, which
 look at the future words as well as views that contain PMI values. 
 Finally, we note that Table~\ref{tab:jkjk} shows that certain datasets can
 actually degrade performance over certain metrics. Therefore we are
 exploring methods for performing discriminative optimization of weights
-assigned to views.
+assigned to views, for purposes of task-based customization of learned representations.
 
 
 \section*{Acknowledgments}
