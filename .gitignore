@@ -17,3 +17,16 @@ glove_*train_*code*
 word2vec_*train_*code*
 all_logs
 some_analysis
+*.aux
+*.log
+*.out
+*.pdf
+*.snm
+*.toc
+*.bbl
+*.blg
+*.nav
+*.out
+*.sol
+*sample.bib
+*.pyc
