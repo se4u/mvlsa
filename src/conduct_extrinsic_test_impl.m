@@ -1,10 +1,10 @@
 function rank_cell=conduct_extrinsic_test_impl(U, id, word, ...
                                                domikolov)
-if nargin < 4
+if narg < 4
     domikolov=1;
 end
 word_map=containers.Map(word, 1:length(word));
-
+asd=1/0;
 get_emb=@(wrd) U(word_map(lower(wrd)), :);
 % % 1. Find the kendall tau correlation  coefficient 
 % tic;

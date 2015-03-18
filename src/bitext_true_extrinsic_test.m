@@ -5,7 +5,7 @@ if nargin < 5
     do_only_G=1;
     emb_word=nan;
 end
-
+    
 if ~do_only_G
     bvgn_embedding=normalize_embedding(bvgn_embedding);
     rank_cell_orig=conduct_extrinsic_test_impl(...
