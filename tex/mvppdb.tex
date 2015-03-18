@@ -1,23 +1,6 @@
 %% **REVISION THAT WE WILL MAKE TO THE PAPER ON THE BASIS OF FEEDBACK**
-%% - Add example/diagram of the views to clear up the exposition.
-%% - Correct the attribution of Neural Networks from Mikolov 2013a to
-%% Mikolov,
-%% Yih and Zweig.
-%% - Add a note to be more clear on the differences between our
-%% motivation and
-%% the original authors of LSA to ensure there's no confusion in context
-%% of
-%% that prior work.
-%% - Release our matlab implementation with the paper, so that it is easy
-%% to
-%% replicate our work and to use this method on other datasets.
-%% - Expand our overview of Multi-View learning in the background
-%% section.
 %% - Make the subsection on MRDS more clear and provide a more
-%% verbose/friendly
-%% definition.
-%% - Comment on our testing methodology and the lack of standard test/dev
-%% splits more explicitly.
+%% verbose/friendly definition.
 \documentclass[11pt]{article}
 \usepackage[ruled,]{algorithm2e}
 \usepackage{naaclhlt2015}
@@ -108,11 +91,10 @@
 
 \title{Multiview LSA: Representation Learning via Generalized CCA}
 
-% \author{Pushpendre Rastogi \\
-%   Johns Hopkins University \\
-%   {\tt pushpendre@jhu.edu} 
-% }
-
+\author{{Pushpendre Rastogi$^1$, Benjamin Van Durme$^{1,2}$, Raman Arora$^{1}$}\\
+  {$^1$Center for Language and Speech Processing, JHU}\\
+  {$^2$Human Language Technology Center of Excellence}
+}
 \date{} 
 
 \begin{document}
@@ -157,8 +139,7 @@ As a methodological aside, we discuss the (in-)significance of
 conclusions being drawn from comparisons done on small sized datasets.
 
 \section{Motivation} 
-LSA is simply an application of the popular unsupervised representation
-learning technique, Principal Component Analysis (PCA), to the
+LSA is simply an application of, Principal Component Analysis (PCA), to the
 term-document cooccurrence matrix.  
 The principal directions found by PCA form the basis of the
 vector-space in which to represent the input
@@ -372,6 +353,7 @@ where
 
 \section{Data}
 \label{sec:data}
+
 \noindent\textbf{Training Data}: We used the English portion of the \textit{Polyglot} Wikipedia dataset
 released by \newcite{al2013polyglot} to create 15 \emph{irredundant} views of
 cooccurrence statistics where element $[z]_{ij}$ of view $Z_k$
@@ -402,6 +384,13 @@ views\footnote{Following is the list of dependency relations that we
 $Z_d$ represents the number of times word $w_j$ occurred
 as the governor of word $w_i$ under dependency relation $d$.
 
+\begin{figure}
+  \includegraphics[trim=0 70 0 35,clip,width=\linewidth]{cartoonbw.pdf}
+  \caption{An illustration of Data sets used.}
+  \label{fig:cartoon}
+  \end{figure}
+
+
 We combined the knowledge of paraphrases present in FrameNet and PPDB by
 using the dataset created by \newcite{rastogi2014augmenting} to create a
 \textit{FrameNet} view. Element $[z]_{ij}$ of the \textit{FrameNet}
@@ -413,7 +402,7 @@ The morphological views and the frame semantic views were especially
 sparse with densities of 0.0003\% and 0.03\%. While we could have utilized more sources of semantic data like
 Cooccurrence in WordNet Synsets or Narrative Chains etc, we decided
 that the above set would be representative enough to inform us of the
-merits or demerits of the MVLSA method and stopped collecting more data.
+merits or demerits of the MVLSA method and stopped collecting more data. Figure~\ref{fig:cartoon} summarizes the description above.
 
 \begin{table}[htbp]
   \centering
@@ -439,7 +428,7 @@ word similarity datasets listed in Table~\ref{tab:testlist}. The first
 10 datasets in Table~\ref{tab:testlist} were annotated with different
 rubrics and rated on different scales. But broadly they all
 contain human judgements about how similar two words are.
-The ``T-SYN'' and ``T-SEM'' datasets contain 4-tuples of
+The ``AN-SYN'' and ``AN-SEM'' datasets contain 4-tuples of
 analogous words and the task is to predict the missing word given the
 first three. Both of these are  open vocabulary tasks while TOEFL is a closed
 vocabulary task. 
@@ -463,8 +452,8 @@ vocabulary task.
     WS-SEM & 203   & 16.2 & 12.6 & 7.3  & 11.5 & 8.9  & 5.1  & -Same-As-Above-                 \\
     RG     & 65    & 28.6 & 22.3 & 12.9 & 20.6 & 16.0 & 9.2  & \cite{Rubenstein1965Contextual} \\
     MC     & 30    & 41.7 & 32.7 & 19.0 & 30.6 & 23.9 & 13.8 & \cite{miller1991contextual}     \\ \hline
-    T-SYN  & 10675 & -    & -    & 0.95 & -    & -    & 0.68 & \cite{mikolov2013distributed}   \\
-    T-SEM  & 8869  & -    & -    & 1.03 & -    & -    & 0.74 & -Same-As-Above-                 \\
+    AN-SYN  & 10675 & -    & -    & 0.95 & -    & -    & 0.68 & \cite{mikolov2013distributed}   \\
+    AN-SEM  & 8869  & -    & -    & 1.03 & -    & -    & 0.74 & -Same-As-Above-                 \\
     TOEFL  & 80    & -    & -    & 8.13 & -    & -    & 6.63 & \cite{landauer1997solution}
   \end{tabular}
   \caption{List of test datasets used. The columns headed $\sigma_{p_0}^r$ contain 
@@ -489,27 +478,27 @@ could not be significant for the Word Similarity test set released by
 \newcite{finkelstein2001placing},
 even if we assume that the correlation between the competing methods was as high as 0.9 and set the
 pval threshold to be 0.05. There are other examples such as the
-comparisons in \cite{hill2014not}. We now present our method for calculating the
-\emph{Minimum Required Difference for Significance (MRDS)}.
+comparisons in \cite{hill2014not}. We now present a method for calculating the
+\emph{Minimum Required Difference for Significance (MRDS)}. 
 
 \noindent\textbf{Minimum Required Difference for Significance (MRDS)}:
 Imagine that there exist two lists of ratings produced by algorithms $A, B$ and a list of gold
 ratings $T$. Let $r_{AT}$ and $r_{BT}$ and $r_{AB}$ denote the
-Spearman correlations between $A, T$ and $B, T$ and $A, B$ respectively. Also let
+Spearman correlations between $A, T$ and $B, T$ and $A, B$ respectively. Let
 $\hat{r}_{AT}, \hat{r}_{BT}, \hat{r}_{AB}$ be their empirical
-estimates. and assume that $\hat{r}_{BT} > \hat{r}_{AT}$.
+estimates and assume that $\hat{r}_{BT} > \hat{r}_{AT}$ without loss of generality.
 
-For word similarity datasets the MRDS $=\sigma_{p_0}^r$ satisfies the following proposition:
+For word similarity datasets we define the MRDS $=\sigma_{p_0}^r$ so that it would satisfy the following proposition:
 {\small $$ (r_{AB} < r) \land (|\hat{r}_{BT} - \hat{r}_{AT}|{<}\sigma_{p_0}^r)
   {\implies} \textit{pval} > p_0$$}
 Where $\textit{pval}$ is the probability of test statistic under the
-null hypothesis that $r_{AT} = r_{BT}$ found using the Steiger's test \cite{steiger1980tests}.
-Let $\textit{stest}$
+null hypothesis that $r_{AT} = r_{BT}$ found using the Steiger's test \cite{steiger1980tests}. The above constraint ensures that as long as the correlation between the competing methods is less than $r$ and then difference between the correlations of the scores of the competing methods to the gold ratings is less than $\sigma_{p_0}^r$ then the pvalue of the null hypothesis would be greater than $p_0$.  It is reasonable to constrain the agreement in the ratings produced by the competing algorithms to say, some number less than $0.9$ (otherwise the methods are not really different.) That leaves us with the second part of the predicate which ensures that as long as the difference between the correlations of the competing algorithms to the gold scores is less than $\sigma_{p_0}^r$ then the null hypothesis is more likely than $p_0$.
+
+We can find $\sigma_{p_0}^r$ as follows: Let $\textit{stest}$
 denote Steiger's test predicate which satisfies the following:
-$\textit{stest}(\hat{r}_{AT}, \hat{r}_{BT}, r_{AB}, p_0, n)
-{\implies} \textit{pval} < p_0$. Then we found
-$\sigma_{p_0}^r$ by solving the following:
-{\small $$\sigma_{p_0}^r = \min\{\sigma | \forall\, 0 {<} r' {<} 1\, \textit{stest}(r',
+$$\textit{stest-p}(\hat{r}_{AT}, \hat{r}_{BT}, r_{AB}, p_0, n) {\implies} \textit{pval} < p_0$$
+Once we define this predicate then we can use it to set up an optimistic problem where our aim is to find $\sigma_{p_0}^r$ by solving the following:
+{\small $$\sigma_{p_0}^r = \min\{\sigma | \forall\, 0 {<} r' {<} 1\, \textit{stest-p}(r',
 \min(r'+\sigma, 1), r, p_0, n) \} $$}
 Note that MRDS is a liberal threshold and it only guarantees that
 differences in correlations below that threshold can never be
@@ -528,7 +517,7 @@ $\beta(1,1)$ to solve the following:\footnote{instead of using  McNemar's test
   \cite{mcnemar1947note} since the Bayesian approach is tractable and
   more direct. A calculation with $\beta(0.5, 0.5)$ as the prior
   changed $\sigma_{0.5}$ from 6.63 to 6.38 for the TOEFL dataset but
-  did not affect MRDS for the T-SEM and T-SYN datasets.}
+  did not affect MRDS for the AN-SEM and AN-SYN datasets.}
 {\small $\sigma_{p_0}=\min\{\sigma |\forall\,
   0{<}\theta{<}\min(1{-}\sigma,0.9)\,$
   $\text{p}(\theta_{B}{\le} \theta_{A}| \hat{\theta}_A{=}\theta,
@@ -585,8 +574,8 @@ of two functions, i.e. $f_j = n_j \circ t_j$.
 \rowstyle{\color{darkergray}}    WS-SEM & 75.0 & 67.2  & \mb{76.2}                  \\
 \rowstyle{\color{darkergray}}    RG     & 69.1 & 55.3  & \mb{75.9}                  \\
 \rowstyle{\color{darkergray}}    MC     & 70.5 & 67.6  & \mb{80.9}                  \\}
-    T-SYN                               & 45.7 & 21.1  & \mb{53.6}                  \\
-    T-SEM                               & 25.4 & 15.9  & \mb{38.7}                  \\\remove{
+    AN-SYN                               & 45.7 & 21.1  & \mb{53.6}                  \\
+    AN-SEM                               & 25.4 & 15.9  & \mb{38.7}                  \\\remove{
   \rowstyle{\color{darkergray}}  TOEFL  & 81.2 & 70.0  & \mb{81.2} }
   \end{tabular}
   \caption{Performance versus $n_j$, the non linear processing of
@@ -611,8 +600,8 @@ SIMLEX                              & 42.7  & \mb{42.4}  & 41.9 & 41.3 & 40.5 & 
 \rowstyle{\color{darkergray}}WS-SEM & 77.8  & 78.8  & 78.8 & 78.2 & 77.7 & 76.5 & 77.0 & 76.2 \\ 
 \rowstyle{\color{darkergray}}RG     & 72.7  & 74.4  & 74.7 & 75.0 & 75.0 & 74.3 & 75.6 & 75.9 \\ 
 \rowstyle{\color{darkergray}}MC     & 75.2  & 75.9  & 79.9 & 80.3 & 81.0 & 76.9 & 79.6 & 80.9 \\}
-T-SYN                               & 59.2  & \mi{60.0}  & \mi{59.5} & 58.4 & 57.4 & 56.1 & 54.3 & 53.6 \\
-T-SEM                               & 37.7  & \mi{38.6}  & \mi{39.4} & \mi{39.2} & \mi{39.4} & 38.4 & \mi{38.8} & \mi{38.7} \\\remove{
+AN-SYN                               & 59.2  & \mi{60.0}  & \mi{59.5} & 58.4 & 57.4 & 56.1 & 54.3 & 53.6 \\
+AN-SEM                               & 37.7  & \mi{38.6}  & \mi{39.4} & \mi{39.2} & \mi{39.4} & 38.4 & \mi{38.8} & \mi{38.7} \\\remove{
 \rowstyle{\color{darkergray}}TOEFL  & 88.8  & 87.5  & 85.0 & 83.8 & 83.8 & 83.8 & 82.5 & 81.2}
       \end{tabular}
   }
@@ -641,8 +630,8 @@ SIMLEX                              & 38.4 & 40.6 & \mb{41.1} & 40.3 \\
 \rowstyle{\color{darkergray}}WS-SEM & 73.6 & 76.8 & 76.8 & \mb{78.0} \\
 \rowstyle{\color{darkergray}}RG     & 61.6 & 69.7 & 73.2 & \mb{74.6} \\
 \rowstyle{\color{darkergray}}MC     & 65.6 & 74.1 & \mb{78.3} & 77.7 \\}
-T-SYN                               & 50.5 & \mi{56.2} & \mi{56.4} & \mb{56.4} \\
-T-SEM                               & 24.3 & 31.4 & 34.3 & \mb{40.6} \\\remove{
+AN-SYN                               & 50.5 & \mi{56.2} & \mi{56.4} & \mb{56.4} \\
+AN-SEM                               & 24.3 & 31.4 & 34.3 & \mb{40.6} \\\remove{
 \rowstyle{\color{darkergray}} TOEFL & 80.0 & 81.2 & \mb{82.5} & 80.0}
   \end{tabular}                                        
   \caption{Performance versus $m$, the number of left     
@@ -672,8 +661,8 @@ SIMLEX                              & 24.0 & 30.1 & 33.9 & 36.1 & 38.9      & 41
 \rowstyle{\color{darkergray}}WS-SEM & 55.3 & 64.7 & 69.9 & 76.9 & 77.1      & 76.8      & 75.6      \\
 \rowstyle{\color{darkergray}}RG     & 48.8 & 60.5 & 66.1 & 69.7 & 75.1      & 73.2      & 72.5      \\
 \rowstyle{\color{darkergray}}MC     & 37.0 & 57.5 & 59.0 & 71.3 & 79.1      & 78.3      & 75.7      \\}
-T-SYN                               & 9.0  & 28.4 & 41.2 & 52.2 & 55.4      & \mb{56.4} & 54.4      \\
-T-SEM                               & 2.5  & 10.8 & 21.8 & 34.8 & \mb{35.8} & 34.3      & 33.8      \\\remove{
+AN-SYN                               & 9.0  & 28.4 & 41.2 & 52.2 & 55.4      & \mb{56.4} & 54.4      \\
+AN-SEM                               & 2.5  & 10.8 & 21.8 & 34.8 & \mb{35.8} & 34.3      & 33.8      \\\remove{
 \rowstyle{\color{darkergray}} TOEFL & 57.5 & 73.8 & 72.5 & 76.2 & 81.2      & 82.5      & 85.0}
   \end{tabular}
   \caption{Performance versus $k$, the final dimensionality of the
@@ -703,8 +692,8 @@ SIMLEX                              & 40.7 & 41.0 & 41.1 & \mb{41.2} & 41.2 & 41
 \rowstyle{\color{darkergray}}WS-SEM & 76.8 & 76.8 & 76.9 & 77.0 & 76.7 & 76.8 & 76.7 & 76.8 \\
 \rowstyle{\color{darkergray}}RG     & 73.0 & 72.8 & 72.7 & 72.8 & 73.6 & 73.2 & 73.4 & 73.7 \\
 \rowstyle{\color{darkergray}}MC     & 75.0 & 76.0 & 76.4 & 76.5 & 78.2 & 78.3 & 78.6 & 78.6 \\}
-T-SYN                               & \mb{56.0} & \mb{55.8} & \mb{56.0} & \mb{55.9} & \mb{56.3} & \mb{56.4} & \mb{56.3} & \mb{56.0} \\
-T-SEM                               & \mb{34.6} & \mb{34.3} & \mb{34.1} & \mb{34.0} & \mb{34.5} & \mb{34.3} & \mb{34.4} & \mb{34.3} \\\remove{
+AN-SYN                               & \mb{56.0} & \mb{55.8} & \mb{56.0} & \mb{55.9} & \mb{56.3} & \mb{56.4} & \mb{56.3} & \mb{56.0} \\
+AN-SEM                               & \mb{34.6} & \mb{34.3} & \mb{34.1} & \mb{34.0} & \mb{34.5} & \mb{34.3} & \mb{34.4} & \mb{34.3} \\\remove{
 \rowstyle{\color{darkergray}} TOEFL & 85.0 & 85.0 & 85.0 & 83.8 & 83.8 & 82.5 & 82.5 & 80.0}
     \end{tabular}
   \caption{Performance versus minimum view support threshold $v$, The other
@@ -747,8 +736,8 @@ SIMLEX                              & 41.1 & 40.1 & 41.1 & 37.8 & 32.4 & \mb{44.
 \rowstyle{\color{darkergray}}WS-SEM & 76.8 & 76.3 & 76.7 & 75.9 & 48.1 & 75.7 & 75.8 & 73.1 \\
 \rowstyle{\color{darkergray}}RG     & 73.2 & 72.0 & 73.2 & 73.7 & 45.0 & 70.8 & 71.9 & 74.0 \\
 \rowstyle{\color{darkergray}}MC     & 78.3 & 75.7 & 78.2 & 78.2 & 46.5 & 77.5 & 76.0 & 80.2 \\}
-T-SYN                               & \mb{56.4} & \mi{56.3} & \mi{56.2} & 51.2 & 37.6 & 50.5 & 54.4 & 46.0 \\
-T-SEM                               & 34.3 & 34.3 & 34.3 & \mb{36.2} & 4.1  & 35.3 & 34.5 & 30.6 \\\remove{
+AN-SYN                               & \mb{56.4} & \mi{56.3} & \mi{56.2} & 51.2 & 37.6 & 50.5 & 54.4 & 46.0 \\
+AN-SEM                               & 34.3 & 34.3 & 34.3 & \mb{36.2} & 4.1  & 35.3 & 34.5 & 30.6 \\\remove{
 \rowstyle{\color{darkergray}}TOEFL  & 82.5 & 82.5 & 82.5 & 71.2 & 45.0 & 85.0 & 82.5 & 65.0   }
   \end{tabular}
   \caption{Performance versus views removed from
@@ -786,8 +775,8 @@ Wikipedia corpus. See column \emph{MVLSA (All Views)} and \emph{MVLSA
   (Wiki)} respectively. It is clearly visible that MVLSA on the
 monolingual data itself is competitive with Glove but
 worse than Word2Vec on the word similarity datasets and it is
-substantially worse than both the systems on the T-SYN 
-and T-SEM datasets. However with the addition of multiple views MVLSA
+substantially worse than both the systems on the AN-SYN 
+and AN-SEM datasets. However with the addition of multiple views MVLSA
 makes substantial gains, shown in column \emph{MV Gain}, and after consuming the Glove and WSG
 embeddings it again improves performance by some margins, as shown in
 column \emph{G-WSG Gain}, and outperforms the original systems. 
@@ -803,25 +792,25 @@ them in the GCCA procedure. The values demonstrate that including Glove and WSG
 
 \begin{table*}[ht]
   \centering
-      \rowcolors{1}{}{lightgray}  \mcinherit
+      %\rowcolors{1}{}{lightgray}  \mcinherit
   \setlength\tabcolsep{2.2pt}
   \resizebox{\textwidth}{!}{
-  \begin{tabular}{+l |                N          N        +d{2.1}     +d{2.1}     +d{2.1}    | N             N        +d{2.1}     +d{2.1}       +d{2.1}       |   +d{2.1}       +d{2.1}|| +c                                  +c |     +c            +c }
-    \mm{Test Set}                  & Glove   & Glove    & \m{Glove} & \m{WSG}   & \mm{G-WSG} & MVLSA   & MVLSA    & \m{MVLSA} & \m{MVLSA}     & \mm{MV-G-WSG} & \m{MV}    & \mmm{G-WSG} & \multicolumn{2}{c|}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
-                \mm{}              & x-max=1 & sym-view & \m{}      & \m{}      & \mm{Combo} & Logproc & Reci-Wgt & \m{Wiki } & \m{All Views} & \mm{Combined} & \m{Gain}  & \mmm{Gain } & \m{Glove}                        & \mm{WSG} & \m{Glove} & \m{WSG}     \\\hline
-MEN                                & 71.2    & 71.2     & 70.4      & 73.9      & \myy{76.0} & 65.9    & 67.3     & 71.4      & 71.2          & \myy{75.8}    & -0.2      & \ma{4.6}    & 71.9                             & 89.1     & 85.8      & 92.3        \\
-RW                                 & 31.9    & 29.7     & 28.1      & 32.9      & 37.2       & 22.6    & 29.4     & 29.0      & \my{41.7}     & \myy{40.5}    & \ma{12.7} & -1.2        & 72.3                             & 74.2     & 80.2      & 75.6        \\
-SCWS                               & 54.9    & 54.4     & 54.1      & 65.6      & 60.7       & 56.9    & 62.1     & 61.8      & \my{67.3}     & \myy{66.4}    & \ma{5.5}  & -0.9        & 87.1                             & 94.5     & 91.3      & 96.3        \\
-SIMLEX                             & 32.9    & 32.9     & 33.7      & 36.7      & 41.1       & 29.7    & 41.1     & 34.5      & \y{42.4}      & \myy{43.9}    & \ma{7.9}  & 1.5         & 62.4                             & 78.2     & 79.3      & 86.0        \\
-WS                                 & 61.0    & 59.1     & 58.6      & \my{70.8} & \myy{67.4} & 68.0    & 63.0     & \y{68.0}  & \my{70.8}     & \myy{70.1}    & \ma{2.8}  & -0.7        & 72.3                             & 88.1     & 81.8      & 91.8        \\
-MTURK                              & 62.8    & 62.4     & \y{61.7}  & \my{65.1} & 59.8       & 50.5    & 53.0     & 59.1      & 59.7          & \myy{62.9}    & 0.6       & 3.2         & 80.0                             & 87.7     & 87.3      & 92.5        \\
-WS-REL                             & 54.2    & 53.7     & 53.4      & \my{63.6} & 59.6       & 62.8    & 52.9     & 60.1      & \y{65.1}      & \myy{63.5}    & \ma{5.0}  & -1.6        & 58.2                             & 81.0     & 69.6      & 85.3        \\
-WS-SEM                             & 71.5    & 68.1     & 69.0      & \y{78.4}  & \myy{76.1} & 72.3    & 74.0     & \y{76.8}  & \y{78.8}      & \myy{79.2}    & 2.0       & 0.4         & 74.4                             & 90.6     & 83.9      & 94.0        \\
-\rowstyle{\color{darkergray}}RG    & 73.5    & 73.8     & \y{73.8}  & \y{78.2}  & \myy{80.4} & 64.8    & 73.2     & 71.2      & \y{74.4}      & \myy{80.8}    & 3.2       & \ma{6.4}    & 80.3                             & 90.6     & 91.8      & 92.9        \\
-\rowstyle{\color{darkergray}}MC    & 73.7    & 67.7     & \y{70.5}  & \y{78.5}  & \myy{82.7} & 66.0    & 82.2     & \y{76.6}  & \y{75.9}      & \myy{77.7}    & -0.7      & 2.8         & 80.1                             & 94.1     & 91.4      & 95.8        \\
-T-SYN                              & 60.7    & 61.3     & 61.8      & 59.8      & 51.0       & 31.8    & 32.7     & 42.7      & 60.0          & \myy{64.3}    & \ma{17.3} & \ma{4.3}    &                                  &          &           &             \\
-T-SEM                              & 66.7    & 81.1     & \my{80.9} & 73.7      & 73.5       & 24.1    & 11.2     & 36.2      & 38.6          & 77.2          & \ma{2.4}  & \ma{38.6}   &                                  &          &           &             \\
-\rowstyle{\color{darkergray}}TOEFL &         &          & \y{83.8}  & 81.2      & \myy{86.2} & 70.0    & 81.2     & 78.8      & \y{87.5}      & \myy{88.8}    & \ma{8.7}  & 1.3         &                                  &          &           & 
+  \begin{tabular}{+l |                 +d{2.1}     +d{2.1} |    +d{2.1}     +d{2.1}     +d{2.1}       +d{2.1}       |   +d{2.1}       +d{2.1}|| +c                                  +c |     +c            +c }
+    \mm{Test Set}                  & \m{Glove} & \mm{WSG}   & \m{G-WSG} & \m{MVLSA} & \m{MVLSA}     & \mm{MV-G-WSG} & \m{MV}    & \mmm{G-WSG} & \multicolumn{2}{c|}{$r_s$ MVLSA} & \multicolumn{2}{c}{$r_s$ MV-G-WSG} \\
+                \mm{}              & \m{}      & \mm{}      & \m{Combo} & \m{Wiki } & \m{All Views} & \mm{Combined} & \m{Gain}  & \mmm{Gain } & \m{Glove}                        & \mm{WSG} & \m{Glove} & \m{WSG}     \\\hline
+MEN                                & 70.4      & 73.9      & \my{76.0} & 71.4      & 71.2          & \myy{75.8}    & -0.2      & \ma{4.6}   & 71.9                             & 89.1     & 85.8      & 92.3        \\
+RW                                 & 28.1      & 32.9      & 37.2       & 29.0      & \my{41.7}     & \myy{40.5}    & \ma{12.7} & -1.2       & 72.3                             & 74.2     & 80.2      & 75.6        \\
+SCWS                               & 54.1      & 65.6      & 60.7       & 61.8      & \my{67.3}     & \myy{66.4}    & \ma{5.5}  & -0.9       & 87.1                             & 94.5     & 91.3      & 96.3        \\
+SIMLEX                             & 33.7      & 36.7      & 41.1       & 34.5      & \y{42.4}      & \myy{43.9}    & \ma{7.9}  & 1.5        & 62.4                             & 78.2     & 79.3      & 86.0        \\
+WS                                 & 58.6      & \myy{70.8} & \my{67.4} & \y{68.0}  & \my{70.8}     & \myy{70.1}    & \ma{2.8}  & -0.7       & 72.3                             & 88.1     & 81.8      & 91.8        \\
+MTURK                              & \y{61.7}  & \myy{65.1} & 59.8       & 59.1      & 59.7          & \myy{62.9}    & 0.6       & 3.2        & 80.0                             & 87.7     & 87.3      & 92.5        \\
+WS-REL                             & 53.4      & \myy{63.6} & 59.6       & 60.1      & \y{65.1}      & \myy{63.5}    & \ma{5.0}  & -1.6       & 58.2                             & 81.0     & 69.6      & 85.3        \\
+WS-SEM                             & 69.0      & \myy{78.4}  & \my{76.1} & \y{76.8}  & \y{78.8}      & \myy{79.2}    & 2.0       & 0.4        & 74.4                             & 90.6     & 83.9      & 94.0        \\
+\rowstyle{\color{darkergray}}RG    & \y{73.8}  & \myy{78.2}  & \my{80.4} & 71.2      & \y{74.4}      & \myy{80.8}    & 3.2       & \ma{6.4}   & 80.3                             & 90.6     & 91.8      & 92.9        \\
+\rowstyle{\color{darkergray}}MC    & \y{70.5}  & \myy{78.5}  & \my{82.7} & \y{76.6}  & \y{75.9}      & \myy{77.7}    & -0.7      & 2.8        & 80.1                             & 94.1     & 91.4      & 95.8        \\
+AN-SYN                              & 61.8      & 59.8      & 51.0       & 42.7      & 60.0          & \myy{64.3}    & \ma{17.3} & \ma{4.3}   &                                  &          &           &             \\
+AN-SEM                              & \my{80.9} & 73.7      & 73.5       & 36.2      & 38.6          & 77.2          & \ma{2.4}  & \ma{38.6}  &                                  &          &           &             \\
+\rowstyle{\color{darkergray}}TOEFL & \y{83.8}  & 81.2      & \my{86.2} & 78.8      & \y{87.5}      & \myy{88.8}    & \ma{8.7}  & 1.3        &                                  &          &           & 
   \end{tabular}}
   \caption{Comparison of Multiview LSA against Glove and WSG(Word2Vec
     Skip Gram). Using $\sigma_{0.05}^{0.9}$ as the
@@ -843,7 +832,7 @@ Vector space representations of words have been created using diverse
  \cite{dhillon2011multi,dhillon2012two}
  %% \footnote{\url{cis.upenn.edu/~ungar/eigenwords}}
  to Neural Networks
- \cite{mikolov2013efficient,mikolov2013distributed,collobert2013word}
+ \cite{mikolov2013linguistic,collobert2013word}
  %%\footnote{\url{code.google.com/p/word2vec},\url{metaoptimize.com/projects/wordreprs}}
  and trained using either one
  \cite{pennington2014glove}
@@ -911,7 +900,7 @@ has a probabilistic interpretation \cite{bach2005probabilistic} as
 well.
 
 
-
+\remove{
 \section{Future Work}
 \label{sec:futurework}
 In a rough order of importance we believe we could improve our method in the following ways:
@@ -934,7 +923,7 @@ In a rough order of importance we believe we could improve our method in the fol
   %% Also note that though the
   %% size of $G$ decreases as we increase $v$ (and hence the recall of
   %% our embeddings) for these experiments the recall of the vocabulary
-  %% over the test sets remained complete except for RW and T-SEM for
+  %% over the test sets remained complete except for RW and AN-SEM for
   %% which the recall was 1700 out of 2034 and 8714 out of 8869
   %% respectively.
 \item By implementing the probabilistic version of GCCA which would
@@ -948,14 +937,14 @@ that has made this connection before and we are working on proving this where th
   words instead of  using only the previous words. Since we are not using
   any PMI-like or frequency like features there is scope for
   improvement on that front.  We note that the performance of our
-  method on the ``T-SEM'' dataset was very low which we believe could
+  method on the ``AN-SEM'' dataset was very low which we believe could
   have been caused due to lack of PMI type features have been reported
   to work well in \cite{levy2014neural}.  
 \item By using more sophisticated method for handling missing values
   as mentioned earlier.
 \item By performing discriminative optimization of multiplicative
   factors over the views. For example we saw that bitext views hurt
-  performance on the ``T-SEM'' task whereas they improved performance
+  performance on the ``AN-SEM'' task whereas they improved performance
   on all the other tasks in general. A simple technique could be to
   simply assign a multiplicative factor to each view and 
   then to tune the values of that factor by using discriminative
@@ -966,13 +955,14 @@ that has made this connection before and we are working on proving this where th
   %% we could calculate gradient of the gram matrix between words in a
   %% dataset versus the multiplicative factor.
 \end{itemize}
-
+}
 
 \section{Conclusion and Future Work}
 While previous work had already demonstrated that incorporating two views
 is beneficial, We extended that thread of work to a
 logical extreme and created \emph{MVLSA} to learn distributed 
-representations using data from 46 views! Through evaluation of our
+representations using data from 46 views!\footnote{Code and data available at \url{www.cs.jhu.edu/~prastog3/mvlsa}}
+Through evaluation of our
 induced representations, shown in Table~\ref{tab:c}, we demonstrated that
 the MVLSA algorithm is able to leverage the information present in  
 multiple data sources to improve performance on a battery of tests
@@ -997,7 +987,7 @@ algorithms.
 Table~\ref{tab:c} shows us that MVLSA applied to monolingual data has
 a mediocre performance  compared to the baselines of Glove and
 Word2Vec on word similarity tasks and performs surprisingly worse on
-the T-SEM dataset. We believe that the results could be improved by (1)
+the AN-SEM dataset. We believe that the results could be improved by (1)
 Either using recent methods for handling missing values
 mentioned in footnote~\ref{ftn:mis} or by using the heuristic count dependent
 non-linear weighting that mentioned by \newcite{pennington2014glove}

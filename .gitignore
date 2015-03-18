@@ -20,7 +20,6 @@ some_analysis
 *.aux
 *.log
 *.out
-*.pdf
 *.snm
 *.toc
 *.bbl
