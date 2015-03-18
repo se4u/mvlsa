@@ -512,16 +512,18 @@ is more likely than $p_0$.
 
 We can find $\sigma_{p_0}^r$ as follows: Let $\textit{stest}$
 denote Steiger's test predicate which satisfies the following:
-$$\textit{stest-p}(\hat{r}_{AT}, \hat{r}_{BT}, r_{AB}, p_0, n) {\implies} \textit{pval} < p_0$$
-Once we define this predicate then we can use it to set up an optimistic problem where our aim is to find $\sigma_{p_0}^r$ by solving the following:
-{\small $$\sigma_{p_0}^r = \min\{\sigma | \forall\, 0 {<} r' {<} 1\, \textit{stest-p}(r',
-\min(r'+\sigma, 1), r, p_0, n) \} $$}
-Note that MRDS is a liberal threshold and it only guarantees that
-differences in correlations below that threshold can never be
-significant. MRDS might still mark differences as significant
-when they are not but it is useful in reducing some of the noise in
-the evaluations.  The values of $\sigma_{p_0}^r$ are shown in
-Table~\ref{tab:testlist}.
+$$\textit{stest-p}(\hat{r}_{AT}, \hat{r}_{BT}, r_{AB}, p_0, n)
+{\implies} \textit{pval} < p_0$$ Once we define this predicate then we
+can use it to set up an optimistic problem where our aim is to find
+$\sigma_{p_0}^r$ by solving the following: {\small $$\sigma_{p_0}^r =
+  \min\{\sigma | \forall\, 0 {<} r' {<} 1\, \textit{stest-p}(r',
+  \min(r'+\sigma, 1), r, p_0, n) \} $$} Note that MRDS is a liberal
+threshold and it only guarantees that differences in correlations
+below that threshold can never be statistically significant (under the
+given parameter settings). MRDS might optimistically consider some
+differences as significant when they are not, but it is at least
+useful in reducing some of the noise in the evaluations.  The values
+of $\sigma_{p_0}^r$ are shown in Table~\ref{tab:testlist}.
 
 For the accuracy based test-sets we found MRDS$=\sigma_{p_0}$ that satisfied
 the following:
@@ -1006,7 +1008,7 @@ alternative of LSA that removes the need for heuristically combining
 word-word cooccurrence matrices into a single matrix. Finally, while
 surveying the literature we noticed that not enough emphasis was being
 given towards establishing the significance of comparative results and
-proposed a simple statistic \emph{(MRDS)} to filter out insignificant
+proposed the heuristic  \emph{(MRDS)} to filter out insignificant
 comparative gains between competing algorithms.
 
 \noindent\textbf{Future Work} Column \emph{MVLSA Wiki} of
