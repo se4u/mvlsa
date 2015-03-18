@@ -20,7 +20,7 @@
 SHELL := /bin/bash
 .SECONDARY:
 .PHONY: optimal_cca_dimension_table log/gridrun_log_tabulate big_input $(STORE2)/agigastandep
-.INTERMEDIATE: gn_ppdb.itermediate
+
 ## GENERIC 
 # TARGET : Contains just the words. extracted from 1st column of source
 %_word: %
@@ -83,7 +83,7 @@ MATCMD := time matlab -nojvm -nodisplay -r "warning('off', 'MATLAB:maxNumCompThr
 MATCMDENV := $(MATCMD)"setenv('TOEFL_QUESTION_FILENAME', '$(RESPATH)/toefl.qst'); setenv('TOEFL_ANSWER_FILENAME', '$(RESPATH)/toefl.ans'); setenv('SCWS_FILENAME', '$(RESPATH)/scws_simplified.txt'); setenv('RW_FILENAME', '$(RESPATH)/rw_simplified.txt'); setenv('MEN_FILENAME', '$(RESPATH)/MEN.txt'); setenv('EN_MC_30_FILENAME', '$(RESPATH)/EN-MC-30.txt'); setenv('EN_MTURK_287_FILENAME', '$(RESPATH)/EN-MTurk-287.txt'); setenv('EN_RG_65_FILENAME', '$(RESPATH)/EN-RG-65.txt'); setenv('EN_TOM_ICLR13_SEM_FILENAME', '$(RESPATH)/EN-TOM-ICLR13-SEM.txt'); setenv('EN_TOM_ICLR13_SYN_FILENAME', '$(RESPATH)/EN-TOM-ICLR13-SYN.txt'); setenv('EN_WS_353_REL_FILENAME', '$(RESPATH)/EN-WS-353-REL.txt'); setenv('EN_WS_353_SIM_FILENAME', '$(RESPATH)/EN-WS-353-SIM.txt'); setenv('EN_WS_353_ALL_FILENAME', '$(RESPATH)/EN-WS-353-ALL.txt'); setenv('WORDNET_TEST_FILENAME', '$(RESPATH)/wordnet.test'); setenv('PPDB_PARAPHRASE_RATING_FILENAME', '$(RESPATH)/ppdb_paraphrase_rating'); setenv('SIMLEX_FILENAME', '$(RESPATH)/simlex_simplified.txt'); setenv('MSR_QUESTIONS', '$(RESPATH)/MSR_Sentence_Completion_Challenge_V1/Data/Holmes.machine_format.questions.txt'); setenv('MSR_ANSWERS', '$(RESPATH)/MSR_Sentence_Completion_Challenge_V1/Data/Holmes.machine_format.answers.txt'); "
 VOCABWITHCOUNT_500K_FILE := $(STORE)/polyglot_wikitxt/en/full.txt.vc5.500K
 VOCAB_500K_FILE := $(VOCABWITHCOUNT_500K_FILE)_word
-
+CALCULATE_DEPENDENCY_CODE := src/makefile_specific/calculate_dependency.py
 ##############################
 ## LOG ANALYSIS CODE
 # TARGET: This finds the least counts for all the datasets by using the
@@ -171,10 +171,10 @@ EXTRINSIC_TEST_WORD2VEC_THEIRCODE_CMD = echo $(word 2,$+) > $@ && \
 	echo $(word 3,$+) >> $@ && \
 	$(WORD2VECDIR)/compute-accuracy $< 929000 < $(word 3,$+) >> $@
 
-# log/extrinsic_word2vec_mytrain_theircode: $(STORE2)/word2vec_mytrain.bin $(PWD)/res/word_sim/EN-TOM-ICLR13-SEM.txt_lowercase $(PWD)/res/word_sim/EN-TOM-ICLR13-SYN.txt_lowercase
+# log/extrinsic_word2vec_mytrain_theircode: $(STORE2)/word2vec_mytrain.bin $(RESPATH)/EN-TOM-ICLR13-SEM.txt_lowercase $(RESPATH)/EN-TOM-ICLR13-SYN.txt_lowercase
 # 	$(EXTRINSIC_TEST_WORD2VEC_THEIRCODE_CMD)
 
-log/extrinsic_word2vec_theirtrain_theircode: $(STORE)/word2vec_theirtrain.bin $(PWD)/res/word_sim/EN-TOM-ICLR13-SEM.txt_lowercase $(PWD)/res/word_sim/EN-TOM-ICLR13-SYN.txt_lowercase
+log/extrinsic_word2vec_theirtrain_theircode: $(STORE)/word2vec_theirtrain.bin $(RESPATH)/EN-TOM-ICLR13-SEM.txt_lowercase $(RESPATH)/EN-TOM-ICLR13-SYN.txt_lowercase
 	$(EXTRINSIC_TEST_WORD2VEC_THEIRCODE_CMD)
 
 log/extrinsic_%_mycode:
@@ -373,8 +373,8 @@ $(STORE2)/v5_embedding_%.mat:
 		JOB_NAME=$(V5_EMB_JOBNAME_MAKER) \
 		GCCA_OPT=$(GCCA_OPT_EXTRACTOR) \
 		M=$(word 3,$(subst _, ,$(word 1,$(subst ~, ,$*))))\
-		V56_GENERIC_DEP="`python src/calculate_dependency.py $* $(STANDEP_LIST) $(subst $(SPACE),$(COMMA),$(BIG_LANG)) $(STORE2)`" \
-		HOLD_JID="`python src/calculate_dependency.py $* $(STANDEP_LIST) $(subst $(SPACE),$(COMMA),$(BIG_LANG)) $(STORE2)  | sed s%$(STORE2)/v5_indisvd%tmp%g | sed 's%.mat %,%g' | rev | cut -c 2- | rev `" v5_generic_qsub 
+		V56_GENERIC_DEP="`python $(CALCULATE_DEPENDENCY_CODE) $* $(STANDEP_LIST) $(subst $(SPACE),$(COMMA),$(BIG_LANG)) $(STORE2)`" \
+		HOLD_JID="`python $(CALCULATE_DEPENDENCY_CODE) $* $(STANDEP_LIST) $(subst $(SPACE),$(COMMA),$(BIG_LANG)) $(STORE2)  | sed s%$(STORE2)/v5_indisvd%tmp%g | sed 's%.mat %,%g' | rev | cut -c 2- | rev `" v5_generic_qsub 
 
 v5_generic_qsub: $(V56_GENERIC_DEP)
 	echo $(V56_GENERIC_DEP) > $(DEP_FILE_NAME) && \
@@ -601,13 +601,13 @@ max = if [ $1 -ge $2 ] ; then echo $1; else echo $2; fi
 
 ##########################################
 ## SIMPLIFIED FILE CREATION CODE
-res/word_sim/simlex_simplified.txt: 
-	awk '{if( NR > 1){print $$1, $$2, $$4}}' res/word_sim/SimLex-999.txt  > $@
+$(RESPATH)/simlex_simplified.txt: 
+	awk '{if( NR > 1){print $$1, $$2, $$4}}' $(RESPATH)/SimLex-999.txt  > $@
 # TARGET: The simplified outputs
 # SOURCE: These are rare word and contextual word similarity datasets which need to simplified
-res/word_sim/rw_simplified.txt: res/word_sim/rw.txt
+$(RESPATH)/rw_simplified.txt: $(RESPATH)/rw.txt
 	awk '{print $$1, $$2, $$3}' $+ > $@
-res/word_sim/scws_simplified.txt: res/word_sim/scws.txt
+$(RESPATH)/scws_simplified.txt: $(RESPATH)/scws.txt
 	awk -F $$'\t' '{print $$2, $$4, $$8}' $+ > $@
 
 ###############################
