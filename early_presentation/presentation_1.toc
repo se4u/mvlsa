@@ -1,2 +1,0 @@
-\beamer@endinputifotherversion {3.07pt}
-\beamer@sectionintoc {1}{What are the Multiple Views ?}{3}{0}{1}
