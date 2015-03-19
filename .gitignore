@@ -29,3 +29,9 @@ some_analysis
 *.sol
 *sample.bib
 *.pyc
+tex/mvppdbPresentation.pdf
+tex/one_page_abstract/acl2014.pdf
+tex/poster/main.pdf
+tex/poster/mvppdb_poster.pdf
+tex/themath.pdf
+tex/themath_generative.pdf
