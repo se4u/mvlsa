@@ -373,22 +373,17 @@ the foreign word $w_j$.
 
 We also used the dependency relations in the \textit{Annotated
   Gigaword Corpus}~\cite{annotatedGigaword12} to create 21
-views\footnote{Following is the list of dependency relations that we
-  used: nsubj, amod, advmod, rcmod, dobj, prep\xline{}of,
+views\footnote{Dependency relations employed: nsubj, amod, advmod, rcmod, dobj, prep\xline{}of,
   prep\xline{}in, prep\xline{}to, prep\xline{}on, prep\xline{}for,
   prep\xline{}with, prep\xline{}from, prep\xline{}at, prep\xline{}by,
   prep\xline{}as, prep\xline{}between, xsubj, agent, conj\xline{}and,
-  conj\xline{}but, pobj. We selected these dependency relations since
-  they seemed to be the particularly interesting which could capture
-  different aspects of similarity.}  where element $[z]_{ij}$ of view
+  conj\xline{}but, pobj.}  where element $[z]_{ij}$ of view
 $Z_d$ represents the number of times word $w_j$ occurred
 as the governor of word $w_i$ under dependency relation $d$.
 
-\begin{figure}
-  \includegraphics[trim=0 70 0 35,clip,width=\linewidth]{cartoonbw.pdf}
-  \caption{An illustration of Data sets used.}
-  \label{fig:cartoon}
-  \end{figure}
+%% We selected these dependency relations since
+%%   they seemed to be the particularly interesting which could capture
+%%   different aspects of similarity.
 
 
 We combined the knowledge of paraphrases present in FrameNet and PPDB
@@ -404,7 +399,15 @@ allows for an arbitrary number of distinct sources of semantic
 information, such as going further to include cooccurrence in WordNet
 synsets, we considered the described views to be representative, with
 further improvements possible as future work.
-Figure~\ref{fig:cartoon} summarizes the description above.
+%%Figure~\ref{fig:cartoon} summarizes our description.
+
+
+\begin{figure}
+  \includegraphics[trim=0 70 0 35,clip,width=\linewidth]{cartoonbw.pdf}
+  \caption{An illustration of datasets used.}
+  \label{fig:cartoon}
+  \end{figure}
+
 
 \begin{table}[htbp]
   \centering
@@ -531,7 +534,7 @@ the following:
   {\implies} \text{p}(\theta_{B} \le \theta_{A}) > p_0$$}
 Specifically, we calculated the posterior probability
 $\text{p}(\theta_{B} \le \theta_{A})$ with a flat prior of
-$\beta(1,1)$ to solve the following:\footnote{instead of using  McNemar's test
+$\beta(1,1)$ to solve the following:\footnote{This instead of using  McNemar's test
   \cite{mcnemar1947note} since the Bayesian approach is tractable and
   more direct. A calculation with $\beta(0.5, 0.5)$ as the prior
   changed $\sigma_{0.5}$ from 6.63 to 6.38 for the TOEFL dataset but
@@ -575,7 +578,7 @@ we show tuning runs only on the larger datasets. We also highlight the top
 performing configurations in bold using the small threshold values in
 column~$\sigma_{0.05}^{0.09}$ of Table~\ref{tab:testlist}.
 
-\noindent\textbf{Effect of Hyper parameters}
+\noindent\textbf{Effect of Hyper-parameters}
 $f_j$: We modeled the preprocessing function $f_j$ as the composition
 of two functions, $f_j = n_j \circ t_j$.
   $n_j$ represents nonlinear preprocessing that is usually
@@ -701,7 +704,7 @@ AN-SEM                               & 2.5  & 10.8 & 21.8 & 34.8 & \mb{35.8} & 3
 \end{table}
   
 
-$v$: Recall that in Expression~\ref{eq:gcca3} we described a method to
+$v$: Expression~\ref{eq:gcca3} describes a method to
   set $W_j$. We experimented with a different, more global, heuristic to
   set $[W_j]_{ii} = (K_{ww} \ge v)$, essentially removing all
   words that did not appear in $v$ views before doing
@@ -790,9 +793,9 @@ that we are using. Therefore, we directly compare our method to the
 Glove and the SkipGram model of Word2Vec as the performance of those
 systems is considered state of the art.  We trained these two systems
 on the English portion of the \textit{Polyglot} Wikipedia
-dataset.\footnote{More specifically we explicitly provided the
+dataset.\footnote{We explicitly provided the
   vocabulary file to Glove and Word2Vec and set the truncation
-  threshold for word2Vec to 10. Also Glove was trained for 25
+  threshold for Word2Vec to 10.  Glove was trained for 25
   iterations. Glove was provided a window of 15 previous words and
   Word2Vec used a symmetric window of 10 words.} We also combined
 their outputs using MVLSA to create \emph{MV-G-WSG)}
@@ -860,13 +863,13 @@ AN-SEM                              & \my{80.9} & 73.7      & 73.5       & 36.2 
 \section{Previous Work}
 \label{sec:previouswork}
 Vector space representations of words have been created using diverse
- frameworks ranging from Spectral methods
- \cite{dhillon2011multi,dhillon2012two}
+ frameworks including Spectral methods
+ \cite{dhillon2011multi,dhillon2012two},
  %% \footnote{\url{cis.upenn.edu/~ungar/eigenwords}}
- to Neural Networks
- \cite{mikolov2013linguistic,collobert2013word}
+ Neural Networks
+ \cite{mikolov2013linguistic,collobert2013word}, and Random Projections \cite{ravichandranACL05,bhagatACL08,chanGEMS2011}.
  %%\footnote{\url{code.google.com/p/word2vec},\url{metaoptimize.com/projects/wordreprs}}
- and trained using either one
+ They have been trained using either one
  \cite{pennington2014glove}
  %% \footnote{\url{nlp.stanford.edu/projects/glove}}
  or two sources of cooccurrence statistics
@@ -875,7 +878,7 @@ Vector space representations of words have been created using diverse
  or using multi-modal data
  \cite{felix2014learning,bruni2012distributional}.
  
-\newcite{dhillon2011multi,dhillon2012two} were the first to use
+\newcite{dhillon2011multi} and \newcite{dhillon2012two} were the first to use
 CCA as the primary method to learn vector representations and
 \newcite{faruqui2014improving} further demonstrated that incorporating bilingual
 data through CCA improved performance. More recently this same
@@ -888,22 +891,25 @@ experiments over neural representations learnt from MT systems.
 Various other researchers have tried to improve the performance of
 their paraphrase systems or vector space models by using diverse
 sources of information such as bilingual
-corpora~\cite{bannard2005paraphrasing,Huang2012Improving,zou2013bilingual},
-structured datasets~\cite{yu2014improving,faruqui2014retrofitting} or
-even tagged images~\cite{bruni2012distributional}; \remove{The
-  intuitive reason that using multiple sources of data improves
-  performance is that the views complement each other. For example it
-  was mentioned in \cite{ganitkevitch2013ppdb} that monolingual data
-  can't distinguish between antonyms but bilingual data can. And
-  bilingual data confounds words that occur in the same sentence but
-  monolingual data can distinguish them based on their context.}
-However, previous work did not adopt the general, simplifying view
-that all of these sources of data are just cooccurrence statistics
-coming from different sources with underlying latent
-factors.\footnote{Note that while \newcite{faruqui2014retrofitting}
-  performed belief propagation over a graph representation of their
-  data, such an undirected weighted graph can be viewed as an
-  adjacency matrix, which is then also a cooccurrence matrix.}
+corpora~\cite{bannard2005paraphrasing,Huang2012Improving,zou2013bilingual},\footnote{An
+  example of complementary views: \newcite{chanGEMS2011} observed that
+  monolingual distributional statistics are susceptible to conflating
+  antonyms, where bilingual data is not; on the other hand bilingual
+  statistics are susceptible to noisy alignments, where monolingual
+  data is not.}  structured
+datasets~\cite{yu2014improving,faruqui2014retrofitting} or even tagged
+images~\cite{bruni2012distributional}. However, most previous
+work\footnote{\newcite{ganitkevitch2013ppdb} did employ a rich set of
+  diverse cooccurrence statistics in constructing the initial PPDB, but without a notion of
+  ``training'' a joint representation beyond random projection to a binary
+  vector subspace (bit-signatures).} did not adopt the general,
+simplifying view that all of these sources of data are just
+cooccurrence statistics coming from different sources with underlying
+latent factors.\footnote{Note that while
+  \newcite{faruqui2014retrofitting} performed belief propagation over
+  a graph representation of their data, such an undirected weighted
+  graph can be viewed as an adjacency matrix, which is then also a
+  cooccurrence matrix.}
 %% Also
 %%   their framework could not fuse arbitrary views such as other vector
 %%   representations.}
@@ -1028,7 +1034,7 @@ assigned to views, for purposes of task-based customization of learned represent
 
 
 \section*{Acknowledgments}
-This material is based on research sponsored by Defense Advanced Research
+This material is based on research sponsored by the Defense Advanced Research
 Projects Agency (DARPA) under the Deep Exploration and
 Filtering of Text (DEFT) Program (Agreement number
 FA8750-13-2-0017). We also thank Juri Ganitkevitch for 
