@@ -1,0 +1,46 @@
+| SIZE MB | NAME                                      |   TOTAL |
+|      12 | agigastandep_cooccurence_advmod.mat       | 6277.17 |
+|     4.7 | agigastandep_cooccurence_agent.mat        |         |
+|      35 | agigastandep_cooccurence_amod.mat         |         |
+|      43 | agigastandep_cooccurence_conj_and.mat     |         |
+|     5.5 | agigastandep_cooccurence_conj_but.mat     |         |
+|      38 | agigastandep_cooccurence_dobj.mat         |         |
+|      74 | agigastandep_cooccurence_nsubj.mat        |         |
+|     6.0 | agigastandep_cooccurence_pobj.mat         |         |
+|     5.0 | agigastandep_cooccurence_prep_as.mat      |         |
+|     6.8 | agigastandep_cooccurence_prep_at.mat      |         |
+|     2.3 | agigastandep_cooccurence_prep_between.mat |         |
+|     4.3 | agigastandep_cooccurence_prep_by.mat      |         |
+|      14 | agigastandep_cooccurence_prep_for.mat     |         |
+|     8.7 | agigastandep_cooccurence_prep_from.mat    |         |
+|      24 | agigastandep_cooccurence_prep_in.mat      |         |
+|      24 | agigastandep_cooccurence_prep_of.mat      |         |
+|      10 | agigastandep_cooccurence_prep_on.mat      |         |
+|      12 | agigastandep_cooccurence_prep_to.mat      |         |
+|      13 | agigastandep_cooccurence_prep_with.mat    |         |
+|      21 | agigastandep_cooccurence_rcmod.mat        |         |
+|     9.0 | agigastandep_cooccurence_xsubj.mat        |         |
+|     221 | bitext_cooccurence_ar.mat                 |         |
+|      26 | bitext_cooccurence_cs.mat                 |         |
+|      60 | bitext_cooccurence_de.mat                 |         |
+|     147 | bitext_cooccurence_es.mat                 |         |
+|     789 | bitext_cooccurence_fr.mat                 |         |
+|     227 | bitext_cooccurence_zh.mat                 |         |
+|     1.6 | fnppdb_cooccurence_xl.mat                 |         |
+|    .270 | morphology_cooccurence_inflection.mat     |         |
+|     279 | polyglotwiki_cooccurence_10.mat           |         |
+|     268 | polyglotwiki_cooccurence_11.mat           |         |
+|     259 | polyglotwiki_cooccurence_12.mat           |         |
+|     249 | polyglotwiki_cooccurence_13.mat           |         |
+|     239 | polyglotwiki_cooccurence_14.mat           |         |
+|     230 | polyglotwiki_cooccurence_15.mat           |         |
+|     180 | polyglotwiki_cooccurence_1.mat            |         |
+|     286 | polyglotwiki_cooccurence_2.mat            |         |
+|     362 | polyglotwiki_cooccurence_3.mat            |         |
+|     363 | polyglotwiki_cooccurence_4.mat            |         |
+|     358 | polyglotwiki_cooccurence_5.mat            |         |
+|     355 | polyglotwiki_cooccurence_6.mat            |         |
+|     345 | polyglotwiki_cooccurence_7.mat            |         |
+|     335 | polyglotwiki_cooccurence_8.mat            |         |
+|     325 | polyglotwiki_cooccurence_9.mat            |         |
+#+TBLFM: @2$3=vsum(@45$1..@2$1)
