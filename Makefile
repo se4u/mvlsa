@@ -33,10 +33,8 @@ echo_qstatfull:
 	qstat | cut -c 73-75 | sort | uniq -c
 echo_qstatarg_%:
 	qstat -j $* | grep arg
-echo_qsubpemake:
-	echo $(QSUBPEMAKE)
-echo_qsubmake:
-	echo $(QSUBMAKE)
+echovar_%:
+	echo $($*)
 sleeper:
 	sleep 60
 # A literal space.
@@ -81,7 +79,7 @@ SVD_DIM := 500
 PREPROCESS_OPT := Count logCount logCount-truncatele20 Count-truncatele20 logFreq Freq Freq-truncatele20 logFreq-truncatele20 logFreqPow075 FreqPow075 logFreqPow075-truncatele20 FreqPow075-truncatele20
 MATCMD := time matlab -nojvm -nodisplay -r "warning('off', 'MATLAB:maxNumCompThreads:Deprecated'); warning('off','MATLAB:HandleGraphics:noJVM'); warning('off', 'MATLAB:declareGlobalBeforeUse');addpath('src'); maxNumCompThreads(10); "
 MATCMDENV := $(MATCMD)"setenv('TOEFL_QUESTION_FILENAME', '$(RESPATH)/toefl.qst'); setenv('TOEFL_ANSWER_FILENAME', '$(RESPATH)/toefl.ans'); setenv('SCWS_FILENAME', '$(RESPATH)/scws_simplified.txt'); setenv('RW_FILENAME', '$(RESPATH)/rw_simplified.txt'); setenv('MEN_FILENAME', '$(RESPATH)/MEN.txt'); setenv('EN_MC_30_FILENAME', '$(RESPATH)/EN-MC-30.txt'); setenv('EN_MTURK_287_FILENAME', '$(RESPATH)/EN-MTurk-287.txt'); setenv('EN_RG_65_FILENAME', '$(RESPATH)/EN-RG-65.txt'); setenv('EN_TOM_ICLR13_SEM_FILENAME', '$(RESPATH)/EN-TOM-ICLR13-SEM.txt'); setenv('EN_TOM_ICLR13_SYN_FILENAME', '$(RESPATH)/EN-TOM-ICLR13-SYN.txt'); setenv('EN_WS_353_REL_FILENAME', '$(RESPATH)/EN-WS-353-REL.txt'); setenv('EN_WS_353_SIM_FILENAME', '$(RESPATH)/EN-WS-353-SIM.txt'); setenv('EN_WS_353_ALL_FILENAME', '$(RESPATH)/EN-WS-353-ALL.txt'); setenv('WORDNET_TEST_FILENAME', '$(RESPATH)/wordnet.test'); setenv('PPDB_PARAPHRASE_RATING_FILENAME', '$(RESPATH)/ppdb_paraphrase_rating'); setenv('SIMLEX_FILENAME', '$(RESPATH)/simlex_simplified.txt'); setenv('MSR_QUESTIONS', '$(RESPATH)/MSR_Sentence_Completion_Challenge_V1/Data/Holmes.machine_format.questions.txt'); setenv('MSR_ANSWERS', '$(RESPATH)/MSR_Sentence_Completion_Challenge_V1/Data/Holmes.machine_format.answers.txt'); "
-VOCABWITHCOUNT_500K_FILE := $(STORE)/polyglot_wikitxt/en/full.txt.vc5.500K
+VOCABWITHCOUNT_500K_FILE := $(STORE2)/VOCAB/full.txt.vc5.500K
 VOCAB_500K_FILE := $(VOCABWITHCOUNT_500K_FILE)_word
 CALCULATE_DEPENDENCY_CODE := src/makefile_specific/calculate_dependency.py
 ##############################
@@ -600,7 +598,7 @@ max = if [ $1 -ge $2 ] ; then echo $1; else echo $2; fi
 
 
 ##########################################
-## SIMPLIFIED FILE CREATION CODE
+## SIMPLIFIED EVALUATION FILE CREATION CODE
 $(RESPATH)/simlex_simplified.txt: 
 	awk '{if( NR > 1){print $$1, $$2, $$4}}' $(RESPATH)/SimLex-999.txt  > $@
 # TARGET: The simplified outputs
@@ -612,19 +610,22 @@ $(RESPATH)/scws_simplified.txt: $(RESPATH)/scws.txt
 
 ###############################
 ## VOCABULARY CREATION CODE
-PPDB_VOCAB_FILE := $STORE2/ppdb.gz
-
-
+PPDB_VOCAB_FILE := $(STORE2)/VOCAB/ppdb.vocab
+PHRASAL_VOCAB := $(STORE2)/VOCAB/phrasal_vocab
+VOCAB_DIR := $(STORE2)/VOCAB
+$(PHRASAL_VOCAB): $(PPDB_VOCAB_FILE) $(VOCABWITHCOUNT_500K_FILE)
+	cat $+ | sed 's#[0-9]#0#g' | sort  > $@
 VOCAB_POLYGLOT_CMD = head -n $*000 $< > $@
-$(STORE)/polyglot_wikitxt/en/full.txt.vc10.%K: $(STORE)/polyglot_wikitxt/en/full.txt.vc10.1M
+$(VOCAB_DIR)/full.txt.vc10.%K: $(VOCAB_DIR)/full.txt.vc10.1M
 	$(VOCAB_POLYGLOT_CMD)
-$(STORE)/polyglot_wikitxt/en/full.txt.vc5.%K: $(STORE)/polyglot_wikitxt/en/full.txt.vc5.1M
+$(VOCAB_DIR)/full.txt.vc5.%K: $(VOCAB_DIR)/full.txt.vc%.1M
 	$(VOCAB_POLYGLOT_CMD)
-$(STORE)/polyglot_wikitxt/en/full.txt.vc%.1M: $(STORE)/polyglot_wikitxt/en/full.txt.vocabcount%.lower
+$(VOCAB_DIR)/full.txt.vc%.1M: $(VOCAB_DIR)/full.txt.vocabcount%.lower
 	 head -n 1000000 $<  > $@
-$(STORE)/polyglot_wikitxt/en/full.txt.vocabcount%.lower: $(STORE)/polyglot_wikitxt/en/full.txt
-	time $(TOOLDIR)/count/vocab_count -min-count $* -verbose 0 -lowercase 1 -replacerandomnumber 1 < $(@D)/full.txt  > $@
-
+$(VOCAB_DIR)/full.txt.vocabcount%.lower: $(STORE)/polyglot_wikitxt/en/full.txt src/count/vocab_count
+	time $(word 2,$+) -min-count $* -verbose 0 -lowercase 1 -replacerandomnumber 1 < $<  > $@
+src/count/vocab_count: src/count/vocab_count.c src/count/commoncore.h
+	gcc -lm -pthread -O9 -march=native -funroll-loops -Wno-unused-result $< -o $@ 
 
 # TARGET : A vocabulary of english created from the 6 files.
 #          with counts of how many times the words occurred
