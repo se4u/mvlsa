@@ -612,6 +612,9 @@ $(RESPATH)/scws_simplified.txt: $(RESPATH)/scws.txt
 
 ###############################
 ## VOCABULARY CREATION CODE
+PPDB_VOCAB_FILE := $STORE2/ppdb.gz
+
+
 VOCAB_POLYGLOT_CMD = head -n $*000 $< > $@
 $(STORE)/polyglot_wikitxt/en/full.txt.vc10.%K: $(STORE)/polyglot_wikitxt/en/full.txt.vc10.1M
 	$(VOCAB_POLYGLOT_CMD)
