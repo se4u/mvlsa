@@ -572,32 +572,12 @@ $(STORE2)/bitext_cooccurence_%.mat: $(STORE2)/big_vocabcount_% $(VOCABWITHCOUNT_
 # 	Its a file with first column as the word,
 #	second column is count in the source files.
 #	third column onwards we have the embeddings.
+#       Note that this is a sparse matrix with many rows that are completely zero.
 # SOURCE : The google embedding and english big vocab
 $(STORE2)/mikolov_cooccurence_intersect.mat: $(STORE)/gn300.txt $(VOCABWITHCOUNT_500K_FILE)
 	time python src/overlap_between_google_and_big_vocabcount.py $+ $@
-
-##################################
-## FREEBASE COCCURENCE EXTRACTOR
-# $(STORE2)/freebase_cooccurence_%.mat: # This data is being prepared in the COE grid.
-# 	scp prastogi@external.hltcoe.jhu.edu:~/freebase_cooccurence_$*.mat $@
-
-###############################
-## FLICKR PREPARATION 
-# submit_grid_stub.sh $STORE/flickr30k_PHOW_features.mat
-# $(STORE2)/flickr30k_cooccurence_%.mat:
-# FLICKR30KDIR := /export/a15/prastog3/flickr30k/flickr30k-images
-# $(STORE)/flickr30k_PHOW_features.mat: $(FLICKR30KDIR)
-# 	$(MATCMD)"input_dir='$<'; outputFile='$@'; [hists, image_path]=flickr30k_feature_extractor(input_dir, outputFile); save(outputFile, 'hists', 'image_path'); exit;"
-
+## DONE TILL HERE ##################################################################################################
 ###########################################
-## BITEXTENGLISH PROCESSING CODE
-SENTENCE_COUNT := 63789996
-INCREMENT := 500000
-VOCAB := 131133
-max = if [ $1 -ge $2 ] ; then echo $1; else echo $2; fi
-
-
-##########################################
 ## SIMPLIFIED EVALUATION FILE CREATION CODE
 $(RESPATH)/simlex_simplified.txt: 
 	awk '{if( NR > 1){print $$1, $$2, $$4}}' $(RESPATH)/SimLex-999.txt  > $@
@@ -608,34 +588,32 @@ $(RESPATH)/rw_simplified.txt: $(RESPATH)/rw.txt
 $(RESPATH)/scws_simplified.txt: $(RESPATH)/scws.txt
 	awk -F $$'\t' '{print $$2, $$4, $$8}' $+ > $@
 
-###############################
+#############################################
 ## VOCABULARY CREATION CODE
 PPDB_VOCAB_FILE := $(STORE2)/VOCAB/ppdb.vocab
+PPDB_VOCAB_CLEAN := $(STORE2)/VOCAB/ppdb.vocab.clean
+REMOVE_NON_ASCII_CMD := perl -nle 'print if m{^[[:ascii:]]+$$}'
+$(PPDB_VOCAB_CLEAN): $(PPDB_VOCAB_FILE)
+	cat $<  | $(REMOVE_NON_ASCII_CMD) | egrep -v '[^a-zA-Z.,;:-?! ]'  | sed 's#[0-9]#0#g' | egrep -v  '^(a|an|the) ' | egrep -v  ' (and) ' > $@
 PHRASAL_VOCAB := $(STORE2)/VOCAB/phrasal_vocab
 VOCAB_DIR := $(STORE2)/VOCAB
-$(PHRASAL_VOCAB): $(PPDB_VOCAB_FILE) $(VOCABWITHCOUNT_500K_FILE)
-	cat $+ | sed 's#[0-9]#0#g' | sort  > $@
+$(PHRASAL_VOCAB): $(VOCABWITHCOUNT_500K_FILE) $(PPDB_VOCAB_CLEAN) 
+	awk '{print $$1}' $< > $@ && \
+	python src/preprocessing_code/filter_ellie_vocab.py $+   >> $@
 VOCAB_POLYGLOT_CMD = head -n $*000 $< > $@
 $(VOCAB_DIR)/full.txt.vc10.%K: $(VOCAB_DIR)/full.txt.vc10.1M
 	$(VOCAB_POLYGLOT_CMD)
-$(VOCAB_DIR)/full.txt.vc5.%K: $(VOCAB_DIR)/full.txt.vc%.1M
+$(VOCAB_DIR)/full.txt.vc5.%K: $(VOCAB_DIR)/full.txt.vc5.1M
 	$(VOCAB_POLYGLOT_CMD)
 $(VOCAB_DIR)/full.txt.vc%.1M: $(VOCAB_DIR)/full.txt.vocabcount%.lower
-	 head -n 1000000 $<  > $@
+	cat $< | $(REMOVE_NON_ASCII_CMD) |  head -n 1000000  > $@
 $(VOCAB_DIR)/full.txt.vocabcount%.lower: $(STORE)/polyglot_wikitxt/en/full.txt src/count/vocab_count
 	time $(word 2,$+) -min-count $* -verbose 0 -lowercase 1 -replacerandomnumber 1 < $<  > $@
 src/count/vocab_count: src/count/vocab_count.c src/count/commoncore.h
-	gcc -lm -pthread -O9 -march=native -funroll-loops -Wno-unused-result $< -o $@ 
+	gcc -lm -pthread -O9 -march=native -funroll-loops -Wno-unused-result $< -o $@
 
-# TARGET : A vocabulary of english created from the 6 files.
-#          with counts of how many times the words occurred
-#          And 6 vocabularies of the foreign languages
-#          big_vocabcount_[en ar cs de es fr zh]
-$(STORE2)/big_vocabcount_en : $(BIG_INPUT)
-	pypy src/create_big_vocab.py $@ $+ 2> log/big_vocabcount
-
-big_input: $(BIG_INPUT)
-
+###############################################################################################
+## SIMPLIFY THE DATA USED IN PPDB
 # TARGET: A simplified BIG_INPUT where all the english parses are converted to normal sentences.
 $(STORE2)/ppdb-input-simplified-%: $(STORE2)/ppdb-input-%
 	pypy src/remove_parse_from_english.py $^  $@
@@ -669,10 +647,8 @@ $(STORE2)/ppdb-input-simplified-%: $(STORE2)/ppdb-input-%
 $(STORE2)/ppdb-input-%:
 	cat /home/juri/ppdb-input/*-$*-* > $@
 
-
-# $(STORE)/gn300.txt.gz : $(STORE)/gn300.txt
-# 	gzip -c $+ > $@
-
+##############################################################################
+## PROCESS GOOGLE's WORD EMBEDDINGS DOWNLOADED FROM WORD2VEC
 $(STORE)/gn300.txt: $(STORE)/GoogleNews-vectors-negative300.bin res/convertvec
 	./res/convertvec bin2txt $<  $@ 
 
