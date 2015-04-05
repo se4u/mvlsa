@@ -1,10 +1,17 @@
-MAKE='make -n -f process_count.mk'
+#! /bin/bash
+: ${TAKE_SVD_OR_NOT:=mc} # mc, nosvd
+: ${NONLINEAR_PREPROCESSING=CountPow025} # CountPow025, Count etc. See v5_indisvd_level2.m file
+: ${TRUNCATE_TO_TOP_COLUMNS=trunccol12500} # Truncate Columns.
+: ${SIZE_AFTER_SVD=500}
+: ${REG=1e-5}
+: ${DEBUG:=no}
+if [ "${DEBUG}" = no ]
+then
+    MAKE='make -f process_count.mk'
+else
+    MAKE='make -n -f process_count.mk'
+fi
 DIR=`make -f commonheader.mk -s echovar_PROCESS_COUNT_FOLDER`
-TAKE_SVD_OR_NOT=mc # mc, nosvd
-NONLINEAR_PREPROCESSING=CountPow025 # CountPow025, Count etc. See v5_indisvd_level2.m file
-TRUNCATE_TO_TOP_COLUMNS=trunccol12500 # Truncate Columns.
-SIZE_AFTER_SVD=500
-REG=1e-5
 OPTIONS=${TAKE_SVD_OR_NOT}~${NONLINEAR_PREPROCESSING}-${TRUNCATE_TO_TOP_COLUMNS}~${SIZE_AFTER_SVD}~${REG}
 
 CORPUS_TYPE=agigastandep

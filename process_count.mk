@@ -17,7 +17,7 @@ OPERATION := process_count
 #    on these jobs so that their parents dont start running till the qsub
 #    jobs are complete.
 $(PROCESS_COUNT_FOLDER)/v5_indisvd_%.mat:
-	qsub -N tmp_$* -p -1 -V -j y -l mem_free=$(V5_INDISVD_MEM) -r yes -cwd submit_grid_stub.sh -f $(OPERATION).mk DEPENDENCY=$(EXTRACT_COUNT_FOLDER)/$(call OPT_EXTRACTOR_tilde,1).mat $(@D)/v5_indisvd_"$*".impl
+	qsub -N tmp_$* -p -1 -V -j y -l mem_free=20G,'hostname=a*' -pe smp 5 -r yes -cwd submit_grid_stub.sh -f $(OPERATION).mk DEPENDENCY=$(EXTRACT_COUNT_FOLDER)/$(call OPT_EXTRACTOR_tilde,1).mat $(@D)/v5_indisvd_"$*".impl
 
 $(PROCESS_COUNT_FOLDER)/v5_indisvd_%.impl: $(DEPENDENCY)
 	$(MATCMD)"addpath('src/$(OPERATION)'); options=strsplit('$*', '~'); f2load=['$(DEPENDENCY)']; load(f2load); assert(exist('align_mat')==1); mc_muc=options{2}; if strcmp(f2load, '$(EXTRACT_COUNT_FOLDER)/mikolov_cooccurence_intersect.mat') preprocess_option='Count'; else preprocess_option=options{3}; end; svd_size=str2num(options{4}); r=str2num(options{5}); outfile='$(word 1,$(subst ., ,$@)).mat';""[ajtj, kj_diag, aj, sj, column_picked_logical, bj, mu1, mu2, sum2]=v5_indisvd_level2(align_mat, mc_muc, preprocess_option, svd_size, r, outfile); save(outfile, 'ajtj', 'kj_diag', 'aj', 'sj', 'r', 'column_picked_logical', 'bj', 'mu2', 'sum2'); exit;"

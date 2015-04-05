@@ -29,7 +29,8 @@ else
     % the results of the preprocessing code.
     a=[0];
     s=[0];
-    b=[0];
+    b=align_mat; %Basically I am free to stuff anything in bj since
+                 %no other code would see those.
 end
 end
 
