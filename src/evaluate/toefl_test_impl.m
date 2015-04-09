@@ -1,8 +1,4 @@
-% load /export/a14/prastog3/gcca_run_sans_mu_300_7000_1e-8_logCount.mat
-% word=textread('/export/a14/prastog3/big_vocabcount_en_intersect_gn_embedding_word', '%s');
-% load /export/a14/prastog3/big_vocabcount_en_intersect_gn_embedding.mat
-function [n_total n_attempt, n_correct]=toefl_test_impl(word, get_emb)
-
+function [n_total n_attempt, n_correct]=toefl_test_impl(word, get_emb, verbose)
 toefl_qst_file=getenv('TOEFL_QUESTION_FILENAME');
 toefl_ans_file=getenv('TOEFL_ANSWER_FILENAME');
 [toefl_q toefl_data]=textread(toefl_qst_file, '%s %s');
@@ -37,6 +33,9 @@ for qst_idx=1:n_total
     else
         sign='-';
     end
-    fprintf(1, [sign ' %d, Q: %s, A: %s \n'], qst_idx, qst_word, ans_word{predicted_ans});
-    disp(ans_sim);
+    if verbose
+        fprintf(1, [sign ' %d, Q: %s, A: %s \n'], qst_idx, qst_word, ...
+            ans_word{predicted_ans});
+        disp(ans_sim);
+    end
 end
