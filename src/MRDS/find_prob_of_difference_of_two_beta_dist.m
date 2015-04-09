@@ -3,10 +3,9 @@ x = 0:0.0001:1;
 pb = @(a,b) betapdf(x,a,b);
 for n=[ 10675 8869 80];
 pval_of_null_hypothesis = 5e-2;
-% alpha is the prior belief. Lc is lower at higher values of
-% belief.
 disp('new n');
 disp(n);
+% alpha is the prior belief. Lc is lower at higher values of belief
 for alpha = [0.5 1]
     for lc = .06:0.01:10
         done = 0;
@@ -20,7 +19,7 @@ for alpha = [0.5 1]
             % this is being done through convnfft since difference of two
             % pdf is like convolution with flipped version, and convolution
             % is faster through fft. All this needs to be done for faster
-            % precision. 
+            % precision.
             pos_sys_1_m_2 = convnfft(pos_sys_1, fliplr(pos_sys_2));
             pos_sys_1_m_2 = pos_sys_1_m_2/sum(pos_sys_1_m_2);
             % pos_sym_1_m_2 is \theta_1 - \theta_2
@@ -34,9 +33,11 @@ for alpha = [0.5 1]
             break
         end
     end
-    fprintf(1,['lc = %0.3f.\nWe can say with pval=%0.3f \n',...
+    fprintf(1,['lc = %0.3f.\n', ...
+               'At alpha = %0.2f,\n',...
+               'We can say with pval=%0.3f \n',...
                 'that when sys1 = %0.3f and sys2 = %0.3f \n',...
-                'then sys2 better than sys1\n'], ...
-                lc, pval_of_null_hypothesis, ac1, ac2);
+                'then sys2 better than sys1.\n'], ...
+                lc, alpha, pval_of_null_hypothesis, ac1, ac2);
 end
 end

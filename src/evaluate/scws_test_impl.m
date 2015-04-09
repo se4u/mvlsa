@@ -1,5 +1,5 @@
 function [n_total, n_attempt, pred_simil, true_simil]=scws_test_impl( ...
-                                                  word, get_emb, fn)
+                                                  word, get_emb, fn, verbose)
 scws_file=getenv(fn);
 [w1, w2, true_simil]=textread(scws_file, '%s %s %f');
 assert(size(true_simil, 2)==1);
@@ -10,15 +10,18 @@ for i=1:n_total
     try
         % So it is over here that I try to find the embedding of a
         % word. And if I dont find it then I fail.
-        % Ideally If I dont find it then I'd impute the embedding by 
+        % Ideally If I dont find it then I'd impute the embedding by
         % trying to find its distributional signature in the
         % original matrices, and then using the projection matrices
-        % that I have learnt to project them to 
+        % that I have learnt to project them to
     e1=get_emb(lower(w1{i}));
     e2=get_emb(lower(w2{i}));
     pred_simil(i)=sum(e1.*e2);
     n_attempt=n_attempt+1;
-    fprintf(1, '%s %s %d %d\n', w1{i}, w2{i}, pred_simil(i), true_simil(i));
+    if verbose
+        fprintf(1, '%s %s %d %d\n', w1{i}, w2{i}, pred_simil(i), ...
+            true_simil(i));
+    end
     catch err
         pred_simil(i)=0;
     end

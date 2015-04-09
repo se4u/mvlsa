@@ -137,3 +137,30 @@ $(STORE)/GoogleNews-vectors-negative300.bin: $(STORE)/GoogleNews-vectors-negativ
 # Create the C binary needed to convert mikolov embeddings from .bin to .txt
 res/convertvec : $(PREPROCESSING_CODE_DIR)/convertvec.c
 	$(CC) $+ -o $@ $(CFLAGS)
+
+
+#############################################
+## VOCABULARY CREATION CODE
+PPDB_VOCAB_FILE := $(STORE2)/VOCAB/ppdb.vocab
+PPDB_VOCAB_CLEAN := $(STORE2)/VOCAB/ppdb.vocab.clean
+REMOVE_NON_ASCII_CMD := perl -nle 'print if m{^[[:ascii:]]+$$}'
+$(PPDB_VOCAB_CLEAN): $(PPDB_VOCAB_FILE)
+	cat $<  | $(REMOVE_NON_ASCII_CMD) | egrep -v '[^a-zA-Z.,;:-?! ]'  | sed 's#[0-9]#0#g' | egrep -v  '^(a|an|the) ' | egrep -v  ' (and) ' > $@
+PHRASAL_VOCAB := $(STORE2)/VOCAB/phrasal_vocab
+VOCAB_DIR := $(STORE2)/VOCAB
+VOCABWITHCOUNT_1M_FILE := $(VOCAB_DIR)/full.txt.vc5.1M
+TOKEN_VOCAB := $(VOCAB_DIR)/full.txt.vocabcount5.lower
+$(PHRASAL_VOCAB): $(TOKEN_VOCAB) $(PPDB_VOCAB_CLEAN)
+	awk '{print $$1}' $< > $@ && \
+	python src/preprocessing_code/filter_ellie_vocab.py $+   >> $@
+VOCAB_POLYGLOT_CMD = head -n $*000 $< > $@
+$(VOCAB_DIR)/full.txt.vc10.%K: $(VOCAB_DIR)/full.txt.vc10.1M
+	$(VOCAB_POLYGLOT_CMD)
+$(VOCAB_DIR)/full.txt.vc5.%K: $(VOCABWITHCOUNT_1M_FILE)
+	$(VOCAB_POLYGLOT_CMD)
+$(VOCAB_DIR)/full.txt.vc%.1M: $(VOCAB_DIR)/full.txt.vocabcount%.lower
+	cat $< | $(REMOVE_NON_ASCII_CMD) |  head -n 1000000  > $@
+$(VOCAB_DIR)/full.txt.vocabcount%.lower: $(STORE)/polyglot_wikitxt/en/full.txt src/count/vocab_count
+	time $(word 2,$+) -min-count $* -verbose 0 -lowercase 1 -replacerandomnumber 1 < $<  > $@
+src/count/vocab_count: src/count/vocab_count.c src/count/commoncore.h
+	gcc -lm -pthread -O9 -march=native -funroll-loops -Wno-unused-result $< -o $@
