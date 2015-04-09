@@ -1,18 +1,18 @@
 """
-Functions for calculating the statistical significant differences between two dependent or independent correlation
-coefficients.
+Functions for calculating the statistical significant differences between two dependent or independent correlation  coefficients.
 The Fisher and Steiger method is adopted from the R package http://personality-project.org/r/html/paired.r.html
 and is described in detail in the book 'Statistical Methods for Psychology'
 Steiger's method is from the paper "Tests for comparing elements of a correlation matrix" http://www.psychmike.com/Steiger.pdf
 The Zou method is adopted from http://seriousstats.wordpress.com/2012/02/05/comparing-correlations/
 Credit goes to the authors of above mentioned packages!
 Author: Philipp Singer (www.philippsinger.info)
+Modified by: Pushpendre Rastogi.
 """
 
 from __future__ import division
 
 __author__ = 'psinger'
-
+__modifier__ = 'pushpendre' # Google for Phillip Singer's original code to see the diff
 import numpy as np
 from scipy.stats import t, norm
 from math import atanh, pow, tanh
@@ -32,7 +32,6 @@ def rho_rxy_rxz(rxy, rxz, ryz):
 
 def dependent_corr(xy, xz, yz, n, twotailed=False, conf_level=None, method='steiger'):
     """
-    
     Calculates the statistic significance between two dependent correlation coefficients
     @param xy: correlation coefficient between x and y
     @param xz: correlation coefficient between x and z
@@ -116,11 +115,22 @@ def independent_corr(xy, ab, n, n2 = None, twotailed=True, conf_level=0.95, meth
 # print independent_corr(.560, .588, 100, 353, method='fisher')
 # print independent_corr(.560, .588, 100, 353, method='zou')
 if __name__ == "__main__":
-    import sys
-    lc_max=float(eval(sys.argv[1]))
-    n=float(eval(sys.argv[2]))
-    midval = float(eval(sys.argv[3]))
-    confidence_thresh=float(eval(sys.argv[4]))
+    import sys, argparse
+    parser = argparse.ArgumentParser(description="This code can reproduce the top section of Table~2 \nfrom the paper, Multiview LSA: Representation Learning via Generalized CCA. \nWith its default settings it reproduces the last column and 'MC' row\n")
+    parser.add_argument('n', type=int, default=30, nargs='?',
+                        help="the number of data points in dataset")
+    parser.add_argument('lc_max', default=0.2, nargs='?', type=float,
+                        help="the maximum LC from start")
+    parser.add_argument('midval', default=0.9, nargs='?', type=float,
+                        help="Assumed maximum third correlation")
+    parser.add_argument('confidence_thresh', default=0.05, nargs='?', type=float,
+                        help="the required confidence level.")
+
+    args = parser.parse_args()
+    lc_max = args.lc_max
+    n = args.n
+    midval = args.midval
+    confidence_thresh = args.confidence_thresh
     #print dependent_corr(r1, r2, r3, r4)
     done = False
     for lc in np.arange(lc_max, 0.000, -0.001):
