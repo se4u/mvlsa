@@ -1,4 +1,4 @@
-import sys, gzip,lib_util
+import sys, gzip
 
 # Read the google file.
 google_f=open(sys.argv[1], 'rb')
@@ -6,6 +6,15 @@ google_f=open(sys.argv[1], 'rb')
 google_wordset=set([row.strip().split(" ")[0] for row in google_f])
 google_f.seek(0); google_f.next()
 assert len(google_wordset)==total_words
+
+def count_and_print(f, l):
+    c=0
+    for e in l:
+        f.write(e)
+        f.write("\n")
+        c+=1
+    f.close()
+    return c
 
 # Read the PPDB file
 ppdb_wordset=set(word.strip() for word in open(sys.argv[2], 'rb'))
@@ -23,7 +32,7 @@ def stuff(google_f, wf, google_wordset):
     for row in google_f:
         arr=row.strip().split(" ")
         word=arr[0]
-        tword=word.replace("_", "-").lower()        
+        tword=word.replace("_", "-").lower()
         assert word in google_wordset, word
         # Basically their can be words like ZURICH and Zurich
         # in the google corpus. Which one do I pick ?
@@ -36,7 +45,7 @@ def stuff(google_f, wf, google_wordset):
             print_to_output(wf, word, arr)
         elif (tword in ppdb_wordset) \
                 and (tword not in google_wordset) \
-                and (tword not in outputted_words): 
+                and (tword not in outputted_words):
             g_wordlist.append(tword)
             outputted_words[tword]=None
             print_to_output(wf, tword, arr)
@@ -53,9 +62,9 @@ g=set(g_wordlist)
 print "In Both ", len(g.intersection(ppdb_wordset))
 
 print "In Google not in PPDB", \
-    lib_util.count_and_print(open(r"res/in_google_not_in_ppdb", "wb"), \
+    count_and_print(open(r"res/in_google_not_in_ppdb", "wb"), \
                                  g-ppdb_wordset)
 
 print  "In PPDB not in Google", \
-    lib_util.count_and_print(open(r"res/in_ppdb_not_in_google", "wb"), \
+    count_and_print(open(r"res/in_ppdb_not_in_google", "wb"), \
                                  ppdb_wordset-g)
