@@ -1,4 +1,3 @@
-addpath('../general_utility');
 N = 100;
 X = randn(100, N);
 [true_u, true_s, ~]=svd(X, 'econ');
