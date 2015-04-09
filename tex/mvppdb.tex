@@ -1,6 +1,3 @@
-%% **REVISION THAT WE WILL MAKE TO THE PAPER ON THE BASIS OF FEEDBACK**
-%% - Make the subsection on MRDS more clear and provide a more
-%% verbose/friendly definition.
 \documentclass[11pt]{article}
 \usepackage[ruled,]{algorithm2e}
 \usepackage{naaclhlt2015}
@@ -96,21 +93,21 @@
     $^2$Human Language Technology Center of Excellence\\
     Johns Hopkins University}
 
-\date{} 
+\date{}
 
 \begin{document}
 \maketitle
 \begin{abstract}
   \emph{Multiview LSA (MVLSA)} is a generalization of Latent Semantic
-  Analysis (LSA) that supports the  
+  Analysis (LSA) that supports the
   fusion of arbitrary views of data and relies on Generalized Canonical Correlation
   Analysis (GCCA). We present an algorithm
   for fast approximate computation of GCCA, which when coupled with methods
   for handling missing values, is general enough to approximate
   some recent algorithms for inducing vector representations of
-  words. Experiments across a comprehensive 
+  words. Experiments across a comprehensive
   collection of test-sets show our approach to be competitive with the
-  state of the art.   
+  state of the art.
 \end{abstract}
 
 \section{Introduction}
@@ -122,7 +119,7 @@ expressions in language are paraphrases if
 their representations are \emph{close} under some distance measure.
 
 One of the earliest linguistic vector space models was Latent
-Semantic Analysis (LSA). LSA has been successfully used 
+Semantic Analysis (LSA). LSA has been successfully used
 for Information Retrieval but it is limited in its
 reliance on a single matrix, or \emph{view}, of term co-occurrences.
 Here we address the single-view limitation of LSA by demonstrating
@@ -132,14 +129,14 @@ approach allows for the use of an arbitrary number of views in the
 induction process, including embeddings induced using other
 algorithms. We also present a fast approximate method for performing
 GCCA and approximately recover the objective of
-\cite{pennington2014glove} while accounting for missing values. 
+\cite{pennington2014glove} while accounting for missing values.
 
 Our experiments show that MVLSA is competitive with state of the art
 approached for inducing vector representations of words and phrases.
 As a methodological aside, we discuss the (in-)significance of
 conclusions being drawn from comparisons done on small sized datasets.
 
-\section{Motivation} 
+\section{Motivation}
 LSA is an application of Principal Component Analysis (PCA) to a
 term-document cooccurrence matrix.  The principal directions found by
 PCA form the basis of the vector-space in which to represent the input
@@ -158,7 +155,7 @@ some measure of the matrix $\Phi$ that contains all the pairwise
 correlations between linear projections of the \emph{covariates}. This
 is how Generalized Canonical Correlation Analysis (GCCA) was first
 derived by~\newcite{horst1961generalized}. Recently these intuitive
-ideas about benefits of leveraging multiple sources of data have 
+ideas about benefits of leveraging multiple sources of data have
 received strong theoretical backing due to the work by
 \newcite{sridharan2008information} who showed that learning with
 multiple views is beneficial since it reduces the complexity of the
@@ -209,7 +206,7 @@ The matrix $G$ that solves problem~(\ref{eq:gcca}) is our vector representation 
 P_j =& X_j(X_j^\top X_j)^{-1}X_j^\top, \label{eq:pp}\\
 M =& \sum_{j=1}^J P_j. \label{eq:mm}
 \end{align}
-Then $G$ and $U_j$ satisfy:
+Then, for some positive diagonal matrix $\Lambda$, $G$ and $U_j$ satisfy:
 \begin{align}
 M G =& G \Lambda,\\
 U_j =& \left(X_j^\top X_j\right)^{-1} X_j^\top G.
@@ -218,18 +215,18 @@ U_j =& \left(X_j^\top X_j\right)^{-1} X_j^\top G.
 %% The above expressions tell us that our word representations are the
 %% eigenvectors of the sum of $J$ projection matrices. Also note that the
 %% dimensions of $G$ are orthogonal to each other. %% Orthogonality in
-%% representations is a nice property that we 
+%% representations is a nice property that we
 %% will discuss later.
 
 Computationally storing $P_j \in \mathbb{R}^{N \times N}$ is
 problematic owing to memory constraints.  Further, the scatter
 matrices may be non-singular leading to an ill-posed procedure.
 % Let us now describe a method to overcome these problems.
-We now describe a novel scalable GCCA with $\ell_2$-regularization to address these issues. 
+We now describe a novel scalable GCCA with $\ell_2$-regularization to address these issues.
 
-\noindent\textbf{Approximate Regularized GCCA}: GCCA can be regularized by adding $r_jI$ to 
+\noindent\textbf{Approximate Regularized GCCA}: GCCA can be regularized by adding $r_jI$ to
 scatter matrix $X_j^\top X_j$ before doing the inversion where
-$r_j$ is a small constant e.g. $10^{-8}$. 
+$r_j$ is a small constant e.g. $10^{-8}$.
 % Equations~\ref{eq:pp} and \ref{eq:mm} change to
 Projection matrices in~(\ref{eq:pp}) and (\ref{eq:mm}) can then be written as
 \begin{align}
@@ -237,67 +234,44 @@ Projection matrices in~(\ref{eq:pp}) and (\ref{eq:mm}) can then be written as
   M =& \sum_{j=1}^J \widetilde{P}_{j}. \label{eq:mmm}
 \end{align}
 
-% We can side step the computational difficulties by assuming that only the top $m$ singular values of $X_j$ are non-negligible. Parts of the following method were proposed to us by \cite{savostyanov}. 
+% We can side step the computational difficulties by assuming that only the top $m$ singular values of $X_j$ are non-negligible. Parts of the following method were proposed to us by \cite{savostyanov}.
 Next, to scale up GCCA to large datasets, we first form a rank-$m$ approximation of projection matrices~\cite{arora2012kernel} and then extend it to an eigendecomposition for $M$ following ideas by~\newcite{savostyanov}. Consider the rank-$m$ SVD of $X_j$:
 $$X_j = A_{j} S_{j} B^\top_{j},$$
-where $S_j \in \R^{m \times m}$ is the diagonal matrix with $m$-largest singular values of $X_j$ and $A_j \in \R^{N \times m}$ and $B_j \in \R^{m \times d_j}$ are the corresponding left and right singular vectors. Given this SVD, write the $j^{th}$ projection matrix as 
+where $S_j \in \R^{m \times m}$ is the diagonal matrix with $m$-largest singular values of $X_j$ and $A_j \in \R^{N \times m}$ and $B_j \in \R^{m \times d_j}$ are the corresponding left and right singular vectors. Given this SVD, write the $j^{th}$ projection matrix as
 \begin{eqnarray}
 \widetilde{P}_j &=& A_j S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j A_j^\top, \nonumber \\
 &=& A_j T_j T_j^\top A_j^\top, \nonumber
 \end{eqnarray}
-where $T_j \in \mathbb{R}^{m \times m}$ is a diagonal matrix such that 
+where $T_j \in \mathbb{R}^{m \times m}$ is a diagonal matrix such that
 $T_jT_j^\top = S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j$. Finally, we note that the sum of projection matrices can be expressed as $M = \tilde{M} \tilde{M}^\top$
 where $$\tilde{M} = \left[ A_1T_1 \ldots A_JT_J \right] \in \mathbb{R}^{N
   \times mJ}.$$
-Therefore, eigenvectors of matrix $M$, i.e. the matrix $G$ that we are interested in finding, are the left singular vectors of $\tilde{M}$, i.e. $\tilde{M}=GSV^\top$. 
-
-
-Let $SVD_m$ denote a partial SVD where $S_j$ is a rectangular diagonal
-matrix that contains only the $m$ largest singular values and $A_j, B_j$
-are square, orthonormal, unitary matrices. Defining $SVD_m$ like this
-ensures correctness but in practice we only need to compute $m$
-columns of $A_j$. Take the SVD of $X_j$:
-$$A_{j} S_{j} B^\top_{j} \xleftarrow{SVD_{m}} X_j$$
-and substitute the above in equation~\ref{eq:6} to get 
-$$\widetilde{P}_j = A_j S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j A_j^\top$$. 
-Define $T_j \in \mathbb{R}^{m \times m}$ to be the diagonal matrix such that
-$T_jT_j^\top = S_j^\top(r_j I + S_j S_J^\top)^{-1}S_j $ then
-$$\widetilde{P}_j = A_j T_j T_j^\top A_j^\top$$.
-Now $\tilde{M} = \left[ A_1T_1 \ldots A_JT_J \right] \in \mathbb{R}^{N
-  \times mJ}$, then 
-$$M = \tilde{M} \tilde{M}^\top$$.
-Performing QR decomposition of $\tilde{M}$ gives
-$$M = Q R R^\top Q$$.
-Eigen decomposition of $R R^\top \in \mathbb{R}^{mJ \times mJ}$
-results in eigen vectors $U$ and eigen values $S$.
-$$M = Q U S U^\top Q^\top$$
- which implies $G = QU$. 
-
+Therefore, eigenvectors of matrix $M$, i.e. the matrix $G$ that we are interested in finding, are the left singular vectors of $\tilde{M}$, i.e. $\tilde{M}=GSV^\top$. These left singular vectors can be computed by using Incremental PCA \cite{brand2002incremental} since $\tilde{M}$ may be too large to fit in memory.
 
 \subsection{Computing SVD of mean centered $X_j$}
 \label{ssec:svdmc}
 Recall that we assumed $X_j$ to be mean centered matrices. Let $Z_j
 \in \mathbb{R}^{N \times d_j}$ be sparse matrices containing
 mean-uncentered cooccurrence counts. Let $f_j = n_j \circ t_j $ be the preprocessing
-function that we apply to $Z_j$: 
+function that we apply to $Z_j$:
 \begin{align}
   Y_j =& f_j (Z_j), \\
   X_j =& Y_j - 1 (1^\top Y_j).
 \end{align}
 In order to compute the SVD of mean centered matrices $X_j$ we first
-compute the partial SVD of uncentered 
+compute the partial SVD of uncentered
 matrix $Y_j$ and then update it (\newcite{brand2006fast} provides details).
-\remove{We experimented with representations created from the
-uncentered matrices $Y_j$ and found that they performed as well as 
+We experimented with representations created from the
+uncentered matrices $Y_j$ and found that they performed as well as
 the mean centered versions but we would not mention them further since
 it is computationally efficient to follow the principled approach. We
 note, however, that even the method of mean-centering the SVD
-produces an approximation.}
+produces an approximation.
 
 \subsection{Handling missing rows across views}
 \label{ssec:missing}
 With real data it may happen that a term was not observed in a view at
-all. A large number of 
+all. A large number of
 missing rows can corrupt the learnt representations since the rows
 in the left singular matrix become zero.
 \remove{The procedure described above
@@ -305,7 +279,7 @@ can not recover from this and the representation for those words may become a
 one hot vector. }
 To counter this problem we adopt a variant of the ``missing-data
 passive'' algorithm from \newcite{van2006generalized} who modified the
-GCCA objective to counter the problem of missing 
+GCCA objective to counter the problem of missing
 rows.\footnote{A more recent effort, by \newcite{van2012generalized},
   describes newer iterative and non-iterative (Test-Equating Method)
   approaches for handling missing values. It is possible that using
@@ -315,7 +289,7 @@ The objective now becomes:
   \label{eq:gcca2}
 \begin{split}
   \operatorname*{arg\,min}_{G,U_j} & \sum_{j=1}^J \begin{Vmatrix} K_j(G - X_jU_j) \end{Vmatrix}^2_F \\
-  \text{subject to } & G^\top G = I, 
+  \text{subject to } & G^\top G = I,
 \end{split}
 \end{equation}
 where $[K_j]_{ii} = 1$ if row $i$ of view $j$ is observed and zero otherwise. Essentially $K_j$ is a diagonal row-selection matrix which ensures
@@ -421,8 +395,8 @@ further improvements possible as future work.
     Bitext-Spanish  & 11.1M  & 241M  \\
     Bitext-French   & 30.9M  & 671M  \\
     Bitext-Chinese  & 10.3M  & 215M  \\
-    Monotext-En-Wiki& 75M    & 1700M 
-  \end{tabular}  
+    Monotext-En-Wiki& 75M    & 1700M
+  \end{tabular}
   \caption{Portion of data used to create GCCA representations (in millions).}
   \label{tab:dataperlang}
 \end{table}
@@ -435,7 +409,7 @@ contain human judgements about how similar two words are.
 The ``AN-SYN'' and ``AN-SEM'' datasets contain 4-tuples of
 analogous words and the task is to predict the missing word given the
 first three. Both of these are  open vocabulary tasks while TOEFL is a closed
-vocabulary task. 
+vocabulary task.
 \begin{table*}[ht]
   \centering
   \rowcolors{1}{}{lightgray}
@@ -443,7 +417,7 @@ vocabulary task.
     Acronym & Size  &
     $\sigma_{0.01}^{0.5}$ & $\sigma_{0.01}^{0.7}$ & $\sigma_{0.01}^{0.9}$ &
     $\sigma_{0.05}^{0.5}$ & $\sigma_{0.05}^{0.7}$ & $\sigma_{0.05}^{0.9}$ &
-    Reference  \\ 
+    Reference  \\
     \hline
 
     MEN    & 3000  & 4.2  & 3.2  & 1.8  & 3.0  & 2.3  & 1.3  & \cite{bruni2012distributional}  \\
@@ -460,7 +434,7 @@ vocabulary task.
     AN-SEM  & 8869  & -    & -    & 1.03 & -    & -    & 0.74 & -Same-As-Above-                 \\
     TOEFL  & 80    & -    & -    & 8.13 & -    & -    & 6.63 & \cite{landauer1997solution}
   \end{tabular}
-  \caption{List of test datasets used. The columns headed $\sigma_{p_0}^r$ contain 
+  \caption{List of test datasets used. The columns headed $\sigma_{p_0}^r$ contain
     \emph{MRDS}
     values. The rows for accuracy based test sets contain
     $\sigma_{p_0}$ which does not depend on $r$. See
@@ -557,12 +531,12 @@ sets.
 
 %% Here we follow
 %% this accepted practice, but on ongoing work are exploring evaluation
-%% of these learned representations in downstream systems as 
+%% of these learned representations in downstream systems as
 
 
 %% and we also evaluated the effects of hyper-parameter tuning
 %% on the entire test set therefore our final comparison could have
-%% favored us due to \emph{soft supervision}. 
+%% favored us due to \emph{soft supervision}.
 %% However the consistent performance of our
 %% method across the test sets lends hope that the trends we report would
 %% generalize.
@@ -591,7 +565,7 @@ of two functions, $f_j = n_j \circ t_j$.
   a type of regularization of the raw counts themselves through which
   we prune away the noisy contexts. Decrease in $t_j$
   also reduces the influence of views that have a large number of
-  context columns and emphasizes the sparser views. 
+  context columns and emphasizes the sparser views.
   Table~\ref{tab:n} and Table~\ref{tab:t} show the results.
 \begin{table}[htbp]
   \centering
@@ -623,15 +597,15 @@ of two functions, $f_j = n_j \circ t_j$.
   \resizebox{0.5\textwidth}{!}{
   \begin{tabular}{=l | +c +c +c +c H +c H +c}
 Test Set                            & 6.25K & 12.5K & 25K  & 50K  & 75K  & 100K & 150K & 200K \\ \hline
-MEN                                 & 70.2  & \mi{71.2}  & \mi{71.5} & \mi{71.6} & \mi{71.4} & \mi{71.2} & \mi{71.0} & \mi{70.7} \\   
-RW                                  & \mi{41.8}  & \mi{41.7}  & \mi{41.5} & \mi{40.9} & \mi{40.7} & 39.6 & 38.3 & 37.8 \\ 
+MEN                                 & 70.2  & \mi{71.2}  & \mi{71.5} & \mi{71.6} & \mi{71.4} & \mi{71.2} & \mi{71.0} & \mi{70.7} \\
+RW                                  & \mi{41.8}  & \mi{41.7}  & \mi{41.5} & \mi{40.9} & \mi{40.7} & 39.6 & 38.3 & 37.8 \\
 SCWS                                & \mi{67.1}  & \mi{67.3}  & \mi{67.1} & \mi{67.0} & \mi{67.3} & \mi{66.9} & \mi{66.8} & \mi{66.6} \\ \remove{
-SIMLEX                              & 42.7  & \mb{42.4}  & 41.9 & 41.3 & 40.5 & 39.5 & 38.4 & 38.0 \\ 
-\rowstyle{\color{darkergray}}WS     & 68.1  & 70.8  & 71.6 & 71.2 & 71.3 & 70.2 & 70.8 & 70.5 \\ 
-\rowstyle{\color{darkergray}}MTURK  & 62.5  & 59.7  & 59.2 & 58.6 & 58.3 & 60.3 & 61.0 & 60.8 \\ 
-\rowstyle{\color{darkergray}}WS-REL & 60.8  & 65.1  & 65.7 & 64.8 & 65.2 & 63.7 & 63.7 & 62.9 \\ 
-\rowstyle{\color{darkergray}}WS-SEM & 77.8  & 78.8  & 78.8 & 78.2 & 77.7 & 76.5 & 77.0 & 76.2 \\ 
-\rowstyle{\color{darkergray}}RG     & 72.7  & 74.4  & 74.7 & 75.0 & 75.0 & 74.3 & 75.6 & 75.9 \\ 
+SIMLEX                              & 42.7  & \mb{42.4}  & 41.9 & 41.3 & 40.5 & 39.5 & 38.4 & 38.0 \\
+\rowstyle{\color{darkergray}}WS     & 68.1  & 70.8  & 71.6 & 71.2 & 71.3 & 70.2 & 70.8 & 70.5 \\
+\rowstyle{\color{darkergray}}MTURK  & 62.5  & 59.7  & 59.2 & 58.6 & 58.3 & 60.3 & 61.0 & 60.8 \\
+\rowstyle{\color{darkergray}}WS-REL & 60.8  & 65.1  & 65.7 & 64.8 & 65.2 & 63.7 & 63.7 & 62.9 \\
+\rowstyle{\color{darkergray}}WS-SEM & 77.8  & 78.8  & 78.8 & 78.2 & 77.7 & 76.5 & 77.0 & 76.2 \\
+\rowstyle{\color{darkergray}}RG     & 72.7  & 74.4  & 74.7 & 75.0 & 75.0 & 74.3 & 75.6 & 75.9 \\
 \rowstyle{\color{darkergray}}MC     & 75.2  & 75.9  & 79.9 & 80.3 & 81.0 & 76.9 & 79.6 & 80.9 \\}
 AN-SYN                               & 59.2  & \mi{60.0}  & \mi{59.5} & 58.4 & 57.4 & 56.1 & 54.3 & 53.6 \\
 AN-SEM                               & 37.7  & \mi{38.6}  & \mi{39.4} & \mi{39.2} & \mi{39.4} & 38.4 & \mi{38.8} & \mi{38.7} \\\remove{
@@ -640,12 +614,12 @@ AN-SEM                               & 37.7  & \mi{38.6}  & \mi{39.4} & \mi{39.2
   }
   \caption{Performance versus the truncation threshold, $t$, of raw
     cooccurrence counts. We used $n_j=\textrm{Count}^{\frac{1}{4}}$
-    and other settings were the same as Table~\ref{tab:n}.} 
+    and other settings were the same as Table~\ref{tab:n}.}
   \label{tab:t}
 \end{table}
 $m$: The number of left singular vectors extracted after SVD of the preprocessed cooccurrence
   matrices can again be interpreted as a type of regularization, since
-  the result of this truncation is that we find cooccurrence patterns 
+  the result of this truncation is that we find cooccurrence patterns
   only between the top left singular vectors. We set $m_j = max(d_j,
   m)$ with $m=[100, 300, 500]$. See table~\ref{tab:m}.
 
@@ -666,11 +640,11 @@ SIMLEX                              & 38.4 & 40.6 & \mb{41.1} & 40.3 \\
 AN-SYN                               & 50.5 & \mi{56.2} & \mi{56.4} & \mb{56.4} \\
 AN-SEM                               & 24.3 & 31.4 & 34.3 & \mb{40.6} \\\remove{
 \rowstyle{\color{darkergray}} TOEFL & 80.0 & 81.2 & \mb{82.5} & 80.0}
-  \end{tabular}                                        
-  \caption{Performance versus $m$, the number of left     
+  \end{tabular}
+  \caption{Performance versus $m$, the number of left
 singular vectors extracted from raw cooccurrence counts. We set
 $n_j=\textrm{Count}^\frac{1}{4}, \; t=100K, \; v=25, \;
-k=300$.} 
+k=300$.}
   \label{tab:m}
 \end{table}
 
@@ -702,7 +676,7 @@ AN-SEM                               & 2.5  & 10.8 & 21.8 & 34.8 & \mb{35.8} & 3
     embeddings. We set $ m=300$ and other settings were same as Table~\ref{tab:m}.}
   \label{tab:k}
 \end{table}
-  
+
 
 $v$: Expression~\ref{eq:gcca3} describes a method to
   set $W_j$. We experimented with a different, more global, heuristic to
@@ -735,7 +709,7 @@ AN-SEM                               & \mb{34.6} & \mb{34.3} & \mb{34.1} & \mb{3
       we chose $v=25$ as the middle ground.}
   \label{tab:v}
 \end{table}
-  
+
 $r_j$: The regularization parameter ensures that all the
   inverses exist at all points in our method. We found that the
   performance of our  procedure was invariant to $r$ over a large
@@ -746,12 +720,12 @@ $r_j$: The regularization parameter ensures that all the
  Table~\ref{tab:jkjk} shows an ablative analysis of performance where we
  remove individual views or some combination of them and measure the
  performance.  It is clear by comparing the last column to the second
- column that adding in more views 
+ column that adding in more views
  improves performance. Also we can see that the Dependency based views and the Bitext
  based views give a larger boost than the morphology and FrameNet
  based views, probably because the latter are so sparse.
 
- \begin{table*}[ht] 
+ \begin{table*}[ht]
   \centering
    \setlength\tabcolsep{3pt}
   \begin{tabular}{=l| +c +c +c +c +c +c +c +c}
@@ -845,7 +819,7 @@ WS-SEM                             & 69.0      & \myy{78.4}  & \my{76.1} & \y{76
 \rowstyle{\color{darkergray}}MC    & \y{70.5}  & \myy{78.5}  & \my{82.7} & \y{76.6}  & \y{75.9}      & \myy{77.7}    & -0.7      & 2.8        & 80.1                             & 94.1     & 91.4      & 95.8        \\
 AN-SYN                              & 61.8      & 59.8      & 51.0       & 42.7      & 60.0          & \myy{64.3}    & \ma{17.3} & \ma{4.3}   &                                  &          &           &             \\
 AN-SEM                              & \my{80.9} & 73.7      & 73.5       & 36.2      & 38.6          & 77.2          & \ma{2.4}  & \ma{38.6}  &                                  &          &           &             \\
-\rowstyle{\color{darkergray}}TOEFL & \y{83.8}  & 81.2      & \my{86.2} & 78.8      & \y{87.5}      & \myy{88.8}    & \ma{8.7}  & 1.3        &                                  &          &           & 
+\rowstyle{\color{darkergray}}TOEFL & \y{83.8}  & 81.2      & \my{86.2} & 78.8      & \y{87.5}      & \myy{88.8}    & \ma{8.7}  & 1.3        &                                  &          &           &
   \end{tabular}}
   \caption{Comparison of Multiview LSA against Glove and WSG(Word2Vec
     Skip Gram). Using $\sigma_{0.05}^{0.9}$ as the
@@ -865,19 +839,19 @@ AN-SEM                              & \my{80.9} & 73.7      & 73.5       & 36.2 
 Vector space representations of words have been created using diverse
  frameworks including Spectral methods
  \cite{dhillon2011multi,dhillon2012two},
- %% \footnote{\url{cis.upenn.edu/~ungar/eigenwords}}
+ \footnote{\url{cis.upenn.edu/~ungar/eigenwords}}
  Neural Networks
  \cite{mikolov2013linguistic,collobert2013word}, and Random Projections \cite{ravichandranACL05,bhagatACL08,chanGEMS2011}.
- %%\footnote{\url{code.google.com/p/word2vec},\url{metaoptimize.com/projects/wordreprs}}
+ \footnote{\url{code.google.com/p/word2vec},\url{metaoptimize.com/projects/wordreprs}}
  They have been trained using either one
  \cite{pennington2014glove}
- %% \footnote{\url{nlp.stanford.edu/projects/glove}}
+ \footnote{\url{nlp.stanford.edu/projects/glove}}
  or two sources of cooccurrence statistics
  \cite{zou2013bilingual,faruqui2014improving,bansal2014tailoring,levy2014dependency}
- %% \footnote{\url{ttic.uchicago.edu/~mbansal/data/syntacticEmbeddings.zip,cs.cmu.edu/~mfaruqui/soft.html}}
+ \footnote{\url{ttic.uchicago.edu/~mbansal/data/syntacticEmbeddings.zip,cs.cmu.edu/~mfaruqui/soft.html}}
  or using multi-modal data
  \cite{felix2014learning,bruni2012distributional}.
- 
+
 \newcite{dhillon2011multi} and \newcite{dhillon2012two} were the first to use
 CCA as the primary method to learn vector representations and
 \newcite{faruqui2014improving} further demonstrated that incorporating bilingual
@@ -886,7 +860,7 @@ phenomenon was reported by \newcite{hill2014not} through their
 experiments over neural representations learnt from MT systems.
 %% Outside of the NLP
 %% community \cite{sun2013generalized,tripathi2011data} are two
-%% publications 
+%% publications
 %% that we are aware of that have used GCCA for ``data fusion''.
 Various other researchers have tried to improve the performance of
 their paraphrase systems or vector space models by using diverse
@@ -918,23 +892,19 @@ latent factors.\footnote{Note that while
 \newcite{bach2005probabilistic} presented a probabilistic
 interpretation for CCA. Though they did not generalize it to include
 GCCA we believe that one could give a probabilistic interpretation of
-\emph{MAX-VAR GCCA}, which we are considering in ongoing work.  Such a
+\emph{MAX-VAR GCCA}.  Such a
 probabilistic interpretation would allow for an online-generative model of
 lexical representations, which unlike methods like Glove or LSA would
 allows us to naturally perplexity or generate sequences. We also note
 that \newcite{via2007learning} presented a neural network model of GCCA
 and adaptive/incremental GCCA.  To the best of our knowledge both of these approaches have not been used for word representation learning.
 
-When we view our work as an application of multiview learning to NLP,
-this follows a long chain of effort started by
+CCA is also an algorithm
+for multi-view learning \cite{kakade2007multi,ganchevuai08} and when we view our work as an application of multiview learning to NLP, this follows a long chain of effort started by
 \newcite{yarowsky1995unsupervised} and continued with
 \emph{Co-Training}~\cite{blum1998combining},
 \emph{CoBoosting}~\cite{collins1999unsupervised} and \emph{2 view
-  perceptrons}~\cite{brefeld2006efficient}.  CCA is also an algorithm
-for multi-view learning \cite{kakade2007multi,ganchevuai08}, and it
-has a probabilistic interpretation \cite{bach2005probabilistic} as
-well.
-
+  perceptrons}~\cite{brefeld2006efficient}.
 
 \remove{
 \section{Future Work}
@@ -968,21 +938,21 @@ In rough order of importance we believe we could improve our method in the follo
 making  this connection  and we are working on proving with a technique and style closely mirroring that by \newcite{bach2005probabilistic}.
 \item Using count dependent non-linear weighting as exemplified
   through Expression~\ref{eq:gcca3}.
-\item Implementing procedures for constant memory QR decomposition so that we can scale our method to larger vocabularies. 
+\item Implementing procedures for constant memory QR decomposition so that we can scale our method to larger vocabularies.
 \item Adding more views such as views that derived from successive
   words instead of  using only the previous words. Since we are not using
   any PMI-like features there is scope for
   improvement on that front.  We note that the performance of our
   method on the ``AN-SEM'' dataset was very low which we believe could
   have been caused due to lack of PMI type features have been reported
-  to work well by \newcite{levy2014neural}.  
+  to work well by \newcite{levy2014neural}.
 \item Using a more sophisticated method for handling missing values,
   as mentioned earlier.
 \item Performing discriminative optimization of multiplicative
   factors over the views. For example we saw that bitext views hurt
   performance on the ``AN-SEM'' task whereas they improved performance
   on all the other tasks in general. A simple technique could be to
-  simply assign a multiplicative factor to each view and 
+  simply assign a multiplicative factor to each view and
   then to tune the values of that factor by using discriminative
   techniques. Of course such a method would not remain unsupervised. Such a discriminative optimization could help us understand
   better the reasons why a particular corpus improves performance on
@@ -1013,7 +983,7 @@ alternative of LSA that removes the need for heuristically combining
 word-word cooccurrence matrices into a single matrix. Finally, while
 surveying the literature we noticed that not enough emphasis was being
 given towards establishing the significance of comparative results and
-proposed the heuristic  \emph{(MRDS)} to filter out insignificant
+proposed a method, \emph{(MRDS)}, to filter out insignificant
 comparative gains between competing algorithms.
 
 \noindent\textbf{Future Work} Column \emph{MVLSA Wiki} of
@@ -1026,7 +996,7 @@ mentioned in footnote~\ref{ftn:mis} or by using the heuristic count dependent
 non-linear weighting mentioned by \newcite{pennington2014glove}
 and that sits well within our framework as exemplified in Expression~\ref{eq:gcca3}
  (2) by using even more views, which
-look at the future words as well as views that contain PMI values. 
+look at the future words as well as views that contain PMI values.
 Finally, we note that Table~\ref{tab:jkjk} shows that certain datasets can
 actually degrade performance over certain metrics. Therefore we are
 exploring methods for performing discriminative optimization of weights
@@ -1037,10 +1007,9 @@ assigned to views, for purposes of task-based customization of learned represent
 This material is based on research sponsored by the Defense Advanced Research
 Projects Agency (DARPA) under the Deep Exploration and
 Filtering of Text (DEFT) Program (Agreement number
-FA8750-13-2-0017). We also thank Juri Ganitkevitch for 
+FA8750-13-2-0017). We also thank Juri Ganitkevitch for
 providing the word aligned bitext corpus.
 
 \bibliographystyle{naaclhlt2015}
 \bibliography{references}
 \end{document}
-
