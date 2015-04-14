@@ -1,49 +1,37 @@
-# Multi View LSA #
-This is the companion code for the paper, `"Multiview LSA: Representation Learning Via Generalized CCA", Pushpendre Rastogi, Benjamin Van Durme and Raman Arora, NAACL(2015).`
+# Multiview LSA #
+This is the companion code for the paper\:
+[Multiview LSA: Representation Learning Via Generalized CCA](http://www.cs.jhu.edu/~prastog3/mvlsa/mvlsa.pdf), [Pushpendre Rastogi](http://www.cs.jhu.edu/~prastog3), [Benjamin Van Durme](http://www.cs.jhu.edu/~vandurme) and [Raman Arora](http://www.cs.jhu.edu/~raman), NAACL(2015).
 
     @conference{rastogi2015multiview,
-	Author = {Pushpendre Rastogi, Benjamin {Van Durme} and Raman Arora},
-	Booktitle = {Proceedings of NAACL},
-	Keywords = {mvlsa,multiview lsa,mvppdb},
-	Title = {Multiview LSA: Representation Learning Via Generalized CCA},
-	Year = {2015}
+	  Author = {Pushpendre Rastogi, Benjamin {Van Durme} and Raman Arora},
+	  Booktitle = {Proceedings of NAACL},
+	  Keywords = {mvlsa,multiview lsa,mvppdb},
+	  Title = {Multiview LSA: Representation Learning Via Generalized CCA},
+	  Year = {2015}
     }
 
-**NOTE 0:** You can download the trained embeddings that combine the
-embeddings of glove, word2vec and our own. The file to download is
-```
-   combined_embedding_0.mat
-OR
-   combined_embedding_0.emb.ascii
-   combined_embedding_0.word.ascii
-```
-This contains the best performing embedding and can be evaluates as
-follows. These embeddings correspond to the `MVLSA Combined` column of
-the paper. These embeddings are also available in svmlight text
-format. All the data is hosted at `zenodo.org/`
+**NOTES:**
 
-**NOTE 1: pipeline.sh would run all the steps below.**
-Assuming that you have downloaded the matlab files containing
-co-occurrence counts to the directory
-[EXTRACT\_COUNT\_FOLDER](file:commonheader.mk) and the
-`VOCABWITHCOUNT_500K_FILE` points to the vocabulary file that you
-downloaded. These are specified in `commonheader.mk`.
+1. We have made available the best performing embeddings in both /mat/ and /svmlight/ formats
+   (Table 9: column _MVLSA Combined_) at
+   [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.16710.svg)](http://dx.doi.org/10.5281/zenodo.16710). Download
+   the file [combined_embedding_0.mat](https://zenodo.org/record/16710/files/combined_embedding_0.mat) from that collection or
+   [combined_embedding_0.emb.ascii](https://zenodo.org/record/16710/files/combined_embedding_0.emb.ascii.gz) and [combined_embedding_0.word.ascii](https://zenodo.org/record/16710/files/combined_embedding_0.word.ascii.gz)
+   If you decide to use other embeddings files then please note that
+   the embedding matrices in the matlab file need to be aligned to the
+   vocabulary and then normalized as shown in the code below.
 
-**NOTE 2:** If you do decide to use the embeddings that we
-provide please see how they should be used as shown in the target
-`eval_generic` in `evaluate.mk`. See that the embedding matrices in the
-matlab file need to be aligned to the vocabulary and then normalized.
+        word=textread('$(VOCAB_500K_FILE)', '%s');
+        load('$(EMB_FILE)');
+        if exist('sort_idx')
+           word=word(sort_idx); % VERY IMPORTANT STEP 1 !!!
+        end;
+        G = normalize_embedding(G); % VERY IMPORTANT STEP 2 !!!
+        conduct_extrinsic_test_impl(G, ...);
 
-```matlab
-word=textread('$(VOCAB_500K_FILE)', '%s');
-load('$(EMB_FILE)');
-if exist('sort_idx')
-  word=word(sort_idx); % VERY IMPORTANT STEP 1 !!!
-end;
-G = normalize_embedding(G); % VERY IMPORTANT STEP 2 !!!
-conduct_extrinsic_test_impl(G, ...)
-```
-
+2. The code is hosted at [github.com/se4u/mvlsa](https://github.com/se4u/mvlsa)
+# Acknoledgements #
+This material is based on research sponsored by the Defense Advanced Research Projects Agency (DARPA) under the Deep Exploration and Filtering of Text (DEFT) Program (Agreement number FA8750-13-2-0017). We also thank Juri Ganitkevitch for providing the word aligned bitext corpus as part of [the PPDB project](http://paraphrase.org)
 # Detailed Description #
 MultiView LSA works in 4 stages
 
@@ -56,6 +44,13 @@ Every stage creates files for the next stage. To run a particular
 stage, just run the shell script associated with it. For example, run
 process\_count.sh after running the EXTRACT\_COUNT stage that dumps
 co-occurrence counts into sparse .mat files.
+
+`pipeline.sh` would run all the steps below
+Assuming that you have downloaded the matlab files containing
+co-occurrence counts to the directory
+[EXTRACT\_COUNT\_FOLDER](file:commonheader.mk) and the
+`VOCABWITHCOUNT_500K_FILE` points to the vocabulary file that you
+downloaded. These configuration variables are specified in `commonheader.mk`.
 
 ## EXTRACT_COUNT ##
 This is a tedious process with lots of grunt work, and though the code
@@ -144,19 +139,18 @@ paper for a more qualified and measured explanation. Run
 At its default settings `mrds.sh` would produce the last column of
 `Table~2` of the paper that describes the datasets used.
 
-## MOTIVATION ##
-1) Task specific representation learning through feedback guided weights (once
-   representation learning becomes online, then all we need to do is
-   train representations, the representations can be
-2) Which contexts give a boost (this is part of analysis)
-   Basically I code PMI, PPMI, Glove's Data dependent preprocessing as
+## Possible Future Work ##
+1. Task specific representation learning through feedback guided
+   weights.
+2. Which contexts give a boost (this is part of analysis)
+   Basically we code PMI, PPMI, Glove's Data dependent preprocessing as
    different views and then find which views get a high weight.
-   i should decide the exact weighting strategy to use. Setting
+   I should decide the exact weighting strategy to use. Setting
    x-max really benefits the Semantic dataset however I can do a lot
    better in terms of weighting by carefully either
    either premultiply or postmultiply and then get basically a factored
    weighting.
-3) Finally do humans really break the performance intro matrices of
+3. Finally do humans really break the performance intro matrices of
    statistics that are called views ?
-4) Tension between thresholding for noise removal and "missing value
+4. Tension between thresholding for noise removal and "missing value
    imputation for svd".
