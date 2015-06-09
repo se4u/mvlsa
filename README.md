@@ -30,9 +30,13 @@ This is the companion code for the paper\:
         conduct_extrinsic_test_impl(G, ...);
 
 2. The code is hosted at [github.com/se4u/mvlsa](https://github.com/se4u/mvlsa)
-# Acknoledgements #
+
+## Acknoledgements ##
+
 This material is based on research sponsored by the Defense Advanced Research Projects Agency (DARPA) under the Deep Exploration and Filtering of Text (DEFT) Program (Agreement number FA8750-13-2-0017). We also thank Juri Ganitkevitch for providing the word aligned bitext corpus as part of [the PPDB project](http://paraphrase.org)
-# Detailed Description #
+
+## Detailed Description ##
+
 MultiView LSA works in 4 stages
 
 1. EXTRACT\_COUNT
