@@ -50,7 +50,7 @@ end
 load(mvlsa_emb_file, 'G');
 w2v_emb=w2v_emb(w2v_l,:);
 glove_emb=glove_emb(glove_l,:);
-mvlsa_emb=G(mvlsa_l,:); clear G; 
+mvlsa_emb=G(mvlsa_l,:); clear G;
 assert(all(size(w2v_emb)==size(glove_emb)));
 assert(all(size(w2v_emb)==size(mvlsa_emb)));
 %% Actually do the gcca
@@ -58,11 +58,12 @@ if remove_mvlsa==1;
     M_tilde=zeros(length(w2v_emb), 600);
 else
     M_tilde=zeros(length(w2v_emb), 900);
-    M_tilde(:,601:900)=mvlsa_emb; 
+    M_tilde(:,601:900)=mvlsa_emb;
 end
 clear mvlsa_emb;
 M_tilde(:,301:600)=make_combined_embedding_impl(glove_emb, 1e-8);
 M_tilde(:,1:300)=make_combined_embedding_impl(w2v_emb, 1e-8);
 clear( 'w2v_emb', 'glove_emb');
-[emb, S_tilde, ~]=ste_rgcca(M_tilde, 300);
+save('tmpfile.mat', 'M_tilde');
+[emb, S_tilde, ~]=mvlsa_incremental_svd(300, {'tmpfile.mat'}, 0, 300);
 save(savefile, 'emb', 'word');
